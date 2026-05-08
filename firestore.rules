@@ -1,0 +1,237 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'displayName', 'email', 'subscriptionTier'])
+        && data.id == request.auth.uid
+        && data.email is string && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.subscriptionTier in ['free', 'pro', 'expedition'];
+    }
+
+    function isValidDive(data) {
+      return data.keys().hasAll(['userId', 'location', 'date', 'timestamp', 'diveType', 'depth', 'duration', 'fishSpotted', 'photos', 'notes'])
+        && data.userId == request.auth.uid
+        && data.location is string && data.location.size() <= 300
+        && data.depth is number
+        && data.duration is int
+        && data.date is string
+        && data.timestamp == request.time
+        && data.fishSpotted is list
+        && data.photos is list;
+    }
+
+    function isValidSighting(data) {
+      return data.keys().hasAll(['userId', 'species', 'lat', 'lng', 'timestamp'])
+        && data.userId == request.auth.uid
+        && data.species is string && data.species.size() <= 100
+        && data.lat is number
+        && data.lng is number
+        && data.timestamp == request.time;
+    }
+
+    function isValidDiveSite(data) {
+      return data.keys().hasAll(['userId', 'name', 'lat', 'lng', 'status', 'upvotes', 'downvotes', 'timestamp'])
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() <= 200
+        && data.lat is number
+        && data.lng is number
+        && (!('type' in data) || data.type in ['reef', 'wreck', 'cave', 'wall', 'site'])
+        && data.status in ['unverified', 'verified']
+        && data.upvotes is int
+        && data.downvotes is int
+        && data.timestamp == request.time
+        // avgRating and reviewCount are optional initially
+        && (!('avgRating' in data) || data.avgRating is number)
+        && (!('reviewCount' in data) || data.reviewCount is int);
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['userId', 'userDisplayName', 'rating', 'text', 'timestamp'])
+        && data.userId == request.auth.uid
+        && data.userDisplayName is string
+        && data.rating is int && data.rating >= 1 && data.rating <= 5
+        && data.text is string && data.text.size() <= 1000
+        && data.timestamp == request.time;
+    }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['userId', 'timestamp', 'content', 'likesCount', 'commentsCount', 'userDisplayName', 'userPhotoURL', 'location', 'image', 'tags'])
+        && data.userId == request.auth.uid
+        && data.content is string && data.content.size() <= 5000
+        && data.likesCount is int
+        && data.commentsCount is int
+        && (!('likedBy' in data) || data.likedBy is list)
+        && (!('reportedBy' in data) || data.reportedBy is list)
+        && (!('reportsCount' in data) || data.reportsCount is int)
+        && data.timestamp == request.time;
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['userId', 'userDisplayName', 'userPhotoURL', 'content', 'timestamp'])
+        && data.userId == request.auth.uid
+        && data.userDisplayName is string
+        && data.userPhotoURL is string
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 1000
+        && (!('reportsCount' in data) || data.reportsCount is int)
+        && (!('reportedBy' in data) || data.reportedBy is list)
+        && (!('likesCount' in data) || data.likesCount is int)
+        && (!('likedBy' in data) || data.likedBy is list)
+        && data.timestamp == request.time;
+    }
+
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'description', 'location', 'date', 'hostId', 'timestamp', 'participants', 'maxParticipants', 'type', 'hostDisplayName', 'hostPhotoURL'])
+        && data.hostId == request.auth.uid
+        && data.title is string && data.title.size() <= 100
+        && data.description is string && data.description.size() <= 2000
+        && data.location is string && data.location.size() <= 200
+        && data.date is string
+        && data.timestamp == request.time
+        && data.participants is list
+        && data.maxParticipants is int
+        && data.type in ["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"]
+        && (!('image' in data) || (data.image is string && data.image.size() <= 10000000))
+        && (!('time' in data) || (data.time is string));
+    }
+
+    function isValidPrivateInfo(data) {
+      return (!('phoneNumber' in data) || data.phoneNumber is string && (data.phoneNumber == '' || data.phoneNumber.matches('^[+]?[0-9\\s\\-\\(\\)]{5,25}$')))
+        && (!('emergencyContactName' in data) || data.emergencyContactName is string && data.emergencyContactName.size() <= 100)
+        && (!('emergencyContactPhone' in data) || data.emergencyContactPhone is string && (data.emergencyContactPhone == '' || data.emergencyContactPhone.matches('^[+]?[0-9\\s\\-\\(\\)]{5,25}$')))
+        && (!('emergencyContactName2' in data) || data.emergencyContactName2 is string && data.emergencyContactName2.size() <= 100)
+        && (!('emergencyContactPhone2' in data) || data.emergencyContactPhone2 is string && (data.emergencyContactPhone2 == '' || data.emergencyContactPhone2.matches('^[+]?[0-9\\s\\-\\(\\)]{5,25}$')))
+        && (!('medicalNotes' in data) || data.medicalNotes is string && data.medicalNotes.size() <= 2000)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (!('emergencyContactPhone' in data) || (data.emergencyContactPhone.size() == 0 || ('emergencyContactName' in data && data.emergencyContactName.size() > 0)))
+        && (!('emergencyContactPhone2' in data) || (data.emergencyContactPhone2.size() == 0 || ('emergencyContactName2' in data && data.emergencyContactName2.size() > 0)));
+    }
+
+    // --- Collection Matchers ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['photoURL']) && incoming().photoURL is string && incoming().photoURL.size() <= 500000) ||
+        (isValidUser(incoming()) && incoming().id == existing().id && incoming().email == existing().email)
+      );
+      allow delete: if isOwner(userId);
+
+      match /private/info {
+        allow get: if isSignedIn();
+        allow list, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidPrivateInfo(incoming());
+      }
+    }
+
+    match /dives/{diveId} {
+      allow get: if isSignedIn() && (resource == null || isOwner(resource.data.userId) || true);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidDive(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && isValidDive(incoming());
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /sightings/{sightingId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || true);
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidSighting(incoming());
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /dive_sites/{siteId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidDiveSite(incoming());
+      allow update: if isSignedIn() && (
+        (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'lat', 'lng', 'timestamp']) && (!('name' in incoming()) || (incoming().name is string && incoming().name.size() <= 200)) && (!('lat' in incoming()) || incoming().lat is number) && (!('lng' in incoming()) || incoming().lng is number) && (!('timestamp' in incoming()) || incoming().timestamp == request.time)) ||
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'status', 'avgRating', 'reviewCount', 'timestamp'])
+        )
+      );
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+
+      match /votes/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isOwner(userId) 
+          && incoming().vote in ['up', 'down']
+          && incoming().timestamp == request.time;
+        allow update, delete: if false; // Once you vote, it's final for now
+      }
+
+      match /reviews/{reviewId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && reviewId == request.auth.uid && isOwner(incoming().userId) && isValidReview(incoming());
+        allow update: if isSignedIn() && reviewId == request.auth.uid && isOwner(existing().userId) && isValidReview(incoming());
+        allow delete: if isSignedIn() && isOwner(existing().userId);
+      }
+    }
+
+    match /posts/{postId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidPost(incoming());
+      allow update: if isSignedIn() && (
+        isOwner(existing().userId) || 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'commentsCount', 'likedBy', 'reportedBy', 'reportsCount']))
+      );
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || (('reportsCount' in existing()) && existing().reportsCount >= 9));
+
+      match /comments/{commentId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && isOwner(incoming().userId) && isValidComment(incoming());
+        allow update: if isSignedIn() && (
+          (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'timestamp'])) || 
+          (incoming().diff(existing()).affectedKeys().hasOnly(['reportedBy', 'reportsCount', 'likedBy', 'likesCount']))
+        );
+        allow delete: if isSignedIn() && (
+          isOwner(existing().userId) ||
+          isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.userId) ||
+          (('reportsCount' in existing()) && existing().reportsCount >= 9)
+        );
+      }
+    }
+
+    match /events/{eventId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(incoming().hostId) && isValidEvent(incoming());
+      allow update: if isSignedIn() && (
+        (isOwner(existing().hostId) && isValidEvent(incoming()) && incoming().hostId == existing().hostId) || 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['participants']) && incoming().participants is list)
+      );
+      allow delete: if isSignedIn() && (resource == null || isOwner(existing().hostId));
+    }
+  }
+}

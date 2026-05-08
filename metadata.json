@@ -1,0 +1,8 @@
+{
+  "name": "GoDive",
+  "description": "An advanced underwater exploration platform for divers. Track your dives, discover marine species, and connect with a global community of explorers.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

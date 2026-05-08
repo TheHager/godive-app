@@ -1,0 +1,1791 @@
+import React, { useState, useEffect } from "react";
+import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserPlus, UserCheck, X, Loader2, Trash2, Plus, Clock, Info, CheckCircle2, Edit2, Phone, HeartPulse, ImagePlus, ImageIcon, Map as MapIcon, Share2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "../lib/utils";
+import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+import { useAuth } from "../contexts/AuthContext";
+import { filterProfanity } from "../lib/profanity";
+import { View, UserProfile, CommunityEvent, UserPrivateInfo } from "../types";
+import { calculateLevel, getRankInfo } from "../constants/ranks";
+import { LocationPickerModal } from "./LocationPickerModal";
+import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
+
+// Helper to calculate distance between two coordinates in km
+const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; 
+  return d;
+};
+
+export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => void, initialEventId?: string | null }) => {
+  const { profile, user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CommunityEvent | null>(null);
+  const [buddies, setBuddies] = useState<UserProfile[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [isLoadingBuddies, setIsLoadingBuddies] = useState(true);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [eventSearchDate, setEventSearchDate] = useState("");
+  const [eventSearchLocation, setEventSearchLocation] = useState("");
+  const [eventSearchCoords, setEventSearchCoords] = useState<{ lat: number, lng: number } | null>(null);
+  const [eventSearchRadius, setEventSearchRadius] = useState(25); // Default 25km
+  const [showLocationSearchModal, setShowLocationSearchModal] = useState(false);
+  const [selectedEventForMap, setSelectedEventForMap] = useState<CommunityEvent | null>(null);
+  const [selectedEventForParticipants, setSelectedEventForParticipants] = useState<CommunityEvent | null>(null);
+  const [selectedBuddyForProfile, setSelectedBuddyForProfile] = useState<UserProfile | null>(null);
+  const [localInitialEventId, setLocalInitialEventId] = useState<string | null>(initialEventId || null);
+
+  useEffect(() => {
+    const q = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const eventData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityEvent));
+      setEvents(eventData);
+      setIsLoadingEvents(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Cleanup expired events (24h after start time)
+  useEffect(() => {
+    const cleanupEvents = async () => {
+      const now = Date.now();
+      const expiredEvents = events.filter(event => {
+        if (!event.date) return false;
+        try {
+          // Combine date and time
+          const dateStr = event.date; // YYYY-MM-DD
+          const timeStr = event.time || "00:00"; // HH:mm
+          const eventStart = new Date(`${dateStr}T${timeStr}`).getTime();
+          
+          if (isNaN(eventStart)) return false;
+          
+          // 24 hours = 86400000 ms
+          return now > (eventStart + 86400000);
+        } catch (e) {
+          return false;
+        }
+      });
+
+      if (expiredEvents.length === 0) return;
+
+      // Only the host can delete the event due to security rules
+      for (const event of expiredEvents) {
+        if (!event.hostId || !user?.uid || event.hostId !== user.uid) continue;
+        
+        try {
+          await deleteDoc(doc(db, "events", event.id));
+        } catch (err: any) {
+          // Ignore permission errors during cleanup as they usually mean
+          // the document was already deleted by another client/instance
+          if (err.code !== 'permission-denied') {
+            console.error("Cleanup error for event", event.id, err);
+          }
+        }
+      }
+    };
+
+    if (events.length > 0 && user?.uid) {
+      cleanupEvents();
+    }
+  }, [events, user?.uid]);
+
+  const filteredEvents = events.filter(e => {
+    // If we have a deep linked event, show only that one
+    if (localInitialEventId) {
+      return e.id === localInitialEventId;
+    }
+
+    // Hide expired events from UI even if not deleted yet
+    const now = Date.now();
+    const dateStr = e.date;
+    const timeStr = e.time || "00:00";
+    const eventStart = new Date(`${dateStr}T${timeStr}`).getTime();
+    if (!isNaN(eventStart) && now > (eventStart + 86400000)) return false;
+
+    const matchesDate = !eventSearchDate || e.date === eventSearchDate;
+    const matchesTextLocation = !eventSearchLocation || e.location.toLowerCase().includes(eventSearchLocation.toLowerCase());
+    
+    let matchesRadius = true;
+    if (eventSearchCoords && e.lat && e.lng) {
+      const distance = getDistance(eventSearchCoords.lat, eventSearchCoords.lng, e.lat, e.lng);
+      matchesRadius = distance <= eventSearchRadius;
+    }
+
+    return matchesDate && matchesTextLocation && matchesRadius;
+  });
+
+  useEffect(() => {
+    const fetchBuddies = async () => {
+      if (!profile?.friends || profile.friends.length === 0) {
+        setBuddies([]);
+        setIsLoadingBuddies(false);
+        return;
+      }
+
+      try {
+        // Break friends into chunks of 10 for Firestore 'in' query
+        const chunks = [];
+        for (let i = 0; i < profile.friends.length; i += 10) {
+          chunks.push(profile.friends.slice(i, i + 10));
+        }
+
+        const buddyPromises = chunks.map(chunk => 
+          getDocs(query(collection(db, "users"), where("id", "in", chunk), limit(10)))
+        );
+
+        const snapshots = await Promise.all(buddyPromises);
+        const buddyData = snapshots.flatMap(snap => snap.docs.map(doc => doc.data() as UserProfile));
+        setBuddies(buddyData);
+      } catch (err) {
+        console.error("Error fetching buddies:", err);
+      } finally {
+        setIsLoadingBuddies(false);
+      }
+    };
+
+    fetchBuddies();
+  }, [profile?.friends]);
+
+  const executeSearch = async (queryStr: string) => {
+    if (!queryStr.trim()) return;
+
+    setIsSearching(true);
+    const q = queryStr.trim();
+    // Normalize for prefix matching if needed (though Firestore is case sensitive)
+    const endRange = q + '\uf8ff';
+
+    try {
+      // Since OR queries with range filters must be on the same field, 
+      // we perform parallel queries for Name, Email, and Phone
+      const queries = [
+        query(collection(db, "users"), where("displayName", ">=", q), where("displayName", "<=", endRange), limit(10)),
+        query(collection(db, "users"), where("email", ">=", q), where("email", "<=", endRange), limit(10)),
+        query(collection(db, "users"), where("phoneNumber", ">=", q), where("phoneNumber", "<=", endRange), limit(10))
+      ];
+      
+      const snapshots = await Promise.all(queries.map(getDocs));
+      
+      const resultsMap = new Map<string, UserProfile>();
+      snapshots.forEach(snap => {
+        snap.docs.forEach(doc => {
+          const data = doc.data() as UserProfile;
+          if (data.id !== profile?.id) {
+            resultsMap.set(data.id, data);
+          }
+        });
+      });
+      
+      setSearchResults(Array.from(resultsMap.values()));
+    } catch (err) {
+      console.error("Error searching users:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showSearchModal) return;
+    
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length >= 3) {
+        executeSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, showSearchModal]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    executeSearch(searchQuery);
+  };
+
+  const toggleBuddy = async (targetUserId: string, isBuddy: boolean) => {
+    if (!profile?.id) return;
+
+    try {
+      const userRef = doc(db, "users", profile.id);
+      if (isBuddy) {
+        await updateDoc(userRef, {
+          friends: arrayRemove(targetUserId)
+        });
+      } else {
+        await updateDoc(userRef, {
+          friends: arrayUnion(targetUserId)
+        });
+      }
+    } catch (err) {
+      console.error("Error toggling buddy:", err);
+    }
+  };
+
+  const handleRemoveBuddy = async (targetUserId: string) => {
+    if (!profile?.id) return;
+    
+    // Optimistic UI update
+    setBuddies(prev => prev.filter(b => b.id !== targetUserId));
+
+    try {
+      const userRef = doc(db, "users", profile.id);
+      await updateDoc(userRef, {
+        friends: arrayRemove(targetUserId)
+      });
+    } catch (err) {
+      console.error("Error removing buddy:", err);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-10 p-6 w-full max-w-4xl mx-auto min-w-0 pb-32">
+      <section>
+        <h2 className="mb-2 text-4xl font-extrabold tracking-tight text-on-surface">Find Your Buddy</h2>
+        <p className="text-lg font-medium text-on-surface-variant opacity-70">Connect with divers and join upcoming local expeditions.</p>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button 
+            onClick={() => setShowSearchModal(true)}
+            className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-secondary py-4 px-6 font-black uppercase tracking-widest text-on-secondary shadow-xl transition-all hover:bg-secondary-container active:scale-95 group shadow-secondary/20 border border-white/10"
+          >
+            <Search size={20} className="transition-transform group-hover:scale-110" />
+            Find Your Buddies
+          </button>
+          <button 
+            onClick={() => setShowCreateEventModal(true)}
+            className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-surface-container-highest py-4 px-6 font-black uppercase tracking-widest text-on-surface shadow-xl transition-all hover:bg-white/5 active:scale-95 group border border-white/10"
+          >
+            <Plus size={20} className="transition-transform group-hover:scale-110" />
+            Create Event
+          </button>
+        </div>
+
+        <UserSearchModal 
+          isOpen={showSearchModal} 
+          onClose={() => {
+            setShowSearchModal(false);
+            setSearchResults([]);
+            setIsSearching(false);
+          }}
+          results={searchResults}
+          isSearching={isSearching}
+          onToggleBuddy={toggleBuddy}
+          friends={profile?.friends || []}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={handleSearch}
+        />
+
+        <CreateEventModal 
+          isOpen={showCreateEventModal}
+          onClose={() => {
+            setShowCreateEventModal(false);
+            setEditingEvent(null);
+          }}
+          profile={profile}
+          eventToEdit={editingEvent}
+        />
+
+        <EventMapModal 
+          isOpen={!!selectedEventForMap}
+          onClose={() => setSelectedEventForMap(null)}
+          event={selectedEventForMap}
+        />
+
+        <ParticipantsModal 
+          isOpen={!!selectedEventForParticipants}
+          onClose={() => setSelectedEventForParticipants(null)}
+          event={selectedEventForParticipants}
+        />
+
+        <UserProfileModal
+          isOpen={!!selectedBuddyForProfile}
+          onClose={() => setSelectedBuddyForProfile(null)}
+          user={selectedBuddyForProfile}
+        />
+
+        <LocationSearchModal
+          isOpen={showLocationSearchModal}
+          onClose={() => setShowLocationSearchModal(false)}
+          onSelectLocation={(loc, coords) => {
+            setEventSearchLocation(loc);
+            setEventSearchCoords(coords);
+            setShowLocationSearchModal(false);
+          }}
+        />
+
+        <SafetyRequirementModal 
+          isOpen={showSafetyModal}
+          onClose={() => setShowSafetyModal(false)}
+          onGoToProfile={() => {
+            setShowSafetyModal(false);
+            setView("profile");
+          }}
+        />
+      </section>
+
+      {/* My Buddies Section */}
+      {!localInitialEventId && profile?.friends && profile.friends.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({profile.friends.length})</h3>
+          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
+            {isLoadingBuddies ? (
+              <div className="flex h-16 w-full items-center justify-center">
+                <Loader2 size={24} className="animate-spin text-secondary" />
+              </div>
+            ) : buddies.map(buddy => (
+              <div 
+                key={buddy.id} 
+                className="flex flex-col items-center gap-2 group min-w-[100px] cursor-pointer"
+                onClick={() => setSelectedBuddyForProfile(buddy)}
+              >
+                <div className="relative">
+                  <img 
+                    src={buddy.photoURL || `https://i.pravatar.cc/150?u=${buddy.id}`} 
+                    className="h-16 w-16 rounded-full border-2 border-secondary/20 object-cover shadow-xl transition-transform group-hover:scale-110" 
+                    alt={buddy.displayName}
+                  />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveBuddy(buddy.id);
+                    }}
+                    className="absolute -top-1 -right-1 rounded-full bg-error p-1.5 border-2 border-background text-on-error opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                    title="Remove Buddy"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                  <div className="absolute -bottom-1 -right-1 rounded-full bg-secondary p-1 border-2 border-background group-hover:opacity-0 transition-opacity">
+                    <UserCheck size={10} className="text-on-secondary" />
+                  </div>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface truncate w-full text-center">{buddy.displayName}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+              {localInitialEventId ? "Specific Expedition" : "Expeditions & Events"}
+            </h3>
+            {localInitialEventId && (
+              <button 
+                onClick={() => setLocalInitialEventId(null)}
+                className="text-[10px] font-black uppercase tracking-widest text-secondary hover:underline"
+              >
+                Show All Events
+              </button>
+            )}
+          </div>
+          {!localInitialEventId && (
+            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            <div className="relative group">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+              <input 
+                type="date"
+                value={eventSearchDate}
+                onChange={(e) => setEventSearchDate(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all"
+              />
+            </div>
+            <div className="relative group">
+              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+              <input 
+                type="text"
+                placeholder="FILTER BY LOCATION..."
+                value={eventSearchLocation}
+                onChange={(e) => setEventSearchLocation(e.target.value)}
+                onClick={() => setShowLocationSearchModal(true)}
+                readOnly
+                className="pl-9 pr-4 py-2 bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all w-full sm:w-48 placeholder:text-on-surface-variant/30 cursor-pointer hover:bg-white/5"
+              />
+            </div>
+            {eventSearchCoords && (
+              <div className="flex items-center gap-2 bg-surface-container-high/40 border border-white/5 rounded-full px-4 py-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-secondary">Radius:</span>
+                <select 
+                  value={eventSearchRadius}
+                  onChange={(e) => setEventSearchRadius(Number(e.target.value))}
+                  className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-0 p-0 cursor-pointer"
+                >
+                  <option value={10}>10km</option>
+                  <option value={20}>20km</option>
+                  <option value={50}>50km</option>
+                  <option value={100}>100km</option>
+                  <option value={500}>500km</option>
+                </select>
+              </div>
+            )}
+            {(eventSearchDate || eventSearchLocation || eventSearchCoords) && (
+              <button 
+                onClick={() => { 
+                  setEventSearchDate(""); 
+                  setEventSearchLocation(""); 
+                  setEventSearchCoords(null);
+                }}
+                className="px-4 py-2 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-widest border border-error/20 hover:bg-error/20 transition-all text-center"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          )}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {isLoadingEvents ? (
+          <div className="md:col-span-2 flex h-32 items-center justify-center">
+            <Loader2 size={32} className="animate-spin text-secondary" />
+          </div>
+        ) : filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => (
+            <EventCard 
+              key={event.id}
+              event={event}
+              isJoined={event.participants.includes(profile?.id || "")}
+              isHost={event.hostId === profile?.id}
+              onEdit={() => {
+                setEditingEvent(event);
+                setShowCreateEventModal(true);
+              }}
+              onViewMap={() => setSelectedEventForMap(event)}
+              onViewParticipants={() => setSelectedEventForParticipants(event)}
+              onSafetyRequirement={() => setShowSafetyModal(true)}
+            />
+          ))
+        ) : (
+          <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center bg-surface-container-high/20 rounded-[40px] border border-white/5">
+            <Calendar size={48} className="text-on-surface-variant/20 mb-4" />
+            <h4 className="text-on-surface font-black italic text-xl">No Events Found</h4>
+            <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-widest mt-2">Try changing your filters</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy, friends, searchQuery, setSearchQuery, onSearch }: any) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/90 backdrop-blur-md" 
+            onClick={onClose} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-lg rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-6 border-b border-white/5 bg-surface-container-highest shrink-0">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-black italic tracking-tight text-on-surface">Find Buddies</h3>
+                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">Community Discovery</p>
+                </div>
+                <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={onSearch} className="flex gap-2 rounded-2xl bg-white/5 p-2 border border-white/5 focus-within:ring-1 focus-within:ring-secondary/50">
+                <div className="flex flex-1 items-center gap-3 px-3 min-w-0">
+                  <Search size={18} className="text-secondary shrink-0" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search name, email, phone..."
+                    className="w-full bg-transparent border-none p-0 text-sm font-medium text-on-surface placeholder:text-outline/30 focus:ring-0 min-w-0 flex-1"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="rounded-xl bg-secondary px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-secondary shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+                  disabled={isSearching}
+                >
+                  {isSearching ? <Loader2 size={12} className="animate-spin" /> : "Search"}
+                </button>
+              </form>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+              {isSearching ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <div className="relative">
+                     <Loader2 size={48} className="animate-spin text-secondary" />
+                     <div className="absolute inset-0 blur-xl bg-secondary/20" />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-secondary animate-pulse px-4 py-2 bg-secondary/10 rounded-full border border-secondary/20">Scanning Depths...</span>
+                </div>
+              ) : results.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Possible Matches</span>
+                    <span className="text-[10px] font-black text-secondary uppercase bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">{results.length} Found</span>
+                  </div>
+                  {results.map((user: UserProfile, index: number) => {
+                    const isBuddy = friends.includes(user.id);
+                    return (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        key={user.id} 
+                        className="flex items-center justify-between p-3 rounded-[2rem] bg-surface-container-high/30 border border-white/5 backdrop-blur-md group hover:bg-surface-container-high hover:border-white/10 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-4 ml-1">
+                          <div className="relative shrink-0">
+                            <img 
+                              src={user.photoURL || `https://i.pravatar.cc/150?u=${user.id}`} 
+                              className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
+                              alt={user.displayName}
+                            />
+                            <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-secondary border-4 border-surface-container-highest shadow-xl" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-extrabold text-on-surface group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[9px] text-on-surface-variant uppercase font-black tracking-[0.1em]">
+                                {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => onToggleBuddy(user.id, isBuddy)}
+                          className={cn(
+                            "flex items-center gap-2 rounded-full px-6 py-3 transition-all duration-300 shadow-xl font-black uppercase tracking-[0.2em] text-[9px] shrink-0 active:scale-95 border",
+                            isBuddy 
+                              ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20" 
+                              : "bg-secondary text-on-secondary border-secondary/20 hover:shadow-secondary/20"
+                          )}
+                        >
+                          {isBuddy ? (
+                            <>
+                              <UserCheck size={14} className="text-primary" />
+                              <span className="hidden sm:inline">Buddy</span>
+                              <span className="sm:hidden">OK</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus size={14} className="text-on-secondary" />
+                              <span>Add</span>
+                            </>
+                          )}
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                  <div className="rounded-full bg-surface-container-high p-6 text-on-surface-variant/20 border border-white/5">
+                    <Users size={48} />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black text-on-surface">No Divers Found</h4>
+                    <p className="text-xs font-medium text-on-surface-variant mt-1 max-w-[200px] mx-auto opacity-60">Try searching for a different username, email, or phone number.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+              <button 
+                onClick={onClose}
+                className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+              >
+                Close Search
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null }) => {
+  if (!event) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+            onClick={onClose} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
+          >
+            <div className="p-6 border-b border-white/5 bg-surface-container-highest flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-xl font-black italic tracking-tighter text-on-surface">{event.title}</h3>
+                <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant opacity-60">
+                   <MapPin size={12} className="text-secondary" />
+                   {event.location}
+                </div>
+              </div>
+              <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 relative bg-surface-container-lowest">
+              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
+                <GoogleMap
+                  defaultCenter={{ lat: event.lat || 0, lng: event.lng || 0 }}
+                  defaultZoom={15}
+                  mapId="EVENT_VIEW_MAP"
+                  disableDefaultUI
+                  gestureHandling="greedy"
+                >
+                  <AdvancedMarker position={{ lat: event.lat || 0, lng: event.lng || 0 }}>
+                    <div className="relative group">
+                      <div className="absolute -inset-4 bg-secondary/20 rounded-full blur-xl group-hover:bg-secondary/40 transition-colors animate-pulse" />
+                      <div className="relative flex flex-col items-center">
+                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2 border-white/20 mb-2">
+                           <MapIcon size={24} className="text-on-secondary" />
+                        </div>
+                        <div className="bg-background/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-xl">
+                           <span className="text-[10px] font-black uppercase text-on-surface whitespace-nowrap">{event.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </AdvancedMarker>
+                </GoogleMap>
+              </APIProvider>
+            </div>
+
+            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+              <button 
+                onClick={onClose}
+                className="w-full py-4 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95"
+              >
+                Close Map View
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const SafetyRequirementModal = ({ isOpen, onClose, onGoToProfile }: { isOpen: boolean, onClose: () => void, onGoToProfile: () => void }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/90 backdrop-blur-md" 
+            onClick={onClose} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-sm rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center gap-6"
+          >
+            <div className="h-20 w-20 rounded-3xl bg-secondary/20 flex items-center justify-center text-secondary mb-2 relative">
+               <ShieldCheck size={40} />
+               <div className="absolute inset-0 blur-xl bg-secondary/30 -z-10" />
+            </div>
+            
+            <div>
+              <h3 className="text-2xl font-black italic tracking-tighter text-on-surface mb-2">Dive Safety Required</h3>
+              <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
+                To join community events, you must have your emergency contact and medical information filled out. This ensures everyone's safety during expeditions.
+              </p>
+            </div>
+
+            <div className="flex flex-col w-full gap-3">
+              <button 
+                onClick={onGoToProfile}
+                className="w-full py-4 rounded-2xl bg-secondary text-on-secondary text-[11px] font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95"
+              >
+                Complete Safety Info
+              </button>
+              <button 
+                onClick={onClose}
+                className="w-full py-4 rounded-2xl bg-white/5 text-on-surface-variant text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+interface EventCardProps {
+  key?: any;
+  event: CommunityEvent;
+  isJoined: boolean;
+  isHost: boolean;
+  onEdit?: () => void;
+  onViewMap?: () => void;
+  onViewParticipants?: () => void;
+  onSafetyRequirement?: () => void;
+}
+
+const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipants, onSafetyRequirement }: EventCardProps) => {
+  const { profile } = useAuth();
+  const [isJoining, setIsJoining] = useState(false);
+  const isFull = event.maxParticipants > 0 && event.participants.length >= event.maxParticipants && !isJoined;
+
+  const handleJoin = async () => {
+    if (!profile?.id || isHost) return;
+
+    // Check for safety info
+    if (!isJoined && !profile.hasEmergencyContactBonus) {
+      onSafetyRequirement?.();
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      const eventRef = doc(db, "events", event.id);
+      if (isJoined) {
+        await updateDoc(eventRef, {
+          participants: arrayRemove(profile.id)
+        });
+      } else {
+        await updateDoc(eventRef, {
+          participants: arrayUnion(profile.id)
+        });
+      }
+    } catch (err) {
+      console.error("Error joining event:", err);
+      handleFirestoreError(err, OperationType.UPDATE, `events/${event.id}`);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  return (
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "group flex flex-col rounded-[32px] bg-surface-container-high/20 backdrop-blur-3xl border border-white/5 shadow-xl transition-all hover:bg-surface-container-high/40 overflow-hidden relative",
+        isFull && "opacity-80"
+      )}
+    >
+      {isHost && (
+        <button 
+          onClick={onEdit}
+          className={cn(
+            "absolute top-4 z-20 rounded-full bg-black/40 backdrop-blur-md p-2.5 text-white border border-white/10 hover:bg-black/60 transition-all active:scale-95",
+            event.image ? "right-4" : "left-4"
+          )}
+          title="Edit Event"
+        >
+          <Edit2 size={16} />
+        </button>
+      )}
+      {/* Event Image */}
+      {event.image && (
+        <div className="w-full h-48 overflow-hidden relative">
+          <img 
+            src={event.image} 
+            alt={event.title} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high/60 to-transparent" />
+        </div>
+      )}
+      
+      <div className="p-6 flex flex-col flex-1">
+        <div className={cn("mb-4 flex items-start justify-between", (!event.image && isHost) && "pl-12")}>
+        <div className="flex gap-2">
+          <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+            <Calendar size={10} />
+            {event.date}
+          </span>
+          <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1.5">
+            <Clock size={10} />
+            {event.time}
+          </span>
+        </div>
+        <button 
+          onClick={onViewParticipants}
+          className="rounded-full bg-white/5 border border-white/10 p-2 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all active:scale-95 group"
+          title="View Participants"
+        >
+          <ArrowUpRight size={20} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </button>
+      </div>
+
+      <h4 className="mb-2 text-2xl font-black italic tracking-tighter text-on-surface">{event.title}</h4>
+      <p className="mb-4 text-sm font-medium text-on-surface-variant line-clamp-2 leading-relaxed">{event.description}</p>
+      
+      <div 
+        onClick={onViewMap}
+        className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors group/loc"
+      >
+        <MapPin size={14} className="text-secondary group-hover/loc:scale-110 transition-transform" />
+        <span className="text-xs font-bold text-on-surface-variant group-hover/loc:text-primary">{event.location}</span>
+      </div>
+
+      <div className="flex items-center gap-1.5 mb-6 opacity-80">
+        <Users size={12} className="text-primary" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies:</span>
+        <span className="text-[11px] font-bold text-on-surface">{event.participants.length} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
+      </div>
+
+      <div className={cn("flex items-center justify-between", !isHost ? "mb-6" : "mb-0")}>
+         <div className="flex items-center gap-3">
+            <img src={event.hostPhotoURL || `https://i.pravatar.cc/150?u=${event.hostId}`} className="h-8 w-8 rounded-full border border-white/10 object-cover" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest text-outline">Hosted By</span>
+              <span className="text-[11px] font-bold text-on-surface">{event.hostDisplayName}</span>
+            </div>
+         </div>
+         <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black uppercase tracking-widest text-outline">Type</span>
+            <span className="text-[11px] font-bold text-primary">{event.type}</span>
+         </div>
+      </div>
+
+      {!isHost && (
+        <div className="mt-auto flex items-center justify-end gap-4 pt-4 border-t border-white/5">
+          <button 
+            onClick={handleJoin}
+            disabled={isJoining || (isFull && !isJoined)}
+            className={cn(
+              "rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2",
+              isJoined 
+                ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" 
+                : "bg-secondary text-on-secondary shadow-lg shadow-secondary/10 hover:bg-secondary-container"
+            )}
+          >
+            {isJoining ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : isJoined ? (
+              <>
+                <CheckCircle2 size={14} />
+                Joined
+              </>
+            ) : isFull ? (
+              "Full"
+            ) : (
+              "Join Event"
+            )}
+          </button>
+        </div>
+      )}
+      </div>
+      
+      {isFull && (
+        <div className="absolute inset-0 bg-background/20 pointer-events-none" />
+      )}
+    </motion.div>
+  );
+};
+
+const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    location: "",
+    lat: 0,
+    lng: 0,
+    date: "",
+    time: "",
+    maxParticipants: 0,
+    type: "Social" as const,
+    image: "",
+    shareToFeed: false
+  });
+
+  useEffect(() => {
+    if (eventToEdit) {
+      setFormData({
+        title: eventToEdit.title,
+        description: eventToEdit.description,
+        location: eventToEdit.location,
+        lat: eventToEdit.lat || 0,
+        lng: eventToEdit.lng || 0,
+        date: eventToEdit.date,
+        time: eventToEdit.time || "",
+        maxParticipants: eventToEdit.maxParticipants ?? 0,
+        type: eventToEdit.type || "Social",
+        image: eventToEdit.image || "",
+        shareToFeed: false
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        location: "",
+        lat: 0,
+        lng: 0,
+        date: "",
+        time: "",
+        maxParticipants: 0,
+        type: "Social",
+        image: "",
+        shareToFeed: false
+      });
+    }
+  }, [eventToEdit, isOpen]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [isModerating, setIsModerating] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be smaller than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      
+      setIsModerating(true);
+      try {
+        const response = await fetch("/api/moderate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: base64 })
+        });
+        const result = await response.json();
+        
+        if (result.safe) {
+          setFormData(prev => ({ ...prev, image: base64 }));
+        } else {
+          alert("Image was flagged as inappropriate. Please choose another one.");
+        }
+      } catch (err) {
+        console.error("Moderation error:", err);
+        // Fallback: allow if moderation fails but alert user
+        setFormData(prev => ({ ...prev, image: base64 }));
+      } finally {
+        setIsModerating(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.id) return;
+
+    setIsSubmitting(true);
+    try {
+      if (eventToEdit) {
+        await updateDoc(doc(db, "events", eventToEdit.id), {
+          ...formData,
+          timestamp: serverTimestamp() // Update timestamp to satisfy rules
+        });
+      } else {
+        const eventData = {
+          title: filterProfanity(formData.title),
+          description: filterProfanity(formData.description),
+          location: filterProfanity(formData.location),
+          lat: formData.lat,
+          lng: formData.lng,
+          date: formData.date,
+          time: formData.time,
+          maxParticipants: formData.maxParticipants,
+          type: formData.type,
+          image: formData.image,
+          hostId: profile.id,
+          hostDisplayName: profile.displayName,
+          hostPhotoURL: profile.photoURL || "",
+          participants: [profile.id],
+          timestamp: serverTimestamp()
+        };
+
+        const eventDocRef = await addDoc(collection(db, "events"), eventData);
+
+        if (formData.shareToFeed) {
+          await addDoc(collection(db, "posts"), {
+            eventId: eventDocRef.id,
+            userId: profile.id,
+            userDisplayName: profile.displayName,
+            userPhotoURL: profile.photoURL || "",
+            location: eventData.location,
+            content: filterProfanity(`Just shared a new Expedition: ${eventData.title}! 🌊 Join us on ${eventData.date} - ${eventData.type} dive.`),
+            image: eventData.image || "",
+            likesCount: 0,
+            commentsCount: 0,
+            likedBy: [],
+            reportsCount: 0,
+            reportedBy: [],
+            tags: ["Expedition", eventData.type].map(t => filterProfanity(t)),
+            timestamp: serverTimestamp()
+          });
+        }
+      }
+      onClose();
+    } catch (err) {
+      console.error("Error saving event:", err);
+      handleFirestoreError(err, eventToEdit ? OperationType.UPDATE : OperationType.CREATE, eventToEdit ? `events/${eventToEdit.id}` : "events");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+              onClick={onClose} 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-white/5 bg-surface-container-highest flex items-center justify-between">
+                <div>
+                  <h3 className="text-3xl font-black italic tracking-tighter text-on-surface">
+                    {eventToEdit ? "Edit Expedition" : "Plan Expedition"}
+                  </h3>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary mt-1">
+                    {eventToEdit ? "Update your dive event" : "Host a Dive event"}
+                  </p>
+                </div>
+                <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 no-scrollbar bg-surface-container-highest/50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Image (Optional)</label>
+                    <div className="relative group/img">
+                      <div className={cn(
+                        "w-full h-40 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden relative bg-white/5",
+                        formData.image ? "border-secondary/50" : "border-white/10 hover:border-secondary/30"
+                      )}>
+                        {formData.image ? (
+                          <>
+                            <img src={formData.image} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                              <ImagePlus size={24} className="text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {isModerating ? (
+                              <Loader2 size={32} className="animate-spin text-secondary" />
+                            ) : (
+                              <ImagePlus size={32} className="text-secondary opacity-40" />
+                            )}
+                            <span className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                              {isModerating ? "Verifying..." : "Click to Upload (Max 2MB)"}
+                            </span>
+                          </>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </div>
+                      {formData.image && (
+                         <button 
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, image: "" }))}
+                          className="absolute -top-2 -right-2 p-1.5 bg-error text-on-error rounded-full shadow-lg border-2 border-background"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Expedition Title</label>
+                    <input 
+                      required
+                      type="text"
+                      value={formData.title}
+                      onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Midnight Wreck Exploration"
+                      className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Description</label>
+                    <textarea 
+                      required
+                      rows={3}
+                      value={formData.description}
+                      onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Share details about the dive, what to bring, and expectations..."
+                      className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Location</label>
+                    <button 
+                      type="button"
+                      onClick={() => setShowLocationPicker(true)}
+                      className="w-full group flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 p-4 text-left transition-all hover:border-secondary/50"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <MapPin className="text-secondary shrink-0" size={18} />
+                        <span className={cn(
+                          "text-sm font-medium truncate",
+                          formData.location ? "text-on-surface" : "text-outline/40"
+                        )}>
+                          {formData.location || "Select location on map"}
+                        </span>
+                      </div>
+                      <ArrowUpRight size={16} className="text-outline/40 group-hover:text-secondary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </button>
+                  </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Type</label>
+                  <select 
+                    value={formData.type}
+                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
+                    className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary"
+                  >
+                    {["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"].map(t => (
+                      <option key={t} value={t} className="bg-surface-container-highest">{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Date</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" size={18} />
+                    <input 
+                      required
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={formData.date}
+                      onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" size={18} />
+                    <input 
+                      required
+                      type="time"
+                      value={formData.time}
+                      onChange={e => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none"
+                    />
+                  </div>
+                </div>
+
+
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies</label>
+                    <button 
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, maxParticipants: prev.maxParticipants === 0 ? 4 : 0 }))}
+                      className="text-[9px] font-black uppercase tracking-widest text-secondary hover:text-secondary-container transition-colors"
+                    >
+                      {formData.maxParticipants === 0 ? "Set Limit" : "Make Unlimited"}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={18} />
+                    {formData.maxParticipants === 0 ? (
+                      <div className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface flex items-center">
+                        <span className="text-xl">∞</span>
+                        <span className="ml-2 text-xs font-bold text-outline/40">(Unlimited)</span>
+                      </div>
+                    ) : (
+                      <input 
+                        type="number"
+                        min={2}
+                        max={100}
+                        value={formData.maxParticipants}
+                        onChange={e => setFormData(prev => ({ ...prev, maxParticipants: Math.max(2, parseInt(e.target.value) || 2) }))}
+                        className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {!eventToEdit && (
+                <div className="mt-8 p-4 rounded-2xl bg-secondary/5 border border-secondary/10 flex items-center justify-between">
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary">
+                      <Share2 size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-on-surface">Share to Community Feed</p>
+                      <p className="text-[10px] text-on-surface-variant/60 font-black uppercase tracking-widest">Post this event to the feed automatically</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, shareToFeed: !prev.shareToFeed }))}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      formData.shareToFeed ? "bg-secondary" : "bg-white/10"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200",
+                        formData.shareToFeed ? "translate-x-5" : "translate-x-0"
+                      )}
+                    />
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-8 flex gap-4">
+                <button 
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-[2] py-4 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <>
+                      {eventToEdit ? "Update Expedition" : "Launch Expedition"} 
+                      <ArrowUpRight size={16}/>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+
+    <LocationPickerModal 
+      isOpen={showLocationPicker}
+      onClose={() => setShowLocationPicker(false)}
+      onSelect={(loc) => setFormData(prev => ({ ...prev, location: loc.name, lat: loc.lat, lng: loc.lng }))}
+    />
+  </>
+  );
+};
+
+const ParticipantsModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null }) => {
+  const [participants, setParticipants] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedParticipant, setSelectedParticipant] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (!event?.participants || event.participants.length === 0) {
+        setParticipants([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const participantProfiles: UserProfile[] = [];
+        // Fetch in chunks of 10
+        const chunks = [];
+        for (let i = 0; i < event.participants.length; i += 10) {
+          chunks.push(event.participants.slice(i, i + 10));
+        }
+
+        const promises = chunks.map(chunk => 
+          getDocs(query(collection(db, "users"), where("id", "in", chunk))).catch(error => {
+            handleFirestoreError(error, OperationType.LIST, "users");
+            return null;
+          })
+        );
+
+        const snapshots = await Promise.all(promises);
+        snapshots.forEach(snap => {
+          if (snap) {
+            snap.docs.forEach(doc => {
+              participantProfiles.push(doc.data() as UserProfile);
+            });
+          }
+        });
+
+        setParticipants(participantProfiles);
+      } catch (err) {
+        console.error("Error fetching participants:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen && event) {
+      fetchParticipants();
+    }
+  }, [isOpen, event]);
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+              onClick={onClose} 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              <div className="p-6 border-b border-white/5 bg-surface-container-highest flex items-center justify-between shrink-0">
+                <div>
+                  <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Expedition Crew</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
+                    {event?.participants.length} Divers Registered
+                  </p>
+                </div>
+                <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <Loader2 size={32} className="animate-spin text-secondary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-outline">Gathering profiles...</span>
+                  </div>
+                ) : participants.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {participants.map((member) => (
+                      <motion.div 
+                        key={member.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        onClick={() => setSelectedParticipant(member)}
+                        className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <img 
+                            src={member.photoURL || `https://i.pravatar.cc/150?u=${member.id}`} 
+                            className="h-12 w-12 rounded-xl object-cover border border-white/10" 
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">{member.displayName}</span>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-outline">
+                                {getRankInfo(calculateLevel((member.points || 0) + (member.rankingPoints || 0))).title}
+                              </span>
+                              <span className="text-[9px] font-bold text-secondary tracking-tight">
+                                {member.divesCount || 0} Dives Complete
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <ArrowUpRight size={16} className="text-outline/40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <Users size={40} className="mx-auto text-outline/20 mb-3" />
+                    <p className="text-xs font-bold text-outline uppercase tracking-widest">No divers yet</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+                <button 
+                  onClick={onClose}
+                  className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <UserProfileModal 
+        isOpen={!!selectedParticipant}
+        onClose={() => setSelectedParticipant(null)}
+        user={selectedParticipant}
+      />
+    </>
+  );
+};
+
+const UserProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose: () => void, user: UserProfile | null }) => {
+  const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrivateInfo = async () => {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        const privateRef = doc(db, "users", user.id, "private", "info");
+        const docSnap = await getDoc(privateRef);
+        
+        if (docSnap.exists()) {
+          setPrivateInfo(docSnap.data() as UserPrivateInfo);
+        } else {
+          setPrivateInfo(null);
+        }
+      } catch (err) {
+        console.error("Error fetching private info:", err);
+        handleFirestoreError(err, OperationType.GET, `users/${user.id}/private/info`);
+        setPrivateInfo(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen && user) {
+      fetchPrivateInfo();
+    }
+  }, [isOpen, user]);
+
+  if (!user) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/95 backdrop-blur-md" 
+            onClick={onClose} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-sm rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+          >
+            <div className="p-8 text-center flex flex-col items-center bg-gradient-to-b from-secondary/10 to-transparent shrink-0">
+              <div className="relative mb-4">
+                <img 
+                  src={user.photoURL || `https://i.pravatar.cc/150?u=${user.id}`} 
+                  className="h-24 w-24 rounded-3xl border-4 border-secondary/20 object-cover shadow-2xl" 
+                />
+                <div className="absolute -bottom-2 -right-2 bg-secondary p-2 rounded-xl border-4 border-surface-container-highest shadow-xl">
+                  <HeartPulse size={16} className="text-on-secondary" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-black italic tracking-tighter text-on-surface">{user.displayName}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
+                  {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
+                </span>
+                <span className="h-1 w-1 rounded-full bg-white/20" />
+                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                  LVL {calculateLevel((user.points || 0) + (user.rankingPoints || 0))}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+              <div className="space-y-4">
+                {user.bio && (
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 mb-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-outline">Bio</div>
+                    <div className="text-xs font-medium text-on-surface-variant leading-relaxed italic">"{user.bio}"</div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2">
+                  <Ship size={12} />
+                  Dive Stats
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Total Dives</div>
+                     <div className="text-xl font-black text-on-surface italic">{user.divesCount || 0}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Exp. Points</div>
+                     <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2">
+                  <Phone size={12} />
+                  Contact Info
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Email</div>
+                     <div className="text-sm font-bold text-on-surface">{user.email}</div>
+                  </div>
+                  {isLoading ? (
+                    <div className="h-10 flex items-center justify-center">
+                      <Loader2 size={24} className="animate-spin text-secondary" />
+                    </div>
+                  ) : privateInfo?.phoneNumber && (
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                       <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone</div>
+                       <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
+                    </div>
+                  )}
+                </div>
+
+                {!isLoading && (
+                  <>
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
+                      <ShieldCheck size={12} />
+                      Emergency Contacts
+                    </div>
+
+                    {privateInfo?.emergencyContactName ? (
+                      <div className="space-y-3">
+                        <div className="bg-error/5 rounded-2xl p-4 border border-error/10 space-y-1">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-error/60">Primary Contact</div>
+                           <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName}</div>
+                           <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone}</div>
+                        </div>
+                        {privateInfo.emergencyContactName2 && (
+                          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                             <div className="text-[9px] font-black uppercase tracking-widest text-outline">Secondary Contact</div>
+                             <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName2}</div>
+                             <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone2}</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
+                        No Emergency Contact Provided
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60 mb-2 pt-2">
+                      <Info size={12} />
+                      Medical Information
+                    </div>
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-h-[60px]">
+                       <p className={cn(
+                         "text-xs font-medium leading-relaxed",
+                         privateInfo?.medicalNotes ? "text-on-surface italic" : "text-outline/40 italic"
+                       )}>
+                         {privateInfo?.medicalNotes || "No medical history or allergies noted."}
+                       </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+              <button 
+                onClick={onClose}
+                className="w-full py-4 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95"
+              >
+                Done
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: boolean, onClose: () => void, onSelectLocation: (loc: string, coords: { lat: number, lng: number }) => void }) => {
+  const [selectedCoords, setSelectedCoords] = useState<{ lat: number, lng: number } | null>(null);
+  const [address, setAddress] = useState("");
+  const [mapProps, setMapProps] = useState({
+    center: { lat: 59.9139, lng: 10.7522 },
+    zoom: 11
+  });
+
+  const handleMapClick = async (e: any) => {
+    const lat = e.detail.latLng.lat;
+    const lng = e.detail.latLng.lng;
+    setSelectedCoords({ lat, lng });
+    setAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        const coords = { lat: latitude, lng: longitude };
+        setSelectedCoords(coords);
+        setMapProps({
+          center: coords,
+          zoom: 14
+        });
+        setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      }, (error) => {
+        console.error("Error getting location:", error);
+      });
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+            onClick={onClose} 
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
+          >
+            <div className="p-6 bg-surface-container-highest flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Search by Map</h3>
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">
+                  Click on the map to set search center
+                </p>
+              </div>
+              <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 relative">
+              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
+                <GoogleMap
+                  center={mapProps.center}
+                  zoom={mapProps.zoom}
+                  onCameraChanged={(e) => {
+                    setMapProps({
+                      center: e.detail.center,
+                      zoom: e.detail.zoom
+                    });
+                  }}
+                  mapId="DEMO_MAP_ID"
+                  disableDefaultUI
+                  gestureHandling="greedy"
+                  onClick={handleMapClick}
+                >
+                  {selectedCoords && (
+                    <AdvancedMarker position={selectedCoords}>
+                      <div className="relative">
+                        <div className="absolute -inset-8 bg-secondary/10 rounded-full animate-ping" />
+                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2 border-white/20">
+                          <MapIcon size={24} className="text-on-secondary" />
+                        </div>
+                      </div>
+                    </AdvancedMarker>
+                  )}
+                </GoogleMap>
+              </APIProvider>
+              
+              <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
+                <div className="bg-background/80 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={handleGetCurrentLocation}
+                      className="h-10 w-10 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary hover:bg-secondary/30 transition-all active:scale-95 group/pin"
+                      title="Use My Location"
+                    >
+                      <MapPin size={20} className="group-hover/pin:scale-110 transition-transform" />
+                    </button>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-secondary">Search Center</div>
+                      <div className="text-xs font-bold text-on-surface truncate max-w-[200px]">
+                        {address || "Select a location on map..."}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    disabled={!selectedCoords}
+                    onClick={() => selectedCoords && onSelectLocation(address, selectedCoords)}
+                    className="px-6 py-3 rounded-xl bg-secondary text-on-secondary text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95 disabled:opacity-50"
+                  >
+                    Set Area
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};

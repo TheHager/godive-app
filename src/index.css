@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #020814;
+  --color-on-background: #e0e3e5;
+  
+  --color-surface: #020814;
+  --color-on-surface: #e0e3e5;
+  --color-on-surface-variant: #c3c7cd;
+  --color-surface-container-low: #191c1e;
+  --color-surface-container: #1d2022;
+  --color-surface-container-high: #272a2c;
+  --color-surface-container-highest: #323537;
+  --color-surface-variant: #323537;
+  --color-surface-bright: #363a3b;
+  --color-surface-dim: #101415;
+  --color-surface-container-lowest: #0b0f10;
+  
+  --color-primary: #b1c9e2;
+  --color-on-primary: #1a3246;
+  --color-secondary: #4cd6fb;
+  --color-on-secondary: #003642;
+  --color-tertiary: #ffb59c;
+  --color-on-tertiary: #5c1a00;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  
+  --color-outline: #8d9197;
+  --color-outline-variant: #43474c;
+  
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-background antialiased font-sans transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Hide native date/time icons and make whole area trigger picker */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+    opacity: 0;
+  }
+}

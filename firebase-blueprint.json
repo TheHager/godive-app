@@ -1,0 +1,207 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a diver profile in GoDive",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "rank": { "type": "string" },
+        "points": { "type": "integer" },
+        "divesCount": { "type": "integer" },
+        "currentLocation": { "type": "string" },
+        "subscriptionTier": { "type": "string", "enum": ["free", "pro", "expedition"] },
+        "emailVerified": { "type": "boolean" }
+      },
+      "required": ["id", "displayName", "email", "subscriptionTier"]
+    },
+    "Dive": {
+      "title": "Dive",
+      "description": "A recorded dive log entry",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "userPhotoURL": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "diveType": { "type": "string" },
+        "depth": { "type": "number" },
+        "duration": { "type": "integer" },
+        "fishSpotted": { "type": "array", "items": { "type": "string" } },
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "location", "date", "timestamp"]
+    },
+    "Sighting": {
+      "title": "Sighting",
+      "description": "A marine species sighting marked on the map",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "species": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "species", "location"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A social feed post from a diver",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "userPhotoURL": { "type": "string" },
+        "location": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "commentsCount": { "type": "integer" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "timestamp"]
+    },
+    "DiveSite": {
+      "title": "Dive Site",
+      "description": "A suggested underwater dive location",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "status": { "type": "string", "enum": ["unverified", "verified"] },
+        "upvotes": { "type": "integer" },
+        "downvotes": { "type": "integer" },
+        "avgRating": { "type": "number" },
+        "reviewCount": { "type": "integer" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "lat", "lng", "userId", "timestamp"]
+    },
+    "Review": {
+      "title": "Site Review",
+      "description": "A user review for a dive site",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "rating": { "type": "integer" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "rating", "text", "timestamp"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a community feed post",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "userPhotoURL": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "reportedBy": { "type": "array", "items": { "type": "string" } },
+        "reportsCount": { "type": "integer" },
+        "likedBy": { "type": "array", "items": { "type": "string" } },
+        "likesCount": { "type": "integer" }
+      },
+      "required": ["userId", "content", "timestamp"]
+    },
+    "PrivateInfo": {
+      "title": "Private Information",
+      "description": "Confidential safety and contact data for a user",
+      "type": "object",
+      "properties": {
+        "phoneNumber": { "type": "string" },
+        "emergencyContactName": { "type": "string" },
+        "emergencyContactPhone": { "type": "string" },
+        "emergencyContactName2": { "type": "string" },
+        "emergencyContactPhone2": { "type": "string" },
+        "medicalNotes": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A scheduled diving event or expedition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "maxParticipants": { "type": "integer" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "hostId": { "type": "string" },
+        "hostDisplayName": { "type": "string" },
+        "hostPhotoURL": { "type": "string" },
+        "image": { "type": "string" },
+        "type": { "type": "string", "enum": ["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "location", "date", "hostId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Individual diver profiles"
+    },
+    "users/{userId}/private/info": {
+      "schema": "PrivateInfo",
+      "description": "Sensitive user identity and medical records"
+    },
+    "dives/{diveId}": {
+      "schema": "Dive",
+      "description": "Dive logs recorded by users"
+    },
+    "sightings/{sightingId}": {
+      "schema": "Sighting",
+      "description": "Marine species sightings for explorer map"
+    },
+    "posts/{postId}": {
+      "schema": "Post",
+      "description": "Community social feed posts"
+    },
+    "posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments on community social feed posts"
+    },
+    "dive_sites/{siteId}": {
+      "schema": "DiveSite",
+      "description": "User suggested dive locations"
+    },
+    "dive_sites/{siteId}/votes/{userId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "vote": { "type": "string", "enum": ["up", "down"] },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["vote", "timestamp"]
+      },
+      "description": "Individual user votes on dive site verification"
+    },
+    "dive_sites/{siteId}/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "User reviews for a dive site"
+    },
+    "events/{eventId}": {
+      "schema": "Event",
+      "description": "Scheduled community diving events"
+    }
+  }
+}
