@@ -40,6 +40,14 @@ const API_KEY =
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
+interface SpeciesAppearance {
+  source: 'dive' | 'sighting';
+  location?: string;
+  date?: string;
+  timestamp?: any;
+  [key: string]: any; // Allow other properties from original items
+}
+
 export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
   const { profile } = useAuth();
   const { badgeStats: contextBadgeStats, updateBadgeStats } = useUser();
@@ -731,9 +739,9 @@ const HistoryModal = ({
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
 
   const speciesLogMap = React.useMemo(() => {
-    const map = new window.Map<string, { count: number, appearances: any[] }>();
+    const map = new window.Map<string, { count: number, appearances: SpeciesAppearance[] }>();
     
-    const addSighting = (species: string, item: any, source: string) => {
+    const addSighting = (species: string, item: any, source: 'dive' | 'sighting') => {
       const sp = species.trim();
       if (!sp) return;
       const key = MARINE_LIFE_DATABASE.find(s => s.toLowerCase() === sp.toLowerCase()) || sp;
@@ -867,7 +875,7 @@ const HistoryModal = ({
                 </h4>
               </div>
               <div className="flex flex-col gap-4 pb-8">
-                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: any, i: number) => {
+                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: SpeciesAppearance, i: number) => {
                   const isDive = item.source === 'dive';
                   return (
                   <motion.div 
