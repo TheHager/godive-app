@@ -266,17 +266,10 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           }
         }
 
-        const currentAvg = Number(currentSiteData.avgRating || 0);
-        const currentCount = Number(currentSiteData.reviewCount || 0);
         const newRating = Number(review.rating);
-
-        let finalCount = currentCount;
-        let finalAvg = currentAvg;
 
         if (reviewDoc.exists()) {
           // Update existing review
-          const oldRating = Number(reviewDoc.data().rating || 0);
-          finalAvg = ((currentAvg * currentCount) - oldRating + newRating) / currentCount;
           transaction.update(reviewRef, {
             rating: newRating,
             text: filterProfanity(review.text),
@@ -285,8 +278,6 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           setToastMessage("Review updated!");
         } else {
           // Add new review
-          finalCount = currentCount + 1;
-          finalAvg = ((currentAvg * currentCount) + newRating) / finalCount;
           transaction.set(reviewRef, {
             userId: profile.id,
             userDisplayName: profile.displayName || "Explorer",
@@ -296,11 +287,6 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           });
           setToastMessage("Review added! Thanks for sharing.");
         }
-
-        transaction.update(siteRef, {
-          avgRating: Number(finalAvg.toFixed(2)),
-          reviewCount: finalCount
-        });
       });
     } catch (err) {
       console.error("Error saving review:", err);
