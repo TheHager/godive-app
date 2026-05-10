@@ -3,7 +3,7 @@ import { Check, Shield, Zap, Anchor, Ship, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
-import { doc, updateDoc, increment } from "firebase/firestore";
+import { doc, updateDoc, increment, FieldValue } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
 export const PricingView = () => {
@@ -14,7 +14,7 @@ export const PricingView = () => {
     try {
       const userRef = doc(db, "users", user.uid);
       
-      const updates: any = { subscriptionTier: tier };
+      const updates: { subscriptionTier: string; points?: FieldValue } = { subscriptionTier: tier };
       if (tier === 'premium') updates.points = increment(2500);
       if (tier === 'vip') updates.points = increment(5000);
 
