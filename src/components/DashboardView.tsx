@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { ActionMenu } from "./ActionMenu";
-import { computeBadgesWithStats } from "../constants/badges";
+import { computeBadgesWithStats, ComputedBadge, BadgeDefinition } from "../constants/badges";
 import { RANKS, calculateLevel, getRankInfo } from "../constants/ranks";
 import { useUser } from "../contexts/UserContext";
 import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useMapsLibrary } from '@vis.gl/react-google-maps';
@@ -1157,7 +1157,7 @@ const getTierSolidColor = (tier: string) => {
   }
 };
 
-const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
+const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: ComputedBadge[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
   const earned = badges.filter(b => b.earned);
   const locked = badges.filter(b => !b.earned && !b.isChallenge);
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
@@ -1261,10 +1261,10 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
   );
 };
 
-const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, isMaxed, unit }: any) => {
+const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, isMaxed, unit }: ComputedBadge) => {
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
 
-  const colors: any = {
+  const colors: Record<BadgeDefinition['color'], string> = {
     primary: "bg-primary/20 text-primary border-primary/20 ring-primary/10",
     secondary: "bg-secondary/20 text-secondary border-secondary/20 ring-secondary/10",
     tertiary: "bg-tertiary/20 text-tertiary border-tertiary/20 ring-tertiary/10"
