@@ -24,10 +24,37 @@ import {
   HardHat,
   Ship,
   TrendingDown,
-  Rocket
+  Rocket,
+  LucideProps
 } from "lucide-react";
+import { ForwardRefExoticComponent, RefAttributes } from "react";
 
-export const BADGE_SCHEMA: any[] = [
+export type LucideIcon = ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+
+export interface BadgeDefinition {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  color: 'primary' | 'secondary' | 'tertiary';
+  unit: string;
+  thresholds: number[];
+  desc: string;
+  isChallenge?: boolean;
+}
+
+export interface BadgeProgress {
+  earned: boolean;
+  tier: string;
+  nextTierName: string;
+  nextTierRequirement: number;
+  currentValue: number;
+  isMaxed: boolean;
+  progressRatio: number;
+}
+
+export type ComputedBadge = BadgeDefinition & BadgeProgress;
+
+export const BADGE_SCHEMA: BadgeDefinition[] = [
   // Recreational Diving
   { id: 'Drift Dive', label: 'Drift Master', icon: Waves, color: 'primary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Master the art of riding the currents.' },
   { id: 'Enriched Dive (nitrox)', label: 'Oxygen Optimizer', icon: Wind, color: 'secondary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Extend your bottom time with enriched air.' },
