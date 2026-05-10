@@ -9,6 +9,7 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { UserProfile } from "../types";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -656,7 +657,13 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   );
 };
 
-const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+interface CreatePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile | null;
+}
+
+const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => {
   const { updateBadgeStats } = useUser();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -677,11 +684,11 @@ const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
     setIsSubmitting(true);
     try {
       const postData: any = {
-        userId: profile.id,
-        userDisplayName: profile.displayName || "Unknown Diver",
-        userPhotoURL: profile.photoURL,
+        userId: profile?.id,
+        userDisplayName: profile?.displayName || "Unknown Diver",
+        userPhotoURL: profile?.photoURL,
         content: content.trim(),
-        location: profile.homeBase || "Ocean Explorer",
+        location: profile?.homeBase || "Ocean Explorer",
         timestamp: serverTimestamp(),
         likesCount: 0,
         likedBy: [],
