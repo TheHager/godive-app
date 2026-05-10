@@ -60,3 +60,7 @@ export const getSpeciesXP = (speciesName: string) => {
     default: return 50;
   }
 };
+
+export const MARINE_LIFE_LOWER_MAP = new Map<string, string>(
+  MARINE_LIFE_DATABASE.map(s => [s.toLowerCase(), s])
+);
