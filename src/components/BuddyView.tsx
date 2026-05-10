@@ -601,7 +601,7 @@ const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: (
             </div>
 
             <div className="flex-1 relative bg-surface-container-lowest">
-              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
+              <APIProvider apiKey={(import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''}>
                 <GoogleMap
                   defaultCenter={{ lat: event.lat || 0, lng: event.lng || 0 }}
                   defaultZoom={15}
@@ -1895,7 +1895,7 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
             </div>
 
             <div className="flex-1 relative">
-              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
+              <APIProvider apiKey={(import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''}>
                 <GoogleMap
                   center={mapProps.center}
                   zoom={mapProps.zoom}
