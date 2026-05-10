@@ -657,6 +657,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
 };
 
 const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+  const { updateBadgeStats } = useUser();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [image, setImage] = useState("");
@@ -694,6 +695,7 @@ const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
       if (image.trim()) postData.image = image.trim();
 
       await addDoc(collection(db, "posts"), postData);
+
       onClose();
     } catch (error) {
       console.error("Error creating post:", error);

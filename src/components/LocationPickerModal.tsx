@@ -7,7 +7,11 @@ import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, query, limit, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY =
+  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
+  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
+  '';
 
 interface LocationPickerProps {
   isOpen: boolean;

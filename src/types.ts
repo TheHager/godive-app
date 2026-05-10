@@ -10,11 +10,13 @@ export interface UserProfile {
   rankingPoints?: number;
   divesCount: number;
   currentLocation: string;
-  subscriptionTier: "free" | "pro" | "expedition";
+  subscriptionTier: "free" | "premium" | "vip";
   emailVerified: boolean;
   friends?: string[];
   phoneNumber?: string;
   hasEmergencyContactBonus?: boolean;
+  pinnedBadgeId?: string;
+  badgeStats?: Record<string, number>;
 }
 
 export interface UserPrivateInfo {
@@ -64,12 +66,15 @@ export interface CommunityEvent {
   hostDisplayName: string;
   hostPhotoURL?: string;
   image?: string;
+  isFeatured?: boolean;
   type: "Beginner Friendly" | "Deep Water Cert" | "Wreck Dive" | "Night Dive" | "Social";
   timestamp: string;
   lat?: number;
   lng?: number;
   reportedBy?: string[];
   reportsCount?: number;
+  certificateRequirements?: string[];
+  equipmentRequirements?: string[];
 }
 
 export interface Post {
@@ -85,4 +90,21 @@ export interface Post {
   reportsCount?: number;
 }
 
-export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile";
+export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile" | "admin" | "equipment";
+
+export interface Equipment {
+  id: string;
+  userId: string;
+  name: string;
+  type: string;
+  purchaseDate?: string;
+  lastServiceDate?: string;
+  nextServiceDate?: string;
+  useCount: number;
+  useLimit?: number;
+  weight?: number;
+  capacity?: number;
+  notes?: string;
+  isStandardSetup?: boolean;
+  timestamp: any;
+}

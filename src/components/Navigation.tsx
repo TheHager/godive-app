@@ -13,7 +13,8 @@ import {
   Compass,
   User as UserIcon,
   CreditCard,
-  Users
+  Users,
+  ShieldAlert
 } from "lucide-react";
 import { View } from "../types";
 import { cn } from "../lib/utils";
@@ -49,8 +50,10 @@ const NavItem = ({ view, currentView, label, icon: Icon, onClick }: NavItemProps
 };
 
 export const BottomNav = ({ currentView, setView }: { currentView: View; setView: (v: View) => void }) => {
+  const { user } = useAuth();
+  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t border-white/5 bg-surface-container-high/60 px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] backdrop-blur-3xl md:hidden w-full max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-1 overflow-x-auto no-scrollbar border-t border-white/5 bg-surface-container-high/60 px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] backdrop-blur-3xl md:hidden w-full max-w-full">
       <NavItem view="friends" currentView={currentView} label="Friends" icon={Users} onClick={setView} />
       <NavItem view="buddy" currentView={currentView} label="Events" icon={Calendar} onClick={setView} />
       <NavItem view="dashboard" currentView={currentView} label="Start" icon={BarChart3} onClick={setView} />
@@ -61,6 +64,8 @@ export const BottomNav = ({ currentView, setView }: { currentView: View; setView
 };
 
 export const DesktopNav = ({ currentView, setView }: { currentView: View; setView: (v: View) => void }) => {
+  const { user } = useAuth();
+  
   return (
     <aside className="hidden w-64 flex-col border-r border-white/5 bg-surface-container-high p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:flex">
       <div className="mb-10 px-2">

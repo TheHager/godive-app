@@ -13,7 +13,13 @@ export const PricingView = () => {
     if (!user) return;
     try {
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { subscriptionTier: tier });
+      
+      const { increment } = await import("firebase/firestore");
+      const updates: any = { subscriptionTier: tier };
+      if (tier === 'premium') updates.points = increment(2500);
+      if (tier === 'vip') updates.points = increment(5000);
+
+      await updateDoc(userRef, updates);
       alert(`Welcome to the ${tier.toUpperCase()} tier!`);
     } catch (err) {
       console.error("Upgrade failed:", err);
@@ -23,46 +29,52 @@ export const PricingView = () => {
   const plans = [
     {
       id: "free",
-      name: "Deep Sea Aspirant",
+      name: "Resident Diver",
       price: "0",
-      description: "Perfect for the holiday diver and beginner.",
+      description: "The essentials for every diver.",
       icon: Anchor,
       features: [
-        "Basic dive log (up to 10)",
-        "Participate in public feeds",
-        "Standard map view",
-        "Marine fauna identifier",
+        "Unlimited dives with up to 3 photos per log.",
+        "Earn points for your first 5 logs/species daily.",
+        "Join any event \u2013 create 1 event per week.",
+        "Full access to all Weekly Challenges.",
+        "Collect trophies up to Gold tier.",
+        "Suggest unlimited sites (XP for the first 5).",
       ],
       color: "primary",
     },
     {
-      id: "pro",
-      name: "Technical Expert",
+      id: "premium",
+      name: "Triton",
       price: "12",
-      description: "For the dedicated diver who wants all the details.",
+      description: "For the dedicated diver who wants more speed.",
       icon: Zap,
       features: [
-        "Unlimited logs",
-        "Decompression analysis",
-        "Heatmaps for rare species",
-        "Equipment maintenance system",
-        "Exclusive 'Pro' profile badge",
+        "Triton Badge + Blue Checkmark on profile.",
+        "Up to 10 photos + 1 min. video per log.",
+        "Earn points for every single log and species.",
+        "2,500 Bonus Points upon joining.",
+        "Create 1 event every day.",
+        "Unlock Platinum tier trophies.",
+        "Your map pins are marked as a Verified Contributor.",
       ],
       color: "secondary",
       featured: true,
     },
     {
-      id: "expedition",
-      name: "Expedition Leader",
+      id: "vip",
+      name: "Atlantian",
       price: "29",
-      description: "Access to the world's most exclusive diving community.",
+      description: "The ultimate status in the diving world.",
       icon: Ship,
       features: [
-        "Everything from 'Technical Expert'",
-        "Create private expeditions",
-        "4K video upload to feed",
-        "Direct contact with marine biologists",
-        "Access to 'Wreck Master' events",
+        "Atlantian Badge + Gold Crown on profile.",
+        "1.5x XP Multiplier on everything you do.",
+        "Unlimited media uploads in Original Quality.",
+        "5,000 Bonus Points upon joining.",
+        "Your events stay at the top with a neon border.",
+        "Create unlimited events.",
+        "Exclusive access to Diamond tier.",
       ],
       color: "tertiary",
     }

@@ -10,6 +10,8 @@ import { BuddyView } from "./components/BuddyView";
 import { PricingView } from "./components/PricingView";
 import { ProfileView } from "./components/ProfileView";
 import { FriendsView } from "./components/FriendsView";
+import { AdminView } from "./components/AdminView";
+import { EquipmentView } from "./components/EquipmentView";
 import { View } from "./types";
 import { APIProvider } from '@vis.gl/react-google-maps';
 
@@ -63,12 +65,14 @@ function AppContent() {
   const renderView = () => {
     switch (view) {
       case "dashboard": return <DashboardView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} onNavigateToProfile={() => setView("profile")} />;
-      case "explorer": return <ExplorerView />;
+      case "explorer": return <ExplorerView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} />;
       case "feed": return <FeedView setView={handleSetView} onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} />;
       case "buddy": return <BuddyView setView={handleSetView} initialEventId={selectedEventId} />;
       case "friends": return <FriendsView setView={handleSetView} />;
       case "pricing": return <PricingView />;
       case "profile": return <ProfileView setView={handleSetView} />;
+      case "admin": return <AdminView setView={handleSetView} />;
+      case "equipment": return <EquipmentView setView={handleSetView} />;
       default: return <DashboardView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} onNavigateToProfile={() => setView("profile")} />;
     }
   };

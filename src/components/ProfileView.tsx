@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { auth, db } from "../lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import { doc, updateDoc, getDoc, setDoc, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
-import { LogOut, User as UserIcon, Phone, HeartPulse, UserPlus, Save, Edit3, X, Trash2, AlertTriangle, CreditCard, Star, Settings } from "lucide-react";
+import { LogOut, User as UserIcon, Phone, Trophy, HeartPulse, UserPlus, Save, Edit3, X, Trash2, AlertTriangle, CreditCard, Star, Settings, ShieldAlert, Box } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { View, UserPrivateInfo } from "../types";
 import { filterProfanity } from "../lib/profanity";
@@ -14,8 +14,10 @@ interface ProfileViewProps {
   setView?: (v: View) => void;
 }
 
+import { computeBadgesWithStats } from '../constants/badges';
+
 export const ProfileView = ({ setView }: ProfileViewProps) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingPrivate, setIsLoadingPrivate] = useState(true);
@@ -482,6 +484,22 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
           )}
         </label>
 
+        {((profile?.pinnedBadgeId && profile?.badgeStats) && (() => {
+            const b = computeBadgesWithStats(profile.badgeStats!).find((bx: any) => bx.id === profile.pinnedBadgeId);
+            if (b && b.earned) {
+              const BIcon = b.icon;
+              return (
+                <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-4 pl-2 py-1.5 rounded-full border border-white/10">
+                  <div className="bg-primary/20 text-primary p-2 rounded-full">
+                    <BIcon size={16} />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-wider text-primary">{b.label}</span>
+                </div>
+              );
+            }
+            return null;
+        })())}
+
         {isEditing ? (
           <input
             type="text"
@@ -594,6 +612,32 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                 </div>
               )}
             </div>
+
+            {profile?.badgeStats && (() => {
+              const earnedBadges = computeBadgesWithStats(profile.badgeStats).filter((b: any) => b.earned && b.id !== profile.pinnedBadgeId);
+              if (earnedBadges.length > 0) {
+                return (
+                  <div className="pt-4 border-t border-white/5 mt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Trophy className="text-secondary" size={16} />
+                      <h3 className="font-black italic uppercase tracking-widest text-xs">Other Earned Badges</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {earnedBadges.map((b: any) => {
+                        const BIcon = b.icon;
+                        return (
+                          <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-3 py-2" title={b.label}>
+                            <BIcon size={14} className="text-secondary" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border border-white/5">
@@ -743,13 +787,33 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
           <div className="flex w-full flex-col gap-3 mt-6">
             {setView && (
               <button 
-                onClick={() => setView('pricing')}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-tertiary/20 to-secondary/20 py-4 text-white transition-colors hover:from-tertiary/30 hover:to-secondary/30 font-black tracking-widest uppercase border border-secondary/20 shadow-[0_0_15px_rgba(76,214,251,0.15)] group relative overflow-hidden"
+                onClick={() => setView('equipment')}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-surface-container-high py-4 text-on-surface transition-colors hover:bg-white/10 font-black tracking-widest uppercase border border-white/10"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-tertiary/0 via-white/10 to-secondary/0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
-                <Star size={20} className="text-secondary fill-secondary/50 group-hover:scale-110 transition-transform" />
-                <span className="bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent group-hover:text-white transition-colors text-sm font-black uppercase tracking-tighter">GO DIVE PRO</span>
+                <Box size={20} />
+                <span className="text-sm">Equipment Log</span>
               </button>
+            )}
+
+            {setView && (
+              user?.email?.toLowerCase() === "tobias.h.jensen@gmail.com" ? (
+                <button 
+                  onClick={() => setView("admin")}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-error/10 py-4 text-error transition-colors hover:bg-error/20 font-black tracking-widest uppercase border border-error/20"
+                >
+                  <ShieldAlert size={20} />
+                  <span className="text-sm">Admin Dashboard</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setView('pricing')}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-tertiary/20 to-secondary/20 py-4 text-white transition-colors hover:from-tertiary/30 hover:to-secondary/30 font-black tracking-widest uppercase border border-secondary/20 shadow-[0_0_15px_rgba(76,214,251,0.15)] group relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-tertiary/0 via-white/10 to-secondary/0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
+                  <Star size={20} className="text-secondary fill-secondary/50 group-hover:scale-110 transition-transform" />
+                  <span className="bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent group-hover:text-white transition-colors text-sm font-black uppercase tracking-tighter">GO DIVE PRO</span>
+                </button>
+              )
             )}
             
             <button 

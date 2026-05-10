@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2, Settings } from "lucide-react";
+import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2, Settings, Camera, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { useAuth } from "../contexts/AuthContext";
+import { useUser } from "../contexts/UserContext";
 import { ActionMenu } from "./ActionMenu";
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
@@ -11,7 +12,11 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, increme
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 
-const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY =
+  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
+  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
+  '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 const INITIAL_DIVE_SITES = [
@@ -27,13 +32,19 @@ const INITIAL_REVIEWS = {
   'site_2': []
 };
 
-export const ExplorerView = () => {
+interface ExplorerViewProps {
+  onNavigateToEvent?: (id: string) => void;
+}
+
+export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   const { profile } = useAuth();
+  const { updateBadgeStats } = useUser();
   const [search, setSearch] = useState("");
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any | null>(null);
   const [sites, setSites] = useState<any[]>(INITIAL_DIVE_SITES);
   const [sightings, setSightings] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
     // Current time minus 24 hours
@@ -81,9 +92,21 @@ export const ExplorerView = () => {
       handleFirestoreError(error, OperationType.GET, "dive_sites");
     });
 
+    const qE = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(200));
+    const unsubscribeE = onSnapshot(qE, (snapshot) => {
+      const eventsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setEvents(eventsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "events");
+    });
+
     return () => {
       unsubscribeS();
       unsubscribeD();
+      unsubscribeE();
     };
   }, []);
 
@@ -105,7 +128,7 @@ export const ExplorerView = () => {
     cleanupFyh();
   }, []);
 
-  const [viewMode, setViewMode] = useState<'all' | 'sites' | 'sightings' | 'unverified'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'sites' | 'sightings' | 'unverified' | 'events'>('all');
   const [selectionMode, setSelectionMode] = useState<'none' | 'site' | 'sighting'>('none');
   const [pendingLocation, setPendingLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isAddingSite, setIsAddingSite] = useState(false);
@@ -129,7 +152,8 @@ export const ExplorerView = () => {
 
   const allMarkers = [
     ...recentSightings,
-    ...sites.map(s => ({ ...s, label: s.name, type: s.status === 'unverified' ? 'unverified' : 'site' }))
+    ...sites.map(s => ({ ...s, label: s.name, type: s.status === 'unverified' ? 'unverified' : 'site' })),
+    ...events.map(e => ({ ...e, label: e.title, type: 'event' }))
   ];
 
   const filteredMarkers = (search 
@@ -365,23 +389,29 @@ export const ExplorerView = () => {
   };
 
   const handleAddSite = async (site: any) => {
+    let finalStatus = 'unverified';
+    if (profile?.subscriptionTier === 'premium' || profile?.subscriptionTier === 'vip') {
+      finalStatus = 'verified';
+    }
+
     const siteData = { 
       name: filterProfanity(site.name),
       lat: Number(site.lat),
       lng: Number(site.lng),
       type: site.type,
-      status: 'unverified', 
+      status: finalStatus, 
       upvotes: 1, 
       downvotes: 0,
       userId: profile?.id || "anonymous",
       userDisplayName: profile?.displayName || "Explorer",
+      photo: site.photo || null,
       timestamp: serverTimestamp()
     };
     
     // Optimistic UI insert with temporary ID
     const tempSite = { ...siteData, id: site.id };
     setSites(prev => [...prev, tempSite]);
-    setToastMessage("Dive site suggestion submitted for community review!");
+    setToastMessage(finalStatus === 'verified' ? "Dive site added as a Verified Contributor!" : "Dive site suggestion submitted for community review!");
     setTimeout(() => setToastMessage(null), 3000);
     setIsAddingSite(false);
 
@@ -393,10 +423,26 @@ export const ExplorerView = () => {
       setSites(prev => prev.map(s => s.id === site.id ? { ...s, id: docRef.id } : s));
       
       if (profile?.id) {
-        const userRef = doc(db, "users", profile.id);
-        await updateDoc(userRef, {
-          points: increment(150) // 150 XP for community contribution
-        });
+        let shouldAwardXP = true;
+        // FREE tier restriction: XP for the first 5 suggested sites daily (shared limit or independent? We'll make it simple checking if they suggested >=5 today)
+        if (profile?.subscriptionTier === 'free' || !profile?.subscriptionTier) {
+           const startOfDayMs = new Date().setHours(0,0,0,0);
+           const todaySitesQ = query(collection(db, "dive_sites"), where("userId", "==", profile.id), where("timestamp", ">=", new Date(startOfDayMs)));
+           const todaySitesSnap = await getDocs(todaySitesQ);
+           if (todaySitesSnap.size >= 5) { // 5 sites today limit reached for XP
+             shouldAwardXP = false;
+           }
+        }
+
+        if (shouldAwardXP) {
+          const userRef = doc(db, "users", profile.id);
+          let xpAward = 150;
+          if (profile?.subscriptionTier === 'vip') xpAward = Math.floor(xpAward * 1.5);
+          
+          await updateDoc(userRef, {
+            points: increment(xpAward)
+          });
+        }
       }
     } catch (err) {
       console.error("Error saving site:", err);
@@ -539,10 +585,11 @@ export const ExplorerView = () => {
             }
           }}
         >
-          {(viewMode === 'all' || viewMode === 'sites' || viewMode === 'sightings' || viewMode === 'unverified') && markerLib && filteredMarkers
+          {(viewMode === 'all' || viewMode === 'sites' || viewMode === 'sightings' || viewMode === 'unverified' || viewMode === 'events') && markerLib && filteredMarkers
             .filter(m => {
               if (viewMode === 'unverified') return m.type === 'unverified';
-              if (m.type === 'unverified') return false; // Hide unverified from all other modes
+              if (viewMode === 'events') return m.type === 'event';
+              if (m.type === 'unverified' || m.type === 'event') return false; // Hide unverified and events from sights/sites modes
               if (viewMode === 'sites') return m.type === 'site';
               if (viewMode === 'sightings') return m.type !== 'site';
               return true;
@@ -552,7 +599,13 @@ export const ExplorerView = () => {
                <AdvancedMarker 
                   position={{lat: marker.lat, lng: marker.lng}} 
                   title={marker.label}
-                  onClick={(marker.type === 'site' || marker.type === 'unverified') ? () => setSelectedSite(marker as any) : undefined}
+                  onClick={() => {
+                    if (marker.type === 'site' || marker.type === 'unverified') {
+                      setSelectedSite(marker as any);
+                    } else if (marker.type === 'event' && onNavigateToEvent) {
+                      onNavigateToEvent(marker.id);
+                    }
+                  }}
                >
                   <div className="flex flex-col items-center group">
                     <div 
@@ -561,11 +614,14 @@ export const ExplorerView = () => {
                          marker.type === 'fish' ? "bg-surface-container-high/90 border-secondary/30 text-secondary" : 
                          marker.type === 'site' ? "bg-surface-container-high/90 border-primary/30 text-primary" : 
                          marker.type === 'unverified' ? "bg-surface-container-high/90 border-orange-500/30 text-orange-500" :
+                         marker.type === 'event' ? "bg-surface-container-high/90 border-purple-500/30 text-purple-500" :
                          "bg-surface-container-high/90 border-tertiary/30 text-tertiary"
                       )}
                     >
                       {marker.type === 'fish' ? <Fish size={20} /> : 
                        marker.type === 'site' ? <MapPin size={20} /> :
+                       marker.type === 'unverified' ? <MapPin size={20} /> :
+                       marker.type === 'event' ? <Calendar size={20} /> :
                        <Star size={20} />}
                     </div>
                     <div className="mt-2 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-xl bg-surface-container-high/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface backdrop-blur-md border border-white/10 pointer-events-none">
@@ -728,6 +784,7 @@ export const ExplorerView = () => {
                 { label: "All", icon: <Filter size={16} />, onClick: () => setViewMode("all"), active: viewMode === "all" },
                 { label: "Sites", icon: <MapPin size={16} />, onClick: () => setViewMode("sites"), active: viewMode === "sites" },
                 { label: "Sightings", icon: <Fish size={16} />, onClick: () => setViewMode("sightings"), active: viewMode === "sightings" },
+                { label: "Events", icon: <Calendar size={16} />, onClick: () => setViewMode("events"), active: viewMode === "events" },
                 { label: "Unverified", icon: <MapPin size={16} />, onClick: () => setViewMode("unverified"), active: viewMode === "unverified" },
               ]}
             />
@@ -874,15 +931,21 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
         exit={{ y: 20, opacity: 0 }}
         className="relative flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5"
       >
-        <div className="flex items-center justify-between border-b border-white/5 p-6">
-          <div>
+        {site.photo && (
+          <div className="w-full h-48 relative shrink-0">
+            <img src={site.photo} className="w-full h-full object-cover" alt={site.name} />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/60 to-transparent" />
+          </div>
+        )}
+        <div className="flex items-center justify-between border-b border-white/5 p-6 relative">
+          <div className="relative z-10">
             <h2 className="text-lg font-black uppercase text-on-surface">{site.name}</h2>
             <div className="flex items-center gap-2 mt-1">
               <Star size={14} className="text-secondary fill-secondary" />
               <span className="text-xs font-bold text-on-surface-variant">{avgRating} • {totalReviews} reviews</span>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
+          <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors relative z-10">
             <X size={20} />
           </button>
         </div>
@@ -960,6 +1023,47 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
   const initialLng = location && typeof location.lng === 'number' && !isNaN(location.lng) ? location.lng.toFixed(4) : "-87.5351";
   const [lat, setLat] = useState(initialLat);
   const [lng, setLng] = useState(initialLng);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_DIM = 800;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setPhoto(compressedDataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -971,7 +1075,8 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
       type: "site",
       name: name.trim(),
       lat: plat,
-      lng: plng
+      lng: plng,
+      photo: photo || undefined
     });
   };
 
@@ -982,7 +1087,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6"
+        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6 max-h-[90vh] overflow-y-auto no-scrollbar"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-black uppercase text-on-surface">Suggest Dive Site</h2>
@@ -1024,6 +1129,39 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
               />
             </div>
           </div>
+
+          <div className="group">
+            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Attach Photo</label>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoUpload} 
+              className="hidden" 
+              accept="image/*" 
+            />
+            {photo ? (
+              <div className="relative aspect-video rounded-2xl bg-black/40 overflow-hidden border border-white/5 group-hover:border-white/20 transition-all">
+                <img src={photo} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhoto(null)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-red-500/80 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full min-h-[100px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-black/20 hover:bg-white/5 hover:border-white/30 transition-all text-on-surface-variant/50 hover:text-white/80"
+              >
+                <Camera size={24} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Upload Image</span>
+              </button>
+            )}
+          </div>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -1222,30 +1360,37 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-sm rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6"
+        className="relative w-full max-w-sm rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 overflow-hidden"
       >
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-500 border border-orange-500/50">
-                Unverified
-              </span>
+        {site.photo && !isEditing && (
+          <div className="w-full h-40 relative">
+            <img src={site.photo} className="w-full h-full object-cover" alt={site.name} />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/80 to-transparent" />
+          </div>
+        )}
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-500 border border-orange-500/50">
+                  Unverified
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-on-surface">{site.name}</h2>
             </div>
-            <h2 className="text-xl font-black text-on-surface">{site.name}</h2>
+            <div className="flex items-center gap-1">
+              {profile?.id === site.userId && !isEditing && (
+                <ActionMenu 
+                  items={[
+                    { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) }
+                  ]}
+                />
+              )}
+              <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
+                 <X size={20} />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            {profile?.id === site.userId && !isEditing && (
-              <ActionMenu 
-                items={[
-                  { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) }
-                ]}
-              />
-            )}
-            <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
-               <X size={20} />
-            </button>
-          </div>
-        </div>
 
         {isEditing ? (
           <form className="mt-4" onSubmit={(e) => {
@@ -1380,6 +1525,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
             </div>
           </>
         )}
+        </div>
       </motion.div>
     </div>
   );

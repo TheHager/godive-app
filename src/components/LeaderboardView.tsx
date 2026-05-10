@@ -13,81 +13,7 @@ interface LeaderboardViewProps {
   onParticipate?: () => void;
 }
 
-const WEEKLY_CHALLENGES = [
-  {
-    title: "Upload a Manta Ray",
-    description: "Capture the elegance of the wings of the ocean. Snap a verified photo of a Manta Ray to complete the challenge. Top 3 entries get a badge and extra points! Others earn points based on upvotes.",
-    points: 1000,
-    badge: "Manta Master Badge",
-    image: "https://placehold.co/1200x800/0ea5e9/ffffff?text=Manta+Ray"
-  },
-  {
-    title: "Upload a Whale Shark",
-    description: "Document the gentle giants of the deep. Successful verification of a Rhincodon typus grants exclusive badges and a 1000pt multiplier for the top 3.",
-    points: 1000,
-    badge: "Ocean Giant Badge",
-    image: "https://placehold.co/1200x800/0369a1/ffffff?text=Whale+Shark"
-  },
-  {
-    title: "Upload a Great White Shark",
-    description: "Encounter the apex predator of the ocean. Prove your bravery with a Great White sighting to earn a massive point reward.",
-    points: 1500,
-    badge: "Apex Predator Badge",
-    image: "https://placehold.co/1200x800/075985/ffffff?text=Great+White+Shark"
-  },
-  {
-    title: "Upload a Green Sea Turtle",
-    description: "Spot a grazing Green Sea Turtle during your dive. Ensure location tracking is on to help conservation efforts.",
-    points: 1000,
-    badge: "Turtle Tracker Badge",
-    image: "https://placehold.co/1200x800/0f766e/ffffff?text=Green+Sea+Turtle"
-  },
-  {
-    title: "Upload an Octopus",
-    description: "Find the masters of camouflage. Spotting a wild Octopus hidden among the rocks grants you 1000pts for the top 3.",
-    points: 1000,
-    badge: "Ninja of the Sea",
-    image: "https://placehold.co/1200x800/6d28d9/ffffff?text=Octopus"
-  },
-  {
-    title: "Upload a Nudibranch",
-    description: "Macro-photography time! Find one of these colorful sea slugs and share a crisp picture.",
-    points: 1000,
-    badge: "Macro Explorer Badge",
-    image: "https://placehold.co/1200x800/be185d/ffffff?text=Nudibranch"
-  },
-  {
-    title: "Upload a Humpback Whale",
-    description: "A breathtaking encounter. Documenting a Humpback Whale will earn you 1500pts and legendary status.",
-    points: 1500,
-    badge: "Song of the Sea",
-    image: "https://placehold.co/1200x800/1d4ed8/ffffff?text=Humpback+Whale"
-  },
-  {
-    title: "Upload a Seahorse",
-    description: "Spot the tiny, graceful seahorse clinging to seagrass or coral. Extra points for pinpoint accuracy.",
-    points: 1000,
-    badge: "Equestrian of the Deep",
-    image: "https://placehold.co/1200x800/b45309/ffffff?text=Seahorse"
-  },
-  {
-    title: "Upload a Hammerhead Shark",
-    description: "Join the elite by logging a Hammerhead Shark sighting. Highly prized verification data for researchers.",
-    points: 1500,
-    badge: "Hammer Time Badge",
-    image: "https://placehold.co/1200x800/374151/ffffff?text=Hammerhead+Shark"
-  },
-  {
-    title: "Upload a Clownfish",
-    description: "Find Nemo! Spot a Clownfish in its anemone home to secure a quick point boost for the community event.",
-    points: 1000,
-    badge: "Anemone Friend",
-    image: "https://placehold.co/1200x800/c2410c/ffffff?text=Clownfish"
-  }
-];
-
 export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [viewMode, setViewMode] = useState<"global" | "friends">("global");
   const [rankings, setRankings] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
@@ -153,51 +79,8 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
     fetchRankings();
   }, []);
 
-  // We can use a weekly index to cycle through the challenges, defaulting to 0 for the preview
-  const currentChallenge = WEEKLY_CHALLENGES[0];
-
   return (
     <div className="flex flex-col gap-6 sm:gap-10 p-4 sm:p-6 pt-16 sm:pt-6 max-w-4xl mx-auto">
-      {/* Weekly Challenge Section */}
-      <section className="flex flex-col gap-4">
-        <div className="group relative min-h-[460px] overflow-hidden rounded-3xl border border-white/5 shadow-2xl transition-all hover:scale-[1.01]">
-          <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
-            <span className="rounded-full bg-background/80 border border-secondary/30 px-4 py-2 text-xs font-bold text-secondary backdrop-blur-md shadow-lg">Ends in 6d 12h</span>
-          </div>
-          <img 
-            src={currentChallenge.image} 
-            alt="" 
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-black/30 pointer-events-none" />
-          
-          <div className="relative z-10 flex h-full flex-col justify-end p-6 sm:p-8 gap-4 mt-20">
-            <h3 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-primary drop-shadow-lg">{currentChallenge.title}</h3>
-            <p className="max-w-xl text-md sm:text-lg font-medium text-on-surface-variant leading-relaxed">
-              {currentChallenge.description}
-            </p>
-            
-            <div className="flex flex-wrap gap-3 mt-2">
-              <div className="flex bg-surface-container-high/80 backdrop-blur-md rounded-xl px-4 py-2 gap-2 text-primary items-center border border-primary/20 shadow-lg">
-                <Medal size={18} />
-                <span className="font-black">Top 3: {currentChallenge.badge} + {currentChallenge.points} pts</span>
-              </div>
-              <div className="flex bg-surface-container-high/80 backdrop-blur-md rounded-xl px-4 py-2 gap-2 text-tertiary items-center border border-tertiary/20 shadow-lg">
-                <Heart size={18} className="fill-tertiary" />
-                <span className="font-bold">Others: 10 pts per upvote</span>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setShowChallengeModal(true)}
-              className="mt-4 w-fit rounded-xl bg-gradient-to-r from-secondary to-primary px-8 py-3.5 font-black uppercase tracking-widest text-on-primary shadow-xl shadow-secondary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Participate Now
-            </button>
-          </div>
-        </div>
-      </section>
-
       <section className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center items-start justify-between border-b border-white/5 pb-4 gap-4 sm:gap-2">
           <div>
@@ -346,61 +229,6 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
         </div>
       </section>
 
-      <AnimatePresence>
-        {showChallengeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowChallengeModal(false)} />
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-[2rem] shadow-2xl border border-white/10 bg-surface-container-highest overflow-hidden"
-            >
-              <div className="flex items-start justify-between p-6 sm:p-8 pb-4 shrink-0 bg-surface-container-highest z-10 border-b border-white/5">
-                <div>
-                  <h2 className="text-3xl font-black italic tracking-tighter text-on-surface">Submit Entry</h2>
-                  <p className="text-sm font-medium text-on-surface-variant mt-1">Upload a photo to join the Weekly Challenge</p>
-                </div>
-                <button onClick={() => setShowChallengeModal(false)} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10 shrink-0">
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-6 sm:p-8 pt-4 flex flex-col gap-6 overflow-y-auto no-scrollbar">
-                <div className="bg-surface-container-high/50 p-2 rounded-3xl border border-white/5">
-                  <div className="group cursor-pointer border-2 border-dashed border-white/10 rounded-2xl overflow-hidden bg-surface-container-low/50 flex flex-col items-center justify-center h-56 transition-all hover:border-primary/50 hover:bg-surface-container-high/50 relative">
-                    <div className="text-center flex flex-col items-center justify-center gap-3 relative z-10 pointer-events-none">
-                      <div className="rounded-full bg-primary/10 p-4 text-primary group-hover:scale-110 transition-transform">
-                        <ImageIcon size={32} />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-bold text-on-surface">Tap to upload picture</span>
-                        <span className="text-xs font-medium text-on-surface-variant">JPG, PNG, HEIC up to 10MB</span>
-                      </div>
-                    </div>
-                    <input type="file" className="absolute inset-0 z-20 opacity-0 cursor-pointer" accept="image/*" />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Dive Description / Species</label>
-                  <input type="text" placeholder="What marine life did you spot?" className="w-full rounded-xl border border-white/10 bg-surface-container-high p-4 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary" />
-                </div>
-
-                <button 
-                  onClick={() => {
-                    alert("Entry sumitted successfully!");
-                    setShowChallengeModal(false);
-                  }}
-                  className="mt-2 w-full rounded-2xl bg-secondary py-4 font-black uppercase tracking-widest text-on-secondary hover:bg-secondary-container transition-colors shadow-lg active:scale-[0.98]"
-                >
-                  Submit for Challenge
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
       <PublicProfileModal 
         isOpen={!!selectedUser} 
         onClose={() => setSelectedUser(null)} 
@@ -451,6 +279,19 @@ const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClos
                     <div className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                        {user.rank || "Apprentice Diver"}
                     </div>
+                    {((user.pinnedBadgeId && user.badgeStats) && (() => {
+                        const b = computeBadgesWithStats(user.badgeStats!).find((bx: any) => bx.id === user.pinnedBadgeId);
+                        if (b && b.earned) {
+                          const BIcon = b.icon;
+                          return (
+                            <div className="mt-2 text-primary flex items-center gap-2">
+                              <BIcon size={14} className="text-secondary" />
+                              <span className="text-[10px] font-black uppercase tracking-wider">{b.label}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                    })())}
                   </div>
                 </div>
                 
@@ -487,6 +328,32 @@ const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClos
                     <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
                   )}
                 </div>
+
+                {user.badgeStats && (() => {
+                  const earnedBadges = computeBadgesWithStats(user.badgeStats).filter((b: any) => b.earned);
+                  if (earnedBadges.length > 0) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                          <Trophy size={12} />
+                          Earned Badges
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {earnedBadges.map((b: any) => {
+                            const BIcon = b.icon;
+                            return (
+                              <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-2.5 py-1.5" title={b.label}>
+                                <BIcon size={14} className="text-secondary" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
 
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
                    <UserIcon size={12} />

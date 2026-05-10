@@ -28,11 +28,17 @@ import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useM
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+import { View, Equipment } from "../types";
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { WEEKLY_CHALLENGES } from "../constants/challenges";
 
-const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY =
+  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
+  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
+  '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
@@ -101,11 +107,48 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     return speciesSet;
   }, [allSightings, allDives]);
 
+  const [dynamicStats, setDynamicStats] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDynamicStats = async () => {
+      if (!profile?.id) return;
+      try {
+        const { query, collection, getDocs, where } = await import('firebase/firestore');
+        
+        const mySitesSnap = await getDocs(query(collection(db, "dive_sites"), where("userId", "==", profile.id), where("status", "==", "verified")));
+        const verifiedSitesCount = mySitesSnap.size;
+
+        const myEventsSnap = await getDocs(query(collection(db, "events"), where("hostId", "==", profile.id)));
+        const eventsCount = myEventsSnap.size;
+
+        const myPostsSnap = await getDocs(query(collection(db, "posts"), where("userId", "==", profile.id)));
+        const postsCount = myPostsSnap.size;
+
+        if (isMounted) {
+          setDynamicStats({
+            'Reef Mapper': verifiedSitesCount,
+            'Charter Captain': eventsCount,
+            'Social Puffer': postsCount,
+          });
+        }
+      } catch (e) {
+        console.error("Error fetching dynamic stats", e);
+      }
+    };
+    fetchDynamicStats();
+    return () => { isMounted = false; };
+  }, [profile?.id]);
+
   const badgeStats = useMemo(() => {
     const stats: Record<string, number> = {
       recreational: 0, deep: 0, wreck: 0, night: 0, cave: 0, 
-      drift: 0, photography: 0, navigation: 0, rescue: 0, training: 0
+      drift: 0, photography: 0, navigation: 0, rescue: 0, training: 0,
+      ...contextBadgeStats,
+      ...dynamicStats
     };
+
+    const speciesWithPhoto = new Set<string>();
 
     allDives.forEach(dive => {
       const type = (dive.diveType || 'Recreational').toLowerCase();
@@ -113,15 +156,59 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
       else stats.recreational++;
 
       if (dive.depth > 30) stats.deep++;
+
+      if (dive.photos && dive.photos.length > 0 && dive.fishSpotted) {
+        dive.fishSpotted.forEach((species: string) => speciesWithPhoto.add(species));
+      }
+    });
+
+    stats['Species Sage'] = speciesWithPhoto.size;
+
+    const now = Date.now();
+    myEvents?.forEach((e) => {
+      if (e.participants?.includes(profile?.id)) {
+        const eventTime = new Date(`${e.date}T${e.time || "00:00"}`).getTime();
+        if (eventTime < now) {
+          if (e.type === 'Eco-Cleanup') stats['Reef Guardian'] = (stats['Reef Guardian'] || 0) + 1;
+          if (e.type === 'Species Hunt') stats['Species Sage'] = (stats['Species Sage'] || 0) + 1;
+          if (e.type === 'After-Dive Social') stats['Social Puffer'] = (stats['Social Puffer'] || 0) + 1;
+          if (e.type === 'Drift / Current') stats['Drift Dive'] = (stats['Drift Dive'] || 0) + 1;
+          if (e.type === 'Liveaboard / Full Day' || e.type === 'Exploration') stats['Expedition Leader'] = (stats['Expedition Leader'] || 0) + 1;
+          if (e.type === 'Photography / Macro') stats['Photography'] = (stats['Photography'] || 0) + 1;
+          if (e.type === 'Training / Skills') stats['Training'] = (stats['Training'] || 0) + 1;
+          if (e.type === 'Shore Dive') stats['Local Legend'] = (stats['Local Legend'] || 0) + 1;
+        }
+      }
     });
 
     return stats;
-  }, [allDives]);
+  }, [allDives, contextBadgeStats, dynamicStats, myEvents, profile?.id]);
 
   const dives = allDives.length;
   const fish = discoveredSpecies.size;
   
   const [totalXp, setTotalXp] = useState<number>((profile?.points ?? 0) > 0 ? profile!.points! : (dives * 250 + fish * 15));
+
+  const { pinnedBadgeId } = useUser();
+
+  useEffect(() => {
+    let isMounted = true;
+    const syncProfileStats = async () => {
+      if (!profile?.id) return;
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        const userRef = doc(db, "users", profile.id);
+        await updateDoc(userRef, {
+          badgeStats,
+          pinnedBadgeId: pinnedBadgeId || null
+        });
+      } catch (err) {
+        console.error("Error syncing stats:", err);
+      }
+    };
+    syncProfileStats();
+    return () => { isMounted = false; };
+  }, [badgeStats, pinnedBadgeId, profile?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -153,8 +240,19 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
         });
         await Promise.all(postPromises);
         
+        let eventsXp = 0;
+        const now = Date.now();
+        myEvents?.forEach((e) => {
+          if (e.participants?.includes(profile?.id)) {
+            const eventTime = new Date(`${e.date}T${e.time || "00:00"}`).getTime();
+            if (eventTime < now) {
+              eventsXp += 150; // 150 XP per completed event
+            }
+          }
+        });
+
         if (isMounted) {
-          setTotalXp(xp + rankingPoints + likes);
+          setTotalXp(xp + rankingPoints + likes + eventsXp);
         }
       } catch (e) {
         console.error("Error calculating total points:", e);
@@ -162,7 +260,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     };
     fetchPoints();
     return () => { isMounted = false; };
-  }, [profile?.points, profile?.rankingPoints, profile?.id, profile]);
+  }, [profile?.points, profile?.rankingPoints, profile?.id, profile, myEvents]);
 
   const validTotalXp = Math.max(0, totalXp || 0);
   const level = calculateLevel(validTotalXp);
@@ -311,7 +409,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-2xl font-bold tracking-tight text-on-surface">Your Events</h3>
             </div>
-            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-8 md:px-8 snap-x snap-mandatory">
+            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scroll-pl-4 md:-mx-8 md:px-8 md:scroll-pl-8 snap-x snap-mandatory after:content-[''] after:shrink-0 after:w-px border-transparent">
               {myEvents.map((e) => {
                 const isHost = e.hostId === profile?.id;
                 return (
@@ -357,6 +455,41 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
 
         <section className="w-full min-w-0 pb-10">
           <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-2xl font-bold tracking-tight text-on-surface">Weekly Challenge</h3>
+          </div>
+          <div 
+            onClick={() => alert("You've joined the Weekly Challenge! Track your progress as you dive.")}
+            className="group relative min-h-[340px] overflow-hidden rounded-[2rem] border border-white/5 shadow-2xl transition-all hover:scale-[1.01] cursor-pointer"
+          >
+            <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
+              <span className="rounded-full bg-background/80 border border-secondary/30 px-3 py-1.5 text-xs font-bold text-secondary backdrop-blur-md shadow-lg">Ends in 6d 12h</span>
+            </div>
+            <img 
+              src={WEEKLY_CHALLENGES[0].image} 
+              alt="" 
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60 mix-blend-overlay"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/20 pointer-events-none" />
+            <div className="absolute inset-0 bg-blue-900/10 pointer-events-none mix-blend-multiply" />
+            
+            <div className="relative z-10 flex h-full flex-col justify-end p-6 pt-16 mt-12 gap-3">
+              <h3 className="text-3xl lg:text-4xl font-black italic tracking-tighter text-white drop-shadow-xl">{WEEKLY_CHALLENGES[0].title}</h3>
+              <p className="max-w-xl text-sm lg:text-base font-medium text-on-surface-variant leading-relaxed drop-shadow-md">
+                {WEEKLY_CHALLENGES[0].description}
+              </p>
+              
+              <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex bg-surface-container-high/90 backdrop-blur-md rounded-xl px-4 py-2 gap-2 text-secondary items-center border border-secondary/20 shadow-lg">
+                  <Trophy size={16} />
+                  <span className="text-xs lg:text-sm font-black uppercase tracking-widest">Rewards: {WEEKLY_CHALLENGES[0].badge} + {WEEKLY_CHALLENGES[0].points} XP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full min-w-0 pb-10">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="text-2xl font-bold tracking-tight text-on-surface">Dive Badges</h3>
             <button 
               onClick={() => setShowBadges(true)}
@@ -367,7 +500,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
           </div>
           
           {earnedBadges.length > 0 ? (
-            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-8 md:px-8 snap-x snap-mandatory">
+            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scroll-pl-4 md:-mx-8 md:px-8 md:scroll-pl-8 snap-x snap-mandatory after:content-[''] after:shrink-0 after:w-px border-transparent">
               {earnedBadges.map((badge, idx) => (
                 <div key={`badge-${badge.id}-${idx}`} className="snap-start shrink-0 cursor-pointer" onClick={() => setActiveBadgeId(badge.id)}>
                   <BadgeCard {...badge} id={badge.id} />
@@ -1030,7 +1163,7 @@ const getTierSolidColor = (tier: string) => {
 
 const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
   const earned = badges.filter(b => b.earned);
-  const locked = badges.filter(b => !b.earned);
+  const locked = badges.filter(b => !b.earned && !b.isChallenge);
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
 
   return (
@@ -1371,7 +1504,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
   const [diveData, setDiveData] = useState({
     location: "Getting GPS location...",
     date: new Date().toISOString().split('T')[0],
-    diveType: "Drift Dive", // Default to one of the new options
+    diveType: "Drift Dive",
     depth: "",
     duration: "",
     fishSpotted: [] as string[],
@@ -1379,6 +1512,8 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
     notes: "",
     shareToFeed: true,
     feedDescription: "",
+    useStandardSetup: true,
+    selectedEquipmentIds: [] as string[],
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -1387,10 +1522,13 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
     const files = e.target.files;
     if (!files) return;
 
-    // Limit to 4 photos to be safe with document limits
-    const remainingSlots = 4 - diveData.photos.length;
+    let maxPhotos = 3;
+    if (profile?.subscriptionTier === 'premium') maxPhotos = 10;
+    if (profile?.subscriptionTier === 'vip') maxPhotos = 30;
+
+    const remainingSlots = maxPhotos - diveData.photos.length;
     if (remainingSlots <= 0) {
-      alert("Maximum 4 photos per dive log.");
+      alert(`Maximum ${maxPhotos} photos per dive log on your current plan.`);
       return;
     }
 
@@ -1438,6 +1576,23 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
 
   const [fishSearch, setFishSearch] = useState("");
   const [showFishDropdown, setShowFishDropdown] = useState(false);
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+  const [showEquipmentDropdown, setShowEquipmentDropdown] = useState(false);
+
+  React.useEffect(() => {
+    if (!profile?.id) return;
+    const q = query(collection(db, "equipment"), where("userId", "==", profile.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const equip: Equipment[] = [];
+      snapshot.forEach((docSnap) => {
+        equip.push({ id: docSnap.id, ...docSnap.data() } as Equipment);
+      });
+      setEquipmentList(equip);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "equipment");
+    });
+    return () => unsubscribe();
+  }, [profile?.id]);
 
   const filteredFish = MARINE_LIFE_DATABASE.filter(f => 
     f.toLowerCase().includes(fishSearch.toLowerCase()) && 
@@ -1452,6 +1607,18 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
 
   const handleRemoveFish = (fish: string) => {
     setDiveData(prev => ({ ...prev, fishSpotted: prev.fishSpotted.filter(f => f !== fish) }));
+  };
+
+  const handleToggleEquipment = (equipId: string) => {
+    setDiveData(prev => {
+      const isSelected = prev.selectedEquipmentIds.includes(equipId);
+      return {
+        ...prev,
+        selectedEquipmentIds: isSelected 
+          ? prev.selectedEquipmentIds.filter(id => id !== equipId)
+          : [...prev.selectedEquipmentIds, equipId]
+      };
+    });
   };
 
   React.useEffect(() => {
@@ -1746,6 +1913,74 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
               )}
             </div>
+
+            <div className="group">
+              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 transition-colors">Equipment Used</label>
+              <div className="border border-white/5 rounded-2xl bg-black/20 p-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div className={cn("w-5 h-5 rounded border flex items-center justify-center transition-colors", diveData.useStandardSetup ? "bg-secondary border-secondary" : "bg-white/10 border-white/20")}>
+                    {diveData.useStandardSetup && <CheckCircle2 size={14} className="text-background" />}
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={diveData.useStandardSetup} 
+                    onChange={e => setDiveData(prev => ({ ...prev, useStandardSetup: e.target.checked }))} 
+                    className="hidden" 
+                  />
+                  <div>
+                    <span className="block text-sm font-bold text-white">Use Standard Setup</span>
+                    <span className="block text-xs text-on-surface-variant/60">Automatically select equipment marked as "Standard Setup" in your gear log.</span>
+                  </div>
+                </label>
+                
+                <AnimatePresence>
+                  {!diveData.useStandardSetup && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-4 mt-4 border-t border-white/5">
+                        {equipmentList.length === 0 ? (
+                          <div className="text-center py-4 text-on-surface-variant/60 text-sm">
+                            No equipment found. <br />Add gear in the Equipment tab.
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar pr-2">
+                            {equipmentList.map(item => {
+                              const isSelected = diveData.selectedEquipmentIds.includes(item.id);
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => handleToggleEquipment(item.id)}
+                                  className={cn("w-full flex items-center justify-between p-3 rounded-xl border transition-colors", 
+                                    isSelected ? "bg-secondary/10 border-secondary/30" : "bg-white/5 border-white/5 hover:border-white/10"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", 
+                                      isSelected ? "border-secondary bg-secondary" : "border-white/20"
+                                    )}>
+                                      {isSelected && <CheckCircle2 size={12} className="text-background" />}
+                                    </div>
+                                    <div className="text-left">
+                                      <div className={cn("text-sm font-bold", isSelected ? "text-secondary" : "text-white")}>{item.name}</div>
+                                      <div className="text-xs text-on-surface-variant/60">{item.type}</div>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
             
             <div className="flex flex-col gap-6 rounded-[2.5rem] bg-black/40 p-8 border border-white/5">
               <div className="flex items-center justify-between">
@@ -1812,6 +2047,10 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
               btn.disabled = true;
 
               try {
+                const finalEquipmentIds = diveData.useStandardSetup 
+                  ? equipmentList.filter(eq => eq.isStandardSetup).map(eq => eq.id)
+                  : diveData.selectedEquipmentIds;
+
                 // 1. Save to dives collection
                 await addDoc(collection(db, "dives"), {
                   userId: profile.id,
@@ -1825,10 +2064,22 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                   fishSpotted: diveData.fishSpotted.map(f => filterProfanity(f)),
                   photos: diveData.photos,
                   notes: filterProfanity(diveData.notes),
+                  equipmentIds: finalEquipmentIds,
                   timestamp: serverTimestamp()
                 });
 
-                // 2. Share to feed if enabled
+                // 2. Increment use count for equipment
+                if (finalEquipmentIds.length > 0) {
+                  const equipmentPromises = finalEquipmentIds.map(equipId => 
+                    updateDoc(doc(db, "equipment", equipId), {
+                      useCount: increment(1),
+                      timestamp: serverTimestamp()
+                    })
+                  );
+                  await Promise.all(equipmentPromises).catch(err => console.error("Error updating equipment uses", err));
+                }
+
+                // 3. Share to feed if enabled
                 if (diveData.shareToFeed) {
                   await addDoc(collection(db, "posts"), {
                     userId: profile.id,
@@ -1853,41 +2104,87 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                 // Calculate XP
                 const baseXP = 100;
                 
-                const multiplier = 1.0;
-                const depthValue = parseFloat(diveData.depth) || 0;
-                const depthBonus = Math.floor(depthValue / 10) * 25; // 25 XP per 10m
-                const photoBonus = diveData.photos.length * 50; // 50 XP per photo
-                const shareBonus = diveData.shareToFeed ? 150 : 0; // 150 XP for community sharing
-                
-                // Calculate Species Discovery XP
-                const fishBonus = diveData.fishSpotted.reduce((acc, species) => acc + getSpeciesXP(species), 0);
-                
-                const calculatedXP = Math.floor(baseXP * multiplier + depthBonus + photoBonus + shareBonus + fishBonus);
-
-                await updateDoc(userRef, {
-                  divesCount: increment(1),
-                  points: increment(calculatedXP)
-                });
-
-                // 4. Calculate badge updates
-                const statsToUpdate: Partial<Record<string, number>> = {};
-                
-                if (diveData.diveType) {
-                  statsToUpdate[diveData.diveType] = 1;
+                let multiplier = 1.0;
+                if (profile?.subscriptionTier === 'vip') {
+                  multiplier = 1.5;
                 }
                 
-                if (!isNaN(depthValue) && depthValue > 30) {
-                  // We can either keep giving them the old 'deep' badge or log their Deep Dive specifically
-                  // Let's increment 'Deep Dive' anyway if depth is > 30 besides the selected dive type
-                  if (diveData.diveType !== 'Deep Dive') {
-                    statsToUpdate['Deep Dive'] = 1;
+                let isFreeTierLimited = false;
+                if (profile?.subscriptionTier === 'free' || !profile?.subscriptionTier) {
+                  // check dives today
+                  const startOfDayMs = new Date().setHours(0,0,0,0);
+                  const todayDivesQ = query(collection(db, "dives"), where("userId", "==", profile.id), where("timestamp", ">=", new Date(startOfDayMs)));
+                  const todayDivesSnap = await getDocs(todayDivesQ);
+                  if (todayDivesSnap.size >= 5) {
+                    isFreeTierLimited = true;
                   }
                 }
 
-                updateBadgeStats(statsToUpdate);
+                let finalXP = 0;
+                let earnedWeeklyBadge = false;
+
+                if (!isFreeTierLimited) {
+                  const depthValue = parseFloat(diveData.depth) || 0;
+                  const depthBonus = Math.floor(depthValue / 10) * 25; // 25 XP per 10m
+                  const photoBonus = diveData.photos.length * 50; // 50 XP per photo
+                  const shareBonus = diveData.shareToFeed ? 150 : 0; // 150 XP for community sharing
+                  
+                  // Calculate Species Discovery XP
+                  const fishBonus = diveData.fishSpotted.reduce((acc, species) => acc + getSpeciesXP(species), 0);
+                  
+                  // Weekly Challenge XP (Simulated AI Verification)
+                  let challengeXP = 0;
+                  
+                  if (diveData.photos.length > 0) {
+                    // Simulate parsing photo for Reef Guardian challenge
+                    const descriptionLower = diveData.feedDescription.toLowerCase();
+                    if (descriptionLower.includes('trash') || descriptionLower.includes('debris') || descriptionLower.includes('cleanup') || descriptionLower.includes('plastic') || descriptionLower.includes('coral') || descriptionLower.includes('restoration')) {
+                      challengeXP = 500;
+                      earnedWeeklyBadge = true;
+                    }
+                  }
+                  
+                  const calculatedXP = Math.floor((baseXP + depthBonus + photoBonus + shareBonus + fishBonus + challengeXP) * multiplier);
+                  finalXP = calculatedXP;
+                }
+
+                await updateDoc(userRef, {
+                  divesCount: increment(1),
+                  ...(finalXP > 0 ? { points: increment(finalXP) } : {})
+                });
+
+                // 4. Calculate badge updates
+                if (!isFreeTierLimited || profile?.subscriptionTier !== 'free') {
+                  const statsToUpdate: Partial<Record<string, number>> = {};
+                  
+                  if (earnedWeeklyBadge) {
+                    statsToUpdate['Reef Guardian'] = 1;
+                  }
+                  
+                  if (diveData.diveType) {
+                    statsToUpdate[diveData.diveType] = 1;
+                  }
+                  
+                  const depthValue = parseFloat(diveData.depth) || 0;
+                  if (!isNaN(depthValue) && depthValue > 30) {
+                    if (diveData.diveType !== 'Deep Dive') {
+                      statsToUpdate['Deep Dive'] = 1;
+                    }
+                  }
+
+                  if (Object.keys(statsToUpdate).length > 0) {
+                    updateBadgeStats(statsToUpdate);
+                  }
+                }
 
                 btn.innerHTML = `<span class="flex items-center gap-2"><div class="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center"><svg size="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg></div> Expedition Saved!</span>`;
                 btn.classList.add("bg-secondary", "text-on-secondary");
+                
+                if (earnedWeeklyBadge) {
+                  setTimeout(() => {
+                    alert("🌊 Weekly Challenge Verified!\nYou earned the Reef Guardian badge and 500 bonus XP for your conservation efforts!");
+                  }, 400);
+                }
                 
                 setTimeout(() => {
                   onClose();

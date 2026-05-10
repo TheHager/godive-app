@@ -10,6 +10,8 @@ import { ActionMenu } from "./ActionMenu";
 import { calculateLevel, getRankInfo } from "../constants/ranks";
 import { LeaderboardView } from "./LeaderboardView";
 
+import { computeBadgesWithStats, BADGE_SCHEMA } from "../constants/badges";
+
 export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
   const { profile, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -509,6 +511,23 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   <HeartPulse size={16} className="text-on-secondary" />
                 </div>
               </div>
+
+              {((user.pinnedBadgeId && user.badgeStats) && (() => {
+                  const b = computeBadgesWithStats(user.badgeStats!).find((bx: any) => bx.id === user.pinnedBadgeId);
+                  if (b && b.earned) {
+                    const BIcon = b.icon;
+                    return (
+                      <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-3 pl-1 py-1 rounded-full border border-white/10">
+                        <div className="bg-primary/20 text-primary p-1.5 rounded-full">
+                          <BIcon size={14} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">{b.label}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+              })())}
+
               <h3 className="text-2xl font-black italic tracking-tighter text-on-surface">{user.displayName}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
@@ -560,6 +579,32 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                     <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
                   )}
                 </div>
+
+                {user.badgeStats && (() => {
+                  const earnedBadges = computeBadgesWithStats(user.badgeStats).filter((b: any) => b.earned);
+                  if (earnedBadges.length > 0) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                          <Trophy size={12} />
+                          Earned Badges
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {earnedBadges.map((b: any) => {
+                            const BIcon = b.icon;
+                            return (
+                              <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-2.5 py-1.5" title={b.label}>
+                                <BIcon size={14} className="text-secondary" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
 
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
                   <Phone size={12} />

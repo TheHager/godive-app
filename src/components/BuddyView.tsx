@@ -6,8 +6,10 @@ import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arra
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
+import { useUser } from "../contexts/UserContext";
 import { View, UserProfile, CommunityEvent, UserPrivateInfo } from "../types";
 import { calculateLevel, getRankInfo } from "../constants/ranks";
+import { computeBadgesWithStats, BADGE_SCHEMA } from "../constants/badges";
 import { LocationPickerModal } from "./LocationPickerModal";
 import { ActionMenu } from "./ActionMenu";
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
@@ -154,6 +156,9 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
 
     return matchesDate && matchesTextLocation && matchesRadius;
   }).sort((a, b) => {
+    if (a.isFeatured && !b.isFeatured) return -1;
+    if (!a.isFeatured && b.isFeatured) return 1;
+
     if (eventSortBy === "distance" && userLocation) {
       const distA = (a.lat && a.lng) ? getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) : Infinity;
       const distB = (b.lat && b.lng) ? getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng) : Infinity;
@@ -601,7 +606,7 @@ const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: (
             </div>
 
             <div className="flex-1 relative bg-surface-container-lowest">
-              <APIProvider apiKey={(import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''}>
+              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
                 <GoogleMap
                   defaultCenter={{ lat: event.lat || 0, lng: event.lng || 0 }}
                   defaultZoom={15}
@@ -787,10 +792,17 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "group flex flex-col rounded-[32px] bg-surface-container-high/20 backdrop-blur-3xl border border-white/5 shadow-xl transition-all hover:bg-surface-container-high/40 overflow-hidden relative",
+        "group flex flex-col rounded-[32px] bg-surface-container-high/20 backdrop-blur-3xl border shadow-xl transition-all hover:bg-surface-container-high/40 overflow-hidden relative",
+        event.isFeatured ? "border-secondary shadow-[0_0_20px_rgba(76,214,251,0.3)] ring-1 ring-secondary/50" : "border-white/5",
         isFull && "opacity-80"
       )}
     >
+      {event.isFeatured && (
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-b-xl text-[9px] font-black uppercase tracking-[0.2em] z-10 shadow-lg flex items-center gap-1.5">
+          <Award size={10} />
+          Featured VIP Event
+        </div>
+      )}
       <div className="absolute top-4 right-4 z-20">
         {(isHost || (!isHost && profile?.id)) && (
           <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10">
@@ -853,13 +865,34 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 mb-6 opacity-80">
+      <div className="flex items-center gap-1.5 mb-2 opacity-80">
         <Users size={12} className="text-primary" />
         <span className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies:</span>
         <span className="text-[11px] font-bold text-on-surface">{event.participants.length} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
       </div>
 
-      <div className={cn("flex items-center justify-between", !isHost ? "mb-6" : "mb-0")}>
+      {(event.certificateRequirements?.length > 0 || event.equipmentRequirements?.length > 0) && (
+        <div className="flex flex-col gap-2 mb-4">
+          {event.certificateRequirements && event.certificateRequirements.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-outline mr-1">Certs:</span>
+              {event.certificateRequirements.map((cert, idx) => (
+                <span key={idx} className="bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">{cert}</span>
+              ))}
+            </div>
+          )}
+          {event.equipmentRequirements && event.equipmentRequirements.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-outline mr-1">Gear:</span>
+              {event.equipmentRequirements.map((gear, idx) => (
+                <span key={idx} className="bg-tertiary/10 text-tertiary border border-tertiary/20 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">{gear}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className={cn("flex items-center justify-between", !isHost ? "mb-6" : "mb-auto")}>
          <div className="flex items-center gap-3">
             {event.hostPhotoURL ? (
               <img src={event.hostPhotoURL} className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover" />
@@ -916,6 +949,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
 };
 
 const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
+  const { updateBadgeStats } = useUser();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -925,10 +959,15 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
     date: "",
     time: "",
     maxParticipants: 0,
-    type: "Social" as const,
+    type: "Eco-Cleanup" as const,
     image: "",
-    shareToFeed: false
+    shareToFeed: false,
+    certificateRequirements: [] as string[],
+    equipmentRequirements: [] as string[]
   });
+
+  const [certInput, setCertInput] = useState("");
+  const [equipInput, setEquipInput] = useState("");
 
   useEffect(() => {
     if (eventToEdit) {
@@ -941,9 +980,11 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
         date: eventToEdit.date,
         time: eventToEdit.time || "",
         maxParticipants: eventToEdit.maxParticipants ?? 0,
-        type: eventToEdit.type || "Social",
+        type: eventToEdit.type || "Eco-Cleanup",
         image: eventToEdit.image || "",
-        shareToFeed: false
+        shareToFeed: false,
+        certificateRequirements: eventToEdit.certificateRequirements || [],
+        equipmentRequirements: eventToEdit.equipmentRequirements || []
       });
     } else {
       setFormData({
@@ -955,9 +996,11 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
         date: "",
         time: "",
         maxParticipants: 0,
-        type: "Social",
+        type: "Eco-Cleanup",
         image: "",
-        shareToFeed: false
+        shareToFeed: false,
+        certificateRequirements: [],
+        equipmentRequirements: []
       });
     }
   }, [eventToEdit, isOpen]);
@@ -1037,11 +1080,36 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
           date: formData.date || new Date().toISOString().split('T')[0],
           time: formData.time || "",
           maxParticipants: formData.maxParticipants || 0,
-          type: formData.type || "Social",
+          type: formData.type || "Eco-Cleanup",
           image: formData.image || "",
+          certificateRequirements: formData.certificateRequirements,
+          equipmentRequirements: formData.equipmentRequirements,
           timestamp: serverTimestamp()
         });
       } else {
+        // Enforce Tier Limits
+        if (profile.subscriptionTier !== 'vip') {
+          const recentEventsQ = query(collection(db, "events"), where("hostId", "==", profile.id));
+          const recentEventsSnap = await getDocs(recentEventsQ);
+          let count = 0;
+          const nowMs = Date.now();
+          const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+          const oneDayMs = 24 * 60 * 60 * 1000;
+          const timeLimitMs = profile.subscriptionTier === 'premium' ? oneDayMs : oneWeekMs;
+          const oldestValid = nowMs - timeLimitMs;
+          
+          recentEventsSnap.forEach(d => {
+            const ts = d.data().timestamp?.toMillis ? d.data().timestamp.toMillis() : Date.now();
+            if (ts > oldestValid) count++;
+          });
+
+          if (count >= 1) {
+            setErrors({ submit: `Event creation limit reached. ${profile.subscriptionTier === 'premium' ? 'Tritons can create 1 event per day.' : 'Resident Divers can create 1 event per week.'}` });
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
         const eventData = {
           title: filterProfanity(formData.title) || "Untitled Event",
           description: filterProfanity(formData.description) || "",
@@ -1051,11 +1119,14 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
           date: formData.date || new Date().toISOString().split('T')[0],
           time: formData.time || "",
           maxParticipants: formData.maxParticipants || 0,
-          type: formData.type || "Social",
+          type: formData.type || "Eco-Cleanup",
           image: formData.image || "",
+          certificateRequirements: formData.certificateRequirements,
+          equipmentRequirements: formData.equipmentRequirements,
           hostId: profile.id,
           hostDisplayName: profile.displayName || "Unknown Diver",
           hostPhotoURL: profile.photoURL || "",
+          isFeatured: profile.subscriptionTier === 'vip',
           participants: [profile.id],
           timestamp: serverTimestamp()
         };
@@ -1150,51 +1221,6 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 no-scrollbar bg-surface-container-highest/50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Image (Optional)</label>
-                    <div className="relative group/img">
-                      <div className={cn(
-                        "w-full h-40 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden relative bg-white/5",
-                        formData.image ? "border-secondary/50" : "border-white/10 hover:border-secondary/30"
-                      )}>
-                        {formData.image ? (
-                          <>
-                            <img src={formData.image} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                              <ImagePlus size={24} className="text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {isModerating ? (
-                              <Loader2 size={32} className="animate-spin text-secondary" />
-                            ) : (
-                              <ImagePlus size={32} className="text-secondary opacity-40" />
-                            )}
-                            <span className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">
-                              {isModerating ? "Verifying..." : "Click to Upload (Max 2MB)"}
-                            </span>
-                          </>
-                        )}
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </div>
-                      {formData.image && (
-                         <button 
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, image: "" }))}
-                          className="absolute -top-2 -right-2 p-1.5 bg-error text-on-error rounded-full shadow-lg border-2 border-background"
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Expedition Title</label>
                     <input 
                       type="text"
@@ -1271,7 +1297,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                     onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
                     className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary appearance-none"
                   >
-                    {["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"].map(t => (
+                    {["Eco-Cleanup", "Photography / Macro", "Drift / Current", "Species Hunt", "Training / Skills", "Exploration", "Sunrise / Early Bird", "Shore Dive", "Liveaboard / Full Day", "After-Dive Social"].map(t => (
                       <option key={t} value={t} className="bg-surface-container-highest">{t}</option>
                     ))}
                   </select>
@@ -1352,6 +1378,139 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                     )}
                   </div>
                 </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Certificate Requirements</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.certificateRequirements.map((cert, idx) => (
+                      <div key={idx} className="flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-bold">
+                        <span>{cert}</span>
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, certificateRequirements: prev.certificateRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-white transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={certInput}
+                      onChange={e => setCertInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (certInput.trim()) {
+                            setFormData(prev => ({ ...prev, certificateRequirements: [...prev.certificateRequirements, certInput.trim()] }));
+                            setCertInput("");
+                          }
+                        }
+                      }}
+                      placeholder="e.g. Open Water, Nitrox"
+                      className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        if (certInput.trim()) {
+                          setFormData(prev => ({ ...prev, certificateRequirements: [...prev.certificateRequirements, certInput.trim()] }));
+                          setCertInput("");
+                        }
+                      }}
+                      className="rounded-2xl bg-primary px-6 font-bold text-on-primary hover:bg-primary-container transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Equipment Requirements</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.equipmentRequirements.map((equip, idx) => (
+                      <div key={idx} className="flex items-center gap-1 bg-tertiary/20 text-tertiary border border-tertiary/30 rounded-lg px-3 py-1.5 text-xs font-bold">
+                        <span>{equip}</span>
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, equipmentRequirements: prev.equipmentRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-white transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={equipInput}
+                      onChange={e => setEquipInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (equipInput.trim()) {
+                            setFormData(prev => ({ ...prev, equipmentRequirements: [...prev.equipmentRequirements, equipInput.trim()] }));
+                            setEquipInput("");
+                          }
+                        }
+                      }}
+                      placeholder="e.g. Dive Computer, Compass"
+                      className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        if (equipInput.trim()) {
+                          setFormData(prev => ({ ...prev, equipmentRequirements: [...prev.equipmentRequirements, equipInput.trim()] }));
+                          setEquipInput("");
+                        }
+                      }}
+                      className="rounded-2xl bg-tertiary px-6 font-bold text-on-tertiary hover:bg-tertiary/80 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Image (Optional)</label>
+                    <div className="relative group/img">
+                      <div className={cn(
+                        "w-full h-40 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden relative bg-white/5",
+                        formData.image ? "border-secondary/50" : "border-white/10 hover:border-secondary/30"
+                      )}>
+                        {formData.image ? (
+                          <>
+                            <img src={formData.image} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                              <ImagePlus size={24} className="text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {isModerating ? (
+                              <Loader2 size={32} className="animate-spin text-secondary" />
+                            ) : (
+                              <ImagePlus size={32} className="text-secondary opacity-40" />
+                            )}
+                            <span className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                              {isModerating ? "Verifying..." : "Click to Upload (Max 2MB)"}
+                            </span>
+                          </>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </div>
+                      {formData.image && (
+                         <button 
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, image: "" }))}
+                          className="absolute -top-2 -right-2 p-1.5 bg-error text-on-error rounded-full shadow-lg border-2 border-background"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
               </div>
 
               {!eventToEdit && (
@@ -1689,6 +1848,23 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   <HeartPulse size={16} className="text-on-secondary" />
                 </div>
               </div>
+
+              {((user.pinnedBadgeId && user.badgeStats) && (() => {
+                  const b = computeBadgesWithStats(user.badgeStats!).find((bx: any) => bx.id === user.pinnedBadgeId);
+                  if (b && b.earned) {
+                    const BIcon = b.icon;
+                    return (
+                      <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-3 pl-1 py-1 rounded-full border border-white/10">
+                        <div className="bg-primary/20 text-primary p-1.5 rounded-full">
+                          <BIcon size={14} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">{b.label}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+              })())}
+              
               <h3 className="text-2xl font-black italic tracking-tighter text-on-surface">{user.displayName}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
@@ -1740,6 +1916,32 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                     <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
                   )}
                 </div>
+
+                {user.badgeStats && (() => {
+                  const earnedBadges = computeBadgesWithStats(user.badgeStats).filter((b: any) => b.earned);
+                  if (earnedBadges.length > 0) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                          <Award size={12} />
+                          Earned Badges
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {earnedBadges.map((b: any) => {
+                            const BIcon = b.icon;
+                            return (
+                              <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-2.5 py-1.5" title={b.label}>
+                                <BIcon size={14} className="text-secondary" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
 
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
                   <Phone size={12} />
@@ -1895,7 +2097,7 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
             </div>
 
             <div className="flex-1 relative">
-              <APIProvider apiKey={(import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''}>
+              <APIProvider apiKey={(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY}>
                 <GoogleMap
                   center={mapProps.center}
                   zoom={mapProps.zoom}

@@ -15,6 +15,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == "Tobias.H.Jensen@gmail.com";
+    }
+
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -33,7 +37,7 @@ service cloud.firestore {
         && data.id == request.auth.uid
         && data.email is string && data.email.size() <= 200
         && data.displayName is string && data.displayName.size() <= 100
-        && data.subscriptionTier in ['free', 'pro', 'expedition']
+        && data.subscriptionTier in ['free', 'premium', 'vip']
         && (!('rank' in data) || (data.rank is string && data.rank.size() <= 100));
     }
 
@@ -46,6 +50,7 @@ service cloud.firestore {
         && data.date is string
         && data.timestamp == request.time
         && data.fishSpotted is list
+        && (!('equipmentIds' in data) || data.equipmentIds is list)
         && data.photos is list;
     }
 
@@ -66,6 +71,7 @@ service cloud.firestore {
         && data.lng is number
         && (!('type' in data) || data.type in ['reef', 'wreck', 'cave', 'wall', 'site'])
         && data.status in ['unverified', 'verified']
+        && (!('photo' in data) || data.photo == null || (data.photo is string && data.photo.size() <= 10485760))
         && data.upvotes is int
         && data.downvotes is int
         && data.timestamp == request.time
@@ -125,7 +131,8 @@ service cloud.firestore {
         && (!('image' in data) || (data.image is string && data.image.size() <= 10000000))
         && (!('time' in data) || (data.time is string))
         && (!('lat' in data) || data.lat is number)
-        && (!('lng' in data) || data.lng is number);
+        && (!('lng' in data) || data.lng is number)
+        && (!('isFeatured' in data) || data.isFeatured is bool);
     }
 
     function isValidPrivateInfo(data) {
@@ -140,17 +147,34 @@ service cloud.firestore {
         && (!('emergencyContactPhone2' in data) || (data.emergencyContactPhone2.size() == 0 || ('emergencyContactName2' in data && data.emergencyContactName2.size() > 0)));
     }
 
+    function isValidEquipment(data) {
+      return data.keys().hasAll(['userId', 'name', 'type', 'useCount', 'timestamp'])
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.type in ["Regulator", "BCD", "Computer", "Wetsuit", "Tank", "Fins", "Mask", "Other"]
+        && data.useCount is number && data.useCount >= 0
+        && (!('useLimit' in data) || (data.useLimit is number && data.useLimit >= 0))
+        && data.timestamp == request.time
+        && (!('purchaseDate' in data) || data.purchaseDate is string)
+        && (!('lastServiceDate' in data) || data.lastServiceDate is string)
+        && (!('nextServiceDate' in data) || data.nextServiceDate is string)
+        && (!('weight' in data) || data.weight is number)
+        && (!('capacity' in data) || data.capacity is number)
+        && (!('isStandardSetup' in data) || data.isStandardSetup is bool)
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000));
+    }
+
     // --- Collection Matchers ---
 
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && (
-        (incoming().diff(existing()).affectedKeys().hasAny(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'rank', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber', 'photoURL'])) ||
+      allow update: if (isOwner(userId) && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'rank', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber', 'photoURL', 'badgeStats', 'pinnedBadgeId', 'emailVerified', 'currentLocation'])) ||
         (isValidUser(incoming()))
-      );
-      allow delete: if isOwner(userId);
+      )) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       match /private/info {
         allow get: if isSignedIn();
@@ -161,7 +185,7 @@ service cloud.firestore {
 
     match /dives/{diveId} {
       allow get: if isSignedIn() && (resource == null || isOwner(resource.data.userId) || true);
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidDive(incoming());
       allow update: if isSignedIn() && isOwner(existing().userId) && isValidDive(incoming());
       allow delete: if isSignedIn() && isOwner(existing().userId);
@@ -169,7 +193,7 @@ service cloud.firestore {
 
     match /sightings/{sightingId} {
       allow get: if isSignedIn();
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || true);
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || true);
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidSighting(incoming());
       allow delete: if isSignedIn() && isOwner(existing().userId);
     }
@@ -179,7 +203,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidDiveSite(incoming());
       allow update: if isSignedIn() && (
-        (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'lat', 'lng', 'timestamp']) && (!('name' in incoming()) || (incoming().name is string && incoming().name.size() <= 200)) && (!('lat' in incoming()) || incoming().lat is number) && (!('lng' in incoming()) || incoming().lng is number) && (!('timestamp' in incoming()) || incoming().timestamp == request.time)) ||
+        (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'lat', 'lng', 'timestamp', 'photo']) && (!('name' in incoming()) || (incoming().name is string && incoming().name.size() <= 200)) && (!('lat' in incoming()) || incoming().lat is number) && (!('lng' in incoming()) || incoming().lng is number) && (!('timestamp' in incoming()) || incoming().timestamp == request.time) && (!('photo' in incoming()) || incoming().photo == null || (incoming().photo is string && incoming().photo.size() <= 10485760))) ||
         (
           incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'status', 'avgRating', 'reviewCount', 'timestamp'])
         )
@@ -226,6 +250,28 @@ service cloud.firestore {
           (('reportsCount' in existing()) && existing().reportsCount >= 9)
         );
       }
+    }
+
+    match /equipment/{equipmentId} {
+      allow get: if isSignedIn() && (resource == null || isOwner(resource.data.userId));
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidEquipment(incoming());
+      allow update: if isSignedIn() && (
+        isOwner(existing().userId) && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'useCount', 'useLimit', 'purchaseDate', 'lastServiceDate', 'nextServiceDate', 'weight', 'capacity', 'notes', 'isStandardSetup', 'timestamp']) &&
+        (!('name' in incoming()) || (incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 100)) &&
+        (!('type' in incoming()) || incoming().type in ["Regulator", "BCD", "Computer", "Wetsuit", "Tank", "Fins", "Mask", "Other"]) &&
+        (!('useCount' in incoming()) || (incoming().useCount is number && incoming().useCount >= 0)) &&
+        (!('useLimit' in incoming()) || (incoming().useLimit is number && incoming().useLimit >= 0)) &&
+        (!('purchaseDate' in incoming()) || incoming().purchaseDate is string) &&
+        (!('lastServiceDate' in incoming()) || incoming().lastServiceDate is string) &&
+        (!('nextServiceDate' in incoming()) || incoming().nextServiceDate is string) &&
+        (!('weight' in incoming()) || incoming().weight is number) &&
+        (!('capacity' in incoming()) || incoming().capacity is number) &&
+        (!('isStandardSetup' in incoming()) || incoming().isStandardSetup is bool) &&
+        (!('notes' in incoming()) || (incoming().notes is string && incoming().notes.size() <= 2000))
+      );
+      allow delete: if isSignedIn() && isOwner(existing().userId);
     }
 
     match /events/{eventId} {

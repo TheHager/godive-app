@@ -3,7 +3,9 @@ import {
   signInWithPopup, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  sendEmailVerification,
+  signOut
 } from "firebase/auth";
 import { auth, googleProvider, db } from "../lib/firebase";
 import { motion } from "framer-motion";
@@ -16,6 +18,7 @@ export const LoginView = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
@@ -50,11 +53,18 @@ export const LoginView = () => {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
     
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        if (!userCred.user.emailVerified) {
+          await signOut(auth);
+          setError("Your email relies on verification. Please check your inbox and verify your email to login.");
+          setLoading(false);
+          return;
+        }
       } else {
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9!@#$%^&*()_[\]{}<>?\\/\-+=|;:.,"'~`]).{6,}$/;
         if (!passwordRegex.test(password)) {
@@ -83,6 +93,14 @@ export const LoginView = () => {
         } catch(e) {
            console.warn("Could not create user document in firestore immediately", e);
         }
+        
+        await sendEmailVerification(userCred.user);
+        await signOut(auth);
+        
+        setSuccess("Account created! Please check your email to verify your account before logging in.");
+        setIsLogin(true);
+        setLoading(false);
+        return;
       }
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential') setError("Invalid email or password.");
@@ -116,6 +134,13 @@ export const LoginView = () => {
           <div className="mb-6 flex items-center gap-3 rounded-xl bg-error/10 p-4 text-sm text-error border border-error/20">
             <AlertCircle size={18} />
             <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl bg-primary/10 p-4 text-sm text-primary border border-primary/20">
+            <Mail size={18} />
+            <span>{success}</span>
           </div>
         )}
 

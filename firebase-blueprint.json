@@ -14,8 +14,10 @@
         "points": { "type": "integer" },
         "divesCount": { "type": "integer" },
         "currentLocation": { "type": "string" },
-        "subscriptionTier": { "type": "string", "enum": ["free", "pro", "expedition"] },
-        "emailVerified": { "type": "boolean" }
+        "subscriptionTier": { "type": "string", "enum": ["free", "premium", "vip"] },
+        "emailVerified": { "type": "boolean" },
+        "badgeStats": { "type": "object" },
+        "pinnedBadgeId": { "type": "string" }
       },
       "required": ["id", "displayName", "email", "subscriptionTier"]
     },
@@ -35,6 +37,7 @@
         "fishSpotted": { "type": "array", "items": { "type": "string" } },
         "photos": { "type": "array", "items": { "type": "string" } },
         "notes": { "type": "string" },
+        "equipmentIds": { "type": "array", "items": { "type": "string" } },
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "location", "date", "timestamp"]
@@ -84,6 +87,7 @@
         "avgRating": { "type": "number" },
         "reviewCount": { "type": "integer" },
         "userId": { "type": "string" },
+        "photo": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "lat", "lng", "userId", "timestamp"]
@@ -131,6 +135,27 @@
         "medicalNotes": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "A piece of dive equipment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["Regulator", "BCD", "Computer", "Wetsuit", "Tank", "Fins", "Mask", "Other"] },
+        "purchaseDate": { "type": "string" },
+        "lastServiceDate": { "type": "string" },
+        "nextServiceDate": { "type": "string" },
+        "useCount": { "type": "integer" },
+        "useLimit": { "type": "integer" },
+        "weight": { "type": "number" },
+        "capacity": { "type": "number" },
+        "notes": { "type": "string" },
+        "isStandardSetup": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "type", "useCount", "timestamp"]
     },
     "Event": {
       "title": "Event",
@@ -198,6 +223,10 @@
     "dive_sites/{siteId}/reviews/{reviewId}": {
       "schema": "Review",
       "description": "User reviews for a dive site"
+    },
+    "equipment/{equipmentId}": {
+      "schema": "Equipment",
+      "description": "User equipment log"
     },
     "events/{eventId}": {
       "schema": "Event",
