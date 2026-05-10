@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Heart, MessageSquare, MoreVertical, MapPin, Tag, Trophy, X as CloseIcon, Edit2, Trash2, Flag, ArrowUpRight } from "lucide-react";
+import { Heart, MessageSquare, MoreVertical, MapPin, Tag, Trophy, X as CloseIcon, Edit2, Trash2, Flag, ArrowUpRight, Plus, Compass, Clock, Users, Settings, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../lib/utils";
+import { cn, formatDate } from "../lib/utils";
 import { computeBadgesWithStats } from "../constants/badges";
 import { useUser } from "../contexts/UserContext";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, getDocs } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { LeaderboardView } from "./LeaderboardView";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { ActionMenu } from "./ActionMenu";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -15,13 +16,15 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
   const allBadges = computeBadgesWithStats(badgeStats);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"all" | "expeditions">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "expeditions" | "friends">("all");
+  const [sortBy, setSortBy] = useState<"date" | "popular">("date");
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
 
   useEffect(() => {
+    const sortField = sortBy === "popular" ? "likesCount" : "timestamp";
     const q = query(
       collection(db, "posts"),
-      orderBy("timestamp", "desc"),
+      orderBy(sortField, "desc"),
       limit(50)
     );
 
@@ -37,7 +40,7 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
         reportsCount: (doc.data() as any).reportsCount || 0,
         reportedBy: (doc.data() as any).reportedBy || [],
         user: ((doc.data() as any).userId === profile?.id ? profile?.displayName : (doc.data() as any).userDisplayName) || "Explorer",
-        avatar: (doc.data() as any).userPhotoURL || `https://i.pravatar.cc/150?u=${doc.id}`,
+        avatar: (doc.data() as any).userPhotoURL,
         isCurrentUser: (doc.data() as any).userId === profile?.id
       }));
       setPosts(postsData);
@@ -48,61 +51,52 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
     });
 
     return () => unsubscribe();
-  }, [profile?.id]);
+  }, [profile?.id, sortBy]);
 
-  const filteredPosts = activeFilter === "all" ? posts : posts.filter(p => p.eventId);
+  const filteredPosts = posts.filter(p => {
+    if (activeFilter === "expeditions") return !!p.eventId;
+    if (activeFilter === "friends") return p.userId === profile?.id || profile?.friends?.includes(p.userId);
+    return true;
+  });
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-[100dvh] w-full items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-10 p-6 max-w-2xl mx-auto min-h-screen pb-32">
+    <div className="flex flex-col gap-10 p-6 max-w-2xl mx-auto min-h-[100dvh] pb-32">
       <section className="flex flex-col gap-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="mb-1 text-4xl font-extrabold tracking-tight text-on-background whitespace-nowrap">Community Feed</h2>
-            <p className="text-xs font-medium text-on-surface-variant/60">To post on the community feed, register a dive.</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Community Feed</h2>
           </div>
-          <button 
-            onClick={() => setShowLeaderboard(true)}
-            className="fixed bottom-24 right-6 z-40 flex items-center gap-2 rounded-2xl bg-secondary px-5 py-4 text-on-secondary transition-all hover:bg-secondary/80 shadow-2xl shrink-0"
-          >
-            <Trophy size={20} className="fill-on-secondary/20" />
-            <span className="font-black uppercase tracking-widest text-xs">Rankings</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-surface-container-high/20 border border-white/5 self-start">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-              activeFilter === "all" ? "bg-secondary text-on-secondary shadow-lg shadow-secondary/20" : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5"
-            )}
-          >
-            All Posts
-          </button>
-          <button
-            onClick={() => setActiveFilter("expeditions")}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-              activeFilter === "expeditions" ? "bg-secondary text-on-secondary shadow-lg shadow-secondary/20" : "text-on-surface-variant/40 hover:text-on-surface hover:bg-white/5"
-            )}
-          >
-            Expeditions
-          </button>
+          <div className="relative z-10 shrink-0 mr-4">
+            <ActionMenu 
+              triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
+              buttonClassName="hover:bg-white/10"
+              items={[
+                { label: "Type", isHeader: true },
+                { label: "All Posts", icon: <Tag size={16} />, onClick: () => setActiveFilter("all"), active: activeFilter === "all" },
+                { label: "Expeditions", icon: <Compass size={16} />, onClick: () => setActiveFilter("expeditions"), active: activeFilter === "expeditions" },
+                { label: "Friends Only", icon: <Users size={16} />, onClick: () => setActiveFilter("friends"), active: activeFilter === "friends" },
+                { isDivider: true },
+                { label: "Sort By", isHeader: true },
+                { label: "Recent", icon: <Clock size={16} />, onClick: () => setSortBy("date"), active: sortBy === "date" },
+                { label: "Popular", icon: <Trophy size={16} />, onClick: () => setSortBy("popular"), active: sortBy === "popular" }
+              ]}
+            />
+          </div>
         </div>
       </section>
 
       <div className="flex flex-col gap-12">
         {filteredPosts.length === 0 ? (
           <div className="text-center py-20 opacity-50">
-            <p className="text-xl font-bold">No {activeFilter === "expeditions" ? "expeditions" : "posts"} shared yet.</p>
+            <p className="text-xl font-bold">No {activeFilter === "expeditions" ? "expeditions" : activeFilter === "friends" ? "posts from friends" : "posts"} shared yet.</p>
             <p className="text-sm">Be the first to share your underwater voyage!</p>
           </div>
         ) : (
@@ -119,41 +113,26 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
         )}
       </div>
 
+      {profile?.id && (
+        <button
+          onClick={() => setShowCreatePostModal(true)}
+          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border border-white/20"
+          title="Create Post"
+        >
+          <Plus size={28} />
+        </button>
+      )}
 
-      <AnimatePresence>
-        {showLeaderboard && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/90 backdrop-blur-md"
-              onClick={() => setShowLeaderboard(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[2.5rem] bg-surface-container shadow-2xl border border-white/5 overflow-hidden"
-            >
-              <button 
-                onClick={() => setShowLeaderboard(false)}
-                className="absolute top-4 right-4 z-[60] flex items-center justify-center rounded-full bg-surface-container-highest p-3 text-on-surface hover:bg-white/10 transition-all border border-white/10 shadow-lg backdrop-blur-md hover:scale-110 active:scale-95"
-              >
-                <CloseIcon size={24} />
-              </button>
-              <div className="overflow-y-auto no-scrollbar pb-10">
-                <LeaderboardView onParticipate={() => setShowLeaderboard(false)} />
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <CreatePostModal 
+        isOpen={showCreatePostModal}
+        onClose={() => setShowCreatePostModal(false)}
+        profile={profile}
+      />
     </div>
   );
 };
 
-const PostCard = ({ id, user, userId, location, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: any) => {
+const PostCard = ({ id, user, userId, location, title, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: any) => {
   const { profile } = useAuth();
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -187,7 +166,7 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
       await addDoc(collection(db, "posts", id, "comments"), {
         userId: profile.id,
         userDisplayName: profile.displayName || "Unknown Diver",
-        userPhotoURL: profile.photoURL || `https://i.pravatar.cc/150?u=${profile.id}`,
+        userPhotoURL: profile.photoURL,
         content: commentText.trim(),
         timestamp: serverTimestamp(),
         reportsCount: 0,
@@ -377,26 +356,21 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
     }
   };
 
-  const formatDate = (time: any) => {
-    if (!time) return "";
-    try {
-      const date = time?.toDate ? time.toDate() : new Date(time);
-      return date.toLocaleString(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-      });
-    } catch {
-      return "";
-    }
-  };
+
+
+  const isVideo = image?.startsWith("data:video");
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-3xl bg-surface-container-high/20 backdrop-blur-3xl border border-white/5 shadow-2xl relative">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <img src={avatar} alt={user} className="h-12 w-12 rounded-full border border-white/10 object-cover shadow-lg" />
+          {avatar ? (
+            <img src={avatar} alt={user} className="h-12 w-12 shrink-0 rounded-full border border-white/10 object-cover shadow-lg" />
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary shadow-lg">
+              <UserIcon size={24} />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-black tracking-tight text-primary">{user}</h4>
@@ -421,86 +395,82 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
           </div>
         </div>
         
-        <div className="relative" ref={optionsRef}>
-          <button 
-            onClick={() => setShowOptions(!showOptions)}
-            className="rounded-full p-2 text-on-surface-variant transition-colors hover:bg-white/5"
-          >
-            <MoreVertical size={20} />
-          </button>
-          <AnimatePresence>
-            {showOptions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                className="absolute right-0 top-full mt-2 w-32 rounded-2xl border border-white/10 bg-surface-container-highest p-2 shadow-xl backdrop-blur-xl z-10"
-              >
-                {isCurrentUser ? (
-                  <>
-                    <button 
-                      onClick={() => { setIsEditing(true); setShowOptions(false); }}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-on-surface transition-colors hover:bg-white/5"
-                    >
-                      <Edit2 size={14} />
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => { handleDelete(); setShowOptions(false); }}
-                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-error transition-colors hover:bg-error/10"
-                    >
-                      <Trash2 size={14} />
-                      Delete
-                    </button>
-                  </>
-                ) : (
-                  <button 
-                    onClick={() => { handleReport(); setShowOptions(false); }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-error transition-colors hover:bg-error/10"
-                  >
-                    <Flag size={14} className={cn(hasReported && "fill-current")} />
-                    {hasReported ? "Remove Report" : "Report"}
-                  </button>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex items-center gap-1">
+          <ActionMenu 
+            items={isCurrentUser ? [
+              { label: "Edit Post", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) },
+              { label: "Delete Post", icon: <Trash2 size={16} />, onClick: handleDelete, destructive: true }
+            ] : [
+              { label: hasReported ? "Remove Report" : "Report Post", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
+            ]}
+          />
         </div>
       </div>
 
-      <div 
-        className="relative aspect-[4/3] w-full overflow-hidden bg-surface-container cursor-pointer"
-        onClick={() => setShowFullImage(true)}
-      >
-        <img src={image} alt="Post" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-      </div>
-
-      <AnimatePresence>
-        {showFullImage && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl"
-            onClick={() => setShowFullImage(false)}
+      {image && (
+        <>
+          <div 
+            className="relative aspect-[4/3] w-full overflow-hidden bg-surface-container cursor-pointer"
+            onClick={() => setShowFullImage(true)}
           >
-            <motion.img 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              src={image} 
-              alt="Full view" 
-              className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl" 
-            />
-            <button 
-              className="absolute top-6 right-6 z-10 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
-              onClick={(e) => { e.stopPropagation(); setShowFullImage(false); }}
-            >
-              <CloseIcon size={24} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {isVideo ? (
+              <video src={image} className="h-full w-full object-cover" controls playsInline />
+            ) : (
+              <img src={image} alt="Post" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            )}
+          </div>
+
+          <AnimatePresence>
+            {showFullImage && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl"
+                onClick={() => setShowFullImage(false)}
+              >
+                <div onClick={(e) => e.stopPropagation()} className="relative flex items-center justify-center h-full w-full">
+                  <TransformWrapper
+                    initialScale={1}
+                    minScale={0.5}
+                    maxScale={4}
+                    centerOnInit={true}
+                  >
+                    <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
+                      {isVideo ? (
+                        <motion.video 
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.9, opacity: 0 }}
+                          src={image} 
+                          controls
+                          playsInline
+                          className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl" 
+                        />
+                      ) : (
+                        <motion.img 
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.9, opacity: 0 }}
+                          src={image} 
+                          alt="Full view" 
+                          className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl cursor-grab active:cursor-grabbing" 
+                        />
+                      )}
+                    </TransformComponent>
+                  </TransformWrapper>
+                </div>
+                <button 
+                  className="absolute top-6 right-6 z-10 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); setShowFullImage(false); }}
+                >
+                  <CloseIcon size={24} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       <div className="p-6">
         <div className="mb-6 flex gap-6">
@@ -534,6 +504,10 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
             <span>View Event</span>
             <ArrowUpRight size={14} />
           </button>
+        )}
+
+        {title && (
+          <h3 className="text-xl font-bold text-on-surface mb-2">{title}</h3>
         )}
 
         {isEditing ? (
@@ -581,7 +555,13 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
 
                   return (
                     <div key={comment.id} className="group/comment flex gap-3">
-                      <img src={comment.userPhotoURL} alt={comment.userDisplayName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                      {comment.userPhotoURL ? (
+                        <img src={comment.userPhotoURL} alt={comment.userDisplayName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface/50 text-secondary">
+                          <UserIcon size={16} />
+                        </div>
+                      )}
                       <div className="flex w-full flex-col">
                         <div className="flex justify-between items-start">
                           <div className="flex items-baseline gap-2">
@@ -591,44 +571,16 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
-                            {isCommentOwner ? (
-                              <>
-                                <button 
-                                  onClick={() => { setEditingCommentId(comment.id); setEditedCommentContent(comment.content); }}
-                                  className="p-1 text-on-surface-variant hover:text-secondary transition-colors"
-                                  title="Edit comment"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                                <button 
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  className="p-1 text-on-surface-variant hover:text-red-400 transition-colors"
-                                  title="Delete comment"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                {isPostOwner && (
-                                  <button 
-                                    onClick={() => handleDeleteComment(comment.id)}
-                                    className="p-1 text-on-surface-variant hover:text-red-400 transition-colors"
-                                    title="Delete comment"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                )}
-                                <button 
-                                  onClick={() => handleReportComment(comment)}
-                                  className={cn("p-1 transition-colors", hasReportedComment ? "text-red-500 hover:text-red-400" : "text-on-surface-variant hover:text-red-400")}
-                                  title={hasReportedComment ? "Remove report" : "Report comment"}
-                                >
-                                  <Flag size={12} className={cn(hasReportedComment && "fill-current")} />
-                                </button>
-                              </>
-                            )}
+                          <div className="flex items-center gap-1">
+                            <ActionMenu
+                              items={isCommentOwner ? [
+                                { label: "Edit Comment", icon: <Edit2 size={16} />, onClick: () => { setEditingCommentId(comment.id); setEditedCommentContent(comment.content); } },
+                                { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
+                              ] : [
+                                ...(isPostOwner ? [{ label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }] : []),
+                                { label: hasReportedComment ? "Remove Report" : "Report Comment", icon: <Flag size={16} className={cn(hasReportedComment && "fill-current")} />, onClick: () => handleReportComment(comment), destructive: true }
+                              ]}
+                            />
                           </div>
                         </div>
 
@@ -701,5 +653,211 @@ const PostCard = ({ id, user, userId, location, content, image, avatar, likesCou
         </AnimatePresence>
       </div>
     </article>
+  );
+};
+
+const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+  const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [image, setImage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setContent("");
+      setTitle("");
+      setImage("");
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async () => {
+    if (!content.trim() || !title.trim() || !profile?.id) return;
+    setIsSubmitting(true);
+    try {
+      const postData: any = {
+        userId: profile.id,
+        userDisplayName: profile.displayName || "Unknown Diver",
+        userPhotoURL: profile.photoURL,
+        content: content.trim(),
+        location: profile.homeBase || "Ocean Explorer",
+        timestamp: serverTimestamp(),
+        likesCount: 0,
+        likedBy: [],
+        commentsCount: 0,
+        tags: ["Community Post"],
+        reportsCount: 0,
+        reportedBy: []
+      };
+      
+      if (title.trim()) postData.title = title.trim();
+      if (image.trim()) postData.image = image.trim();
+
+      await addDoc(collection(db, "posts"), postData);
+      onClose();
+    } catch (error) {
+      console.error("Error creating post:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 700 * 1024) {
+      alert("File must be smaller than 700KB to fit within database limits");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      if (file.type.startsWith('video/')) {
+        setImage(event.target?.result as string);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_DIM = 800;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setImage(compressedDataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 p-4"
+          >
+            <div className="flex flex-col overflow-hidden rounded-3xl bg-surface-container border border-white/10 shadow-2xl max-h-[90vh]">
+              <div className="flex items-center justify-between border-b border-white/5 p-6 bg-surface-container-high/50 shrink-0">
+                <h3 className="text-xl font-black tracking-tight text-on-surface">Create Post</h3>
+                <button
+                  onClick={onClose}
+                  className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 hover:text-on-surface transition-colors"
+                >
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-6 p-6 overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                    Headline <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="E.g., Amazing dive at the Blue Hole!"
+                    className="w-full rounded-2xl border-none bg-surface-container-highest/50 p-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
+                    <MessageSquare size={14} />
+                    What's on your mind?
+                  </label>
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Share your diving stories, ask questions..."
+                    className="w-full rounded-2xl border-none bg-surface-container-highest/50 p-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all resize-none min-h-[120px]"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                    Photo or Video (Optional)
+                  </label>
+                  <label className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-surface-container-highest/50 p-6 text-on-surface-variant transition-colors hover:border-secondary hover:bg-white/5 hover:text-secondary">
+                    <input 
+                      type="file" 
+                      accept="image/*,video/*" 
+                      onChange={handleImageUpload} 
+                      className="hidden" 
+                    />
+                    {image ? (
+                      <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                        {image.startsWith('data:video') ? (
+                          <video src={image} className="h-full w-full object-cover opacity-50 transition-opacity group-hover:opacity-30" autoPlay muted loop />
+                        ) : (
+                          <img src={image} alt="Preview" className="h-full w-full object-cover opacity-50 transition-opacity group-hover:opacity-30" />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="font-bold text-white tracking-widest text-xs uppercase uppercase">Change Media</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-2 rounded-full bg-surface-container p-3 text-on-surface-variant group-hover:bg-secondary/20 group-hover:text-secondary transition-colors">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        </div>
+                        <span className="text-xs font-bold text-on-surface">Click to upload media</span>
+                        <span className="mt-1 text-[10px] text-on-surface-variant/60">Max 700KB</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 border-t border-white/5 p-6 bg-surface-container-high/50 shrink-0">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !content.trim() || !title.trim()}
+                  className="flex items-center gap-2 rounded-2xl bg-secondary px-8 py-3 text-[10px] font-black uppercase tracking-widest text-on-secondary shadow-[0_4px_15px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {isSubmitting ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-on-secondary border-t-transparent" />
+                  ) : (
+                    "Post"
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };

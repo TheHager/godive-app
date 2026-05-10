@@ -56,6 +56,13 @@ export const LoginView = () => {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9!@#$%^&*()_[\]{}<>?\\/\-+=|;:.,"'~`]).{6,}$/;
+        if (!passwordRegex.test(password)) {
+          setError("Password must be at least 6 characters and include an uppercase letter, a lowercase letter, and a number or special character.");
+          setLoading(false);
+          return;
+        }
+
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCred.user, { displayName: name });
         const { doc, setDoc } = await import('firebase/firestore');
@@ -87,7 +94,7 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#4cd6fb20_0%,transparent_100%)] opacity-30" />
       </div>
@@ -101,7 +108,7 @@ export const LoginView = () => {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/20 text-secondary shadow-[0_0_20px_rgba(76,214,251,0.2)]">
             <Ship size={32} />
           </div>
-          <h2 className="mb-2 text-3xl font-black italic tracking-tighter text-primary">GoDive</h2>
+          <h2 className="mb-2 text-4xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h2>
           <p className="text-on-surface-variant opacity-70">Explore the depths of the ocean with us.</p>
         </div>
 
@@ -148,6 +155,11 @@ export const LoginView = () => {
               className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
             />
           </div>
+          {!isLogin && (
+            <p className="text-xs text-on-surface-variant opacity-70 px-2 mt-1">
+              Password must be at least 6 characters and include an uppercase letter, a lowercase letter, and a number or special character.
+            </p>
+          )}
 
           <button
             type="submit"

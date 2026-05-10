@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserPlus, UserCheck, X, Loader2, Trash2, Plus, Clock, Info, CheckCircle2, Edit2, Phone, HeartPulse, ImagePlus, ImageIcon, Map as MapIcon, Share2 } from "lucide-react";
+import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserPlus, UserCheck, X, Loader2, Trash2, Plus, Clock, Info, CheckCircle2, Edit2, Phone, HeartPulse, ImagePlus, ImageIcon, Map as MapIcon, Share2, AlertCircle, Flag, Award, Settings, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../lib/utils";
-import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc } from "firebase/firestore";
+import { cn, formatDate } from "../lib/utils";
+import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc, increment } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
 import { View, UserProfile, CommunityEvent, UserPrivateInfo } from "../types";
 import { calculateLevel, getRankInfo } from "../constants/ranks";
 import { LocationPickerModal } from "./LocationPickerModal";
+import { ActionMenu } from "./ActionMenu";
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 
 // Helper to calculate distance between two coordinates in km
@@ -42,11 +43,38 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
   const [eventSearchLocation, setEventSearchLocation] = useState("");
   const [eventSearchCoords, setEventSearchCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [eventSearchRadius, setEventSearchRadius] = useState(25); // Default 25km
+  const [eventSortBy, setEventSortBy] = useState<"date" | "distance">("date");
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showLocationSearchModal, setShowLocationSearchModal] = useState(false);
   const [selectedEventForMap, setSelectedEventForMap] = useState<CommunityEvent | null>(null);
   const [selectedEventForParticipants, setSelectedEventForParticipants] = useState<CommunityEvent | null>(null);
   const [selectedBuddyForProfile, setSelectedBuddyForProfile] = useState<UserProfile | null>(null);
   const [localInitialEventId, setLocalInitialEventId] = useState<string | null>(initialEventId || null);
+
+  useEffect(() => {
+    if (eventSortBy === "distance" && !userLocation) {
+      if (navigator.geolocation) {
+        setIsGettingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+            setIsGettingLocation(false);
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+            setEventSortBy("date"); // fallback
+            setIsGettingLocation(false);
+          }
+        );
+      } else {
+        setEventSortBy("date");
+      }
+    }
+  }, [eventSortBy, userLocation]);
 
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("timestamp", "desc"), limit(50));
@@ -125,6 +153,17 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
     }
 
     return matchesDate && matchesTextLocation && matchesRadius;
+  }).sort((a, b) => {
+    if (eventSortBy === "distance" && userLocation) {
+      const distA = (a.lat && a.lng) ? getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) : Infinity;
+      const distB = (b.lat && b.lng) ? getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng) : Infinity;
+      return distA - distB;
+    }
+    
+    const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+    const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+    // Show upcoming events first
+    return dateA - dateB;
   });
 
   useEffect(() => {
@@ -159,87 +198,36 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
     fetchBuddies();
   }, [profile?.friends]);
 
-  const executeSearch = async (queryStr: string) => {
-    if (!queryStr.trim()) return;
-
-    setIsSearching(true);
-    const q = queryStr.trim();
-    // Normalize for prefix matching if needed (though Firestore is case sensitive)
-    const endRange = q + '\uf8ff';
-
-    try {
-      // Since OR queries with range filters must be on the same field, 
-      // we perform parallel queries for Name, Email, and Phone
-      const queries = [
-        query(collection(db, "users"), where("displayName", ">=", q), where("displayName", "<=", endRange), limit(10)),
-        query(collection(db, "users"), where("email", ">=", q), where("email", "<=", endRange), limit(10)),
-        query(collection(db, "users"), where("phoneNumber", ">=", q), where("phoneNumber", "<=", endRange), limit(10))
-      ];
-      
-      const snapshots = await Promise.all(queries.map(getDocs));
-      
-      const resultsMap = new Map<string, UserProfile>();
-      snapshots.forEach(snap => {
-        snap.docs.forEach(doc => {
-          const data = doc.data() as UserProfile;
-          if (data.id !== profile?.id) {
-            resultsMap.set(data.id, data);
-          }
-        });
-      });
-      
-      setSearchResults(Array.from(resultsMap.values()));
-    } catch (err) {
-      console.error("Error searching users:", err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   useEffect(() => {
-    if (!showSearchModal) return;
-    
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length >= 3) {
-        executeSearch(searchQuery);
-      } else {
-        setSearchResults([]);
+    const fetchBuddies = async () => {
+      if (!profile?.friends || profile.friends.length === 0) {
+        setBuddies([]);
+        setIsLoadingBuddies(false);
+        return;
       }
-    }, 400);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, showSearchModal]);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    executeSearch(searchQuery);
-  };
-
-  const toggleBuddy = async (targetUserId: string, isBuddy: boolean) => {
-    if (!profile?.id) return;
-
-    try {
-      const userRef = doc(db, "users", profile.id);
-      if (isBuddy) {
-        await updateDoc(userRef, {
-          friends: arrayRemove(targetUserId)
-        });
-      } else {
-        await updateDoc(userRef, {
-          friends: arrayUnion(targetUserId)
-        });
+      try {
+        const chunks = [];
+        for (let i = 0; i < profile.friends.length; i += 10) {
+          chunks.push(profile.friends.slice(i, i + 10));
+        }
+        const buddyPromises = chunks.map(chunk => 
+          getDocs(query(collection(db, "users"), where("id", "in", chunk), limit(10)))
+        );
+        const snapshots = await Promise.all(buddyPromises);
+        const buddyData = snapshots.flatMap(snap => snap.docs.map(doc => doc.data() as UserProfile));
+        setBuddies(buddyData);
+      } catch (err) {
+        console.error("Error fetching buddies:", err);
+      } finally {
+        setIsLoadingBuddies(false);
       }
-    } catch (err) {
-      console.error("Error toggling buddy:", err);
-    }
-  };
+    };
+    fetchBuddies();
+  }, [profile?.friends]);
 
   const handleRemoveBuddy = async (targetUserId: string) => {
     if (!profile?.id) return;
-    
-    // Optimistic UI update
     setBuddies(prev => prev.filter(b => b.id !== targetUserId));
-
     try {
       const userRef = doc(db, "users", profile.id);
       await updateDoc(userRef, {
@@ -252,205 +240,141 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
 
   return (
     <div className="flex flex-col gap-10 p-6 w-full max-w-4xl mx-auto min-w-0 pb-32">
-      <section>
-        <h2 className="mb-2 text-4xl font-extrabold tracking-tight text-on-surface">Find Your Buddy</h2>
-        <p className="text-lg font-medium text-on-surface-variant opacity-70">Connect with divers and join upcoming local expeditions.</p>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button 
-            onClick={() => setShowSearchModal(true)}
-            className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-secondary py-4 px-6 font-black uppercase tracking-widest text-on-secondary shadow-xl transition-all hover:bg-secondary-container active:scale-95 group shadow-secondary/20 border border-white/10"
-          >
-            <Search size={20} className="transition-transform group-hover:scale-110" />
-            Find Your Buddies
-          </button>
-          <button 
-            onClick={() => setShowCreateEventModal(true)}
-            className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-surface-container-highest py-4 px-6 font-black uppercase tracking-widest text-on-surface shadow-xl transition-all hover:bg-white/5 active:scale-95 group border border-white/10"
-          >
-            <Plus size={20} className="transition-transform group-hover:scale-110" />
-            Create Event
-          </button>
-        </div>
-
-        <UserSearchModal 
-          isOpen={showSearchModal} 
-          onClose={() => {
-            setShowSearchModal(false);
-            setSearchResults([]);
-            setIsSearching(false);
-          }}
-          results={searchResults}
-          isSearching={isSearching}
-          onToggleBuddy={toggleBuddy}
-          friends={profile?.friends || []}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSearch={handleSearch}
-        />
-
-        <CreateEventModal 
-          isOpen={showCreateEventModal}
-          onClose={() => {
-            setShowCreateEventModal(false);
-            setEditingEvent(null);
-          }}
-          profile={profile}
-          eventToEdit={editingEvent}
-        />
-
-        <EventMapModal 
-          isOpen={!!selectedEventForMap}
-          onClose={() => setSelectedEventForMap(null)}
-          event={selectedEventForMap}
-        />
-
-        <ParticipantsModal 
-          isOpen={!!selectedEventForParticipants}
-          onClose={() => setSelectedEventForParticipants(null)}
-          event={selectedEventForParticipants}
-        />
-
-        <UserProfileModal
-          isOpen={!!selectedBuddyForProfile}
-          onClose={() => setSelectedBuddyForProfile(null)}
-          user={selectedBuddyForProfile}
-        />
-
-        <LocationSearchModal
-          isOpen={showLocationSearchModal}
-          onClose={() => setShowLocationSearchModal(false)}
-          onSelectLocation={(loc, coords) => {
-            setEventSearchLocation(loc);
-            setEventSearchCoords(coords);
-            setShowLocationSearchModal(false);
-          }}
-        />
-
-        <SafetyRequirementModal 
-          isOpen={showSafetyModal}
-          onClose={() => setShowSafetyModal(false)}
-          onGoToProfile={() => {
-            setShowSafetyModal(false);
-            setView("profile");
-          }}
-        />
-      </section>
-
-      {/* My Buddies Section */}
-      {!localInitialEventId && profile?.friends && profile.friends.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({profile.friends.length})</h3>
-          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
-            {isLoadingBuddies ? (
-              <div className="flex h-16 w-full items-center justify-center">
-                <Loader2 size={24} className="animate-spin text-secondary" />
-              </div>
-            ) : buddies.map(buddy => (
-              <div 
-                key={buddy.id} 
-                className="flex flex-col items-center gap-2 group min-w-[100px] cursor-pointer"
-                onClick={() => setSelectedBuddyForProfile(buddy)}
-              >
-                <div className="relative">
-                  <img 
-                    src={buddy.photoURL || `https://i.pravatar.cc/150?u=${buddy.id}`} 
-                    className="h-16 w-16 rounded-full border-2 border-secondary/20 object-cover shadow-xl transition-transform group-hover:scale-110" 
-                    alt={buddy.displayName}
-                  />
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveBuddy(buddy.id);
-                    }}
-                    className="absolute -top-1 -right-1 rounded-full bg-error p-1.5 border-2 border-background text-on-error opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
-                    title="Remove Buddy"
-                  >
-                    <Trash2 size={10} />
-                  </button>
-                  <div className="absolute -bottom-1 -right-1 rounded-full bg-secondary p-1 border-2 border-background group-hover:opacity-0 transition-opacity">
-                    <UserCheck size={10} className="text-on-secondary" />
-                  </div>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface truncate w-full text-center">{buddy.displayName}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
-              {localInitialEventId ? "Specific Expedition" : "Expeditions & Events"}
-            </h3>
-            {localInitialEventId && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Community Events</h2>
+          </div>
+          {!localInitialEventId && (
+            <div className="relative z-10 shrink-0 mr-4">
+              <ActionMenu 
+                triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
+                buttonClassName="hover:bg-white/10"
+                items={[
+                  { label: "Sort By", isHeader: true },
+                  { label: "Date", icon: <Calendar size={16} />, onClick: () => setEventSortBy("date"), active: eventSortBy === "date" },
+                  { label: isGettingLocation ? "Locating..." : "Close to me", icon: isGettingLocation ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />, onClick: () => { if (!isGettingLocation) setEventSortBy("distance"); }, active: eventSortBy === "distance" },
+                  { isDivider: true },
+                  { label: "Filters", isHeader: true },
+                  {
+                    customComponent: (
+                      <div className="px-3 py-2 flex flex-col gap-2">
+                        <div className="relative group">
+                          <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+                          <input 
+                            type="date"
+                            value={eventSearchDate}
+                            onChange={(e) => setEventSearchDate(e.target.value)}
+                            className="pl-9 pr-4 py-2 w-full bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all"
+                          />
+                        </div>
+                        <div className="relative group">
+                          <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+                          <input 
+                            type="text"
+                            placeholder="LOCATION..."
+                            value={eventSearchLocation}
+                            onChange={(e) => setEventSearchLocation(e.target.value)}
+                            onClick={() => setShowLocationSearchModal(true)}
+                            readOnly
+                            className="pl-9 pr-4 py-2 w-full bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all placeholder:text-on-surface-variant/30 cursor-pointer hover:bg-white/5"
+                          />
+                        </div>
+                        {eventSearchCoords && (
+                          <div className="flex items-center gap-2 bg-surface-container-high/40 border border-white/5 rounded-full px-4 py-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-secondary">Radius:</span>
+                            <select 
+                              value={eventSearchRadius}
+                              onChange={(e) => setEventSearchRadius(Number(e.target.value))}
+                              className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-0 p-0 cursor-pointer w-full text-right"
+                            >
+                              <option value={10}>10km</option>
+                              <option value={20}>20km</option>
+                              <option value={50}>50km</option>
+                              <option value={100}>100km</option>
+                              <option value={500}>500km</option>
+                            </select>
+                          </div>
+                        )}
+                        {(eventSearchDate || eventSearchLocation || eventSearchCoords) && (
+                          <button 
+                            onClick={() => { 
+                              setEventSearchDate(""); 
+                              setEventSearchLocation(""); 
+                              setEventSearchCoords(null);
+                            }}
+                            className="w-full px-4 py-2 mt-1 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-widest border border-error/20 hover:bg-error/20 transition-all text-center"
+                          >
+                            Clear Filters
+                          </button>
+                        )}
+                      </div>
+                    )
+                  }
+                ]}
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Modals rendered without section wrapper to avoid gap */}
+      <CreateEventModal 
+        isOpen={showCreateEventModal}
+        onClose={() => {
+          setShowCreateEventModal(false);
+          setEditingEvent(null);
+        }}
+        profile={profile}
+        eventToEdit={editingEvent}
+      />
+      <EventMapModal 
+        isOpen={!!selectedEventForMap}
+        onClose={() => setSelectedEventForMap(null)}
+        event={selectedEventForMap}
+      />
+      <ParticipantsModal 
+        isOpen={!!selectedEventForParticipants}
+        onClose={() => setSelectedEventForParticipants(null)}
+        event={selectedEventForParticipants}
+        profile={profile}
+        onRemoveBuddy={handleRemoveBuddy}
+      />
+      <LocationSearchModal
+        isOpen={showLocationSearchModal}
+        onClose={() => setShowLocationSearchModal(false)}
+        onSelectLocation={(loc, coords) => {
+          setEventSearchLocation(loc);
+          setEventSearchCoords(coords);
+          setShowLocationSearchModal(false);
+        }}
+      />
+      <SafetyRequirementModal 
+        isOpen={showSafetyModal}
+        onClose={() => setShowSafetyModal(false)}
+        onGoToProfile={() => {
+          setShowSafetyModal(false);
+          setView("profile");
+        }}
+      />
+
+      {localInitialEventId && (
+        <section className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                Specific Expedition
+              </h3>
               <button 
                 onClick={() => setLocalInitialEventId(null)}
                 className="text-[10px] font-black uppercase tracking-widest text-secondary hover:underline"
               >
                 Show All Events
               </button>
-            )}
-          </div>
-          {!localInitialEventId && (
-            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            <div className="relative group">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
-              <input 
-                type="date"
-                value={eventSearchDate}
-                onChange={(e) => setEventSearchDate(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all"
-              />
             </div>
-            <div className="relative group">
-              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
-              <input 
-                type="text"
-                placeholder="FILTER BY LOCATION..."
-                value={eventSearchLocation}
-                onChange={(e) => setEventSearchLocation(e.target.value)}
-                onClick={() => setShowLocationSearchModal(true)}
-                readOnly
-                className="pl-9 pr-4 py-2 bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all w-full sm:w-48 placeholder:text-on-surface-variant/30 cursor-pointer hover:bg-white/5"
-              />
-            </div>
-            {eventSearchCoords && (
-              <div className="flex items-center gap-2 bg-surface-container-high/40 border border-white/5 rounded-full px-4 py-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-secondary">Radius:</span>
-                <select 
-                  value={eventSearchRadius}
-                  onChange={(e) => setEventSearchRadius(Number(e.target.value))}
-                  className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-0 p-0 cursor-pointer"
-                >
-                  <option value={10}>10km</option>
-                  <option value={20}>20km</option>
-                  <option value={50}>50km</option>
-                  <option value={100}>100km</option>
-                  <option value={500}>500km</option>
-                </select>
-              </div>
-            )}
-            {(eventSearchDate || eventSearchLocation || eventSearchCoords) && (
-              <button 
-                onClick={() => { 
-                  setEventSearchDate(""); 
-                  setEventSearchLocation(""); 
-                  setEventSearchCoords(null);
-                }}
-                className="px-4 py-2 bg-error/10 text-error rounded-full text-[10px] font-black uppercase tracking-widest border border-error/20 hover:bg-error/20 transition-all text-center"
-              >
-                Clear
-              </button>
-            )}
           </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {isLoadingEvents ? (
@@ -464,6 +388,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
               event={event}
               isJoined={event.participants.includes(profile?.id || "")}
               isHost={event.hostId === profile?.id}
+              userLocation={userLocation}
               onEdit={() => {
                 setEditingEvent(event);
                 setShowCreateEventModal(true);
@@ -481,6 +406,16 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
           </div>
         )}
       </section>
+
+      {profile?.id && (
+        <button
+          onClick={() => setShowCreateEventModal(true)}
+          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border border-white/20"
+          title="Create Event"
+        >
+          <Plus size={28} />
+        </button>
+      )}
     </div>
   );
 };
@@ -563,11 +498,17 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                       >
                         <div className="flex items-center gap-4 ml-1">
                           <div className="relative shrink-0">
-                            <img 
-                              src={user.photoURL || `https://i.pravatar.cc/150?u=${user.id}`} 
-                              className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
-                              alt={user.displayName}
-                            />
+                            {user.photoURL ? (
+                              <img 
+                                src={user.photoURL} 
+                                className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
+                                alt={user.displayName}
+                              />
+                            ) : (
+                              <div className="flex h-14 w-14 rounded-2xl border-2 border-white/10 bg-surface/50 text-secondary shadow-2xl items-center justify-center transition-transform group-hover:scale-105 duration-500">
+                                <UserIcon size={28} />
+                              </div>
+                            )}
                             <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-secondary border-4 border-surface-container-highest shadow-xl" />
                           </div>
                           <div className="flex flex-col min-w-0">
@@ -618,14 +559,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
               )}
             </div>
 
-            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
-              <button 
-                onClick={onClose}
-                className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
-              >
-                Close Search
-              </button>
-            </div>
+
           </motion.div>
         </div>
       )}
@@ -763,16 +697,54 @@ interface EventCardProps {
   event: CommunityEvent;
   isJoined: boolean;
   isHost: boolean;
+  userLocation?: {lat: number, lng: number} | null;
   onEdit?: () => void;
   onViewMap?: () => void;
   onViewParticipants?: () => void;
   onSafetyRequirement?: () => void;
 }
 
-const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipants, onSafetyRequirement }: EventCardProps) => {
+const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, onViewParticipants, onSafetyRequirement }: EventCardProps) => {
   const { profile } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
   const isFull = event.maxParticipants > 0 && event.participants.length >= event.maxParticipants && !isJoined;
+  
+  const hasReported = event.reportedBy?.includes(profile?.id || "");
+
+  const handleReport = async () => {
+    if (!profile?.id || isHost) return;
+    try {
+      const eventRef = doc(db, "events", event.id);
+      
+      if (hasReported) {
+        await updateDoc(eventRef, {
+          reportedBy: arrayRemove(profile.id),
+          reportsCount: increment(-1)
+        });
+      } else {
+        const newReportsCount = (event.reportsCount || 0) + 1;
+        
+        if (newReportsCount >= 10) {
+          await deleteDoc(eventRef);
+          
+          // Also delete associated posts
+          const postsQuery = query(collection(db, "posts"), where("eventId", "==", event.id));
+          const postsSnapshot = await getDocs(postsQuery);
+          const deletePromises = postsSnapshot.docs.map(postDoc => 
+            deleteDoc(doc(db, "posts", postDoc.id))
+          );
+          await Promise.all(deletePromises);
+        } else {
+          await updateDoc(eventRef, {
+            reportedBy: arrayUnion(profile.id),
+            reportsCount: increment(1)
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error reporting event:", error);
+    }
+  };
 
   const handleJoin = async () => {
     if (!profile?.id || isHost) return;
@@ -803,6 +775,12 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
     }
   };
 
+  let distanceDisplay = null;
+  if (userLocation && event.lat && event.lng) {
+    const distance = getDistance(userLocation.lat, userLocation.lng, event.lat, event.lng);
+    distanceDisplay = distance < 1 ? "<1 km" : `${distance.toFixed(1)} km`;
+  }
+
   return (
     <motion.div 
       layout
@@ -813,18 +791,19 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
         isFull && "opacity-80"
       )}
     >
-      {isHost && (
-        <button 
-          onClick={onEdit}
-          className={cn(
-            "absolute top-4 z-20 rounded-full bg-black/40 backdrop-blur-md p-2.5 text-white border border-white/10 hover:bg-black/60 transition-all active:scale-95",
-            event.image ? "right-4" : "left-4"
-          )}
-          title="Edit Event"
-        >
-          <Edit2 size={16} />
-        </button>
-      )}
+      <div className="absolute top-4 right-4 z-20">
+        {(isHost || (!isHost && profile?.id)) && (
+          <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+            <ActionMenu 
+              items={isHost ? [
+                { label: "Edit Event", icon: <Edit2 size={16} />, onClick: () => onEdit && onEdit() }
+              ] : [
+                { label: hasReported ? "Remove Report" : "Report Event", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
+              ]}
+            />
+          </div>
+        )}
+      </div>
       {/* Event Image */}
       {event.image && (
         <div className="w-full h-48 overflow-hidden relative">
@@ -842,7 +821,7 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
         <div className="flex gap-2">
           <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
             <Calendar size={10} />
-            {event.date}
+            {formatDate(event.date)}
           </span>
           <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1.5">
             <Clock size={10} />
@@ -867,6 +846,11 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
       >
         <MapPin size={14} className="text-secondary group-hover/loc:scale-110 transition-transform" />
         <span className="text-xs font-bold text-on-surface-variant group-hover/loc:text-primary">{event.location}</span>
+        {distanceDisplay && (
+           <span className="text-[10px] bg-secondary/10 text-secondary border border-secondary/20 px-2 py-0.5 rounded-full font-black uppercase tracking-widest ml-2">
+             {distanceDisplay} away
+           </span>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5 mb-6 opacity-80">
@@ -877,7 +861,13 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
 
       <div className={cn("flex items-center justify-between", !isHost ? "mb-6" : "mb-0")}>
          <div className="flex items-center gap-3">
-            <img src={event.hostPhotoURL || `https://i.pravatar.cc/150?u=${event.hostId}`} className="h-8 w-8 rounded-full border border-white/10 object-cover" />
+            {event.hostPhotoURL ? (
+              <img src={event.hostPhotoURL} className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover" />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary">
+                <UserIcon size={16} />
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-[10px] font-black uppercase tracking-widest text-outline">Hosted By</span>
               <span className="text-[11px] font-bold text-on-surface">{event.hostDisplayName}</span>
@@ -890,22 +880,22 @@ const EventCard = ({ event, isJoined, isHost, onEdit, onViewMap, onViewParticipa
       </div>
 
       {!isHost && (
-        <div className="mt-auto flex items-center justify-end gap-4 pt-4 border-t border-white/5">
+        <div className="mt-auto flex justify-center pt-4 border-t border-white/5">
           <button 
             onClick={handleJoin}
             disabled={isJoining || (isFull && !isJoined)}
             className={cn(
-              "rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2",
+              "w-full max-w-[240px] rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2",
               isJoined 
                 ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" 
                 : "bg-secondary text-on-secondary shadow-lg shadow-secondary/10 hover:bg-secondary-container"
             )}
           >
             {isJoining ? (
-              <Loader2 size={12} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
             ) : isJoined ? (
               <>
-                <CheckCircle2 size={14} />
+                <CheckCircle2 size={16} />
                 Joined
               </>
             ) : isFull ? (
@@ -975,6 +965,8 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [isModerating, setIsModerating] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1018,42 +1010,72 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
     e.preventDefault();
     if (!profile?.id) return;
 
+    const newErrors: Record<string, string> = {};
+    if (!formData.title.trim()) newErrors.title = "A title is required for your expedition.";
+    if (!formData.description.trim()) newErrors.description = "Please provide a short description.";
+    if (!formData.location) newErrors.location = "Select a dive site or point on the map.";
+    if (!formData.date) newErrors.date = "Pick a date for your dive.";
+    if (!formData.time) newErrors.time = "Set a start time.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Auto-dismiss errors after 5 seconds
+      setTimeout(() => setErrors({}), 5000);
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
     try {
       if (eventToEdit) {
         await updateDoc(doc(db, "events", eventToEdit.id), {
-          ...formData,
-          timestamp: serverTimestamp() // Update timestamp to satisfy rules
+          title: filterProfanity(formData.title) || "Untitled Event",
+          description: filterProfanity(formData.description) || "",
+          location: filterProfanity(formData.location) || "",
+          lat: formData.lat || 0,
+          lng: formData.lng || 0,
+          date: formData.date || new Date().toISOString().split('T')[0],
+          time: formData.time || "",
+          maxParticipants: formData.maxParticipants || 0,
+          type: formData.type || "Social",
+          image: formData.image || "",
+          timestamp: serverTimestamp()
         });
       } else {
         const eventData = {
-          title: filterProfanity(formData.title),
-          description: filterProfanity(formData.description),
-          location: filterProfanity(formData.location),
-          lat: formData.lat,
-          lng: formData.lng,
-          date: formData.date,
-          time: formData.time,
-          maxParticipants: formData.maxParticipants,
-          type: formData.type,
-          image: formData.image,
+          title: filterProfanity(formData.title) || "Untitled Event",
+          description: filterProfanity(formData.description) || "",
+          location: filterProfanity(formData.location) || "",
+          lat: formData.lat || 0,
+          lng: formData.lng || 0,
+          date: formData.date || new Date().toISOString().split('T')[0],
+          time: formData.time || "",
+          maxParticipants: formData.maxParticipants || 0,
+          type: formData.type || "Social",
+          image: formData.image || "",
           hostId: profile.id,
-          hostDisplayName: profile.displayName,
+          hostDisplayName: profile.displayName || "Unknown Diver",
           hostPhotoURL: profile.photoURL || "",
           participants: [profile.id],
           timestamp: serverTimestamp()
         };
 
+        console.log("EVENT DATA", eventData);
+
         const eventDocRef = await addDoc(collection(db, "events"), eventData);
 
         if (formData.shareToFeed) {
+          const firstName = profile.displayName ? profile.displayName.split(' ')[0] : 'A diver';
+          const locationText = (eventData.location && !eventData.location.includes("Location at") && !eventData.location.includes("Current Location")) 
+            ? ` 📍 ${eventData.location}` 
+            : '';
           await addDoc(collection(db, "posts"), {
             eventId: eventDocRef.id,
             userId: profile.id,
-            userDisplayName: profile.displayName,
+            userDisplayName: profile.displayName || "Unknown Diver",
             userPhotoURL: profile.photoURL || "",
             location: eventData.location,
-            content: filterProfanity(`Just shared a new Expedition: ${eventData.title}! 🌊 Join us on ${eventData.date} - ${eventData.type} dive.`),
+            content: filterProfanity(`${firstName} has shared an event!\n\n${eventData.title}\n📅 ${eventData.date}${locationText}`),
             image: eventData.image || "",
             likesCount: 0,
             commentsCount: 0,
@@ -1093,17 +1115,36 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
               className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="p-8 border-b border-white/5 bg-surface-container-highest flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-3xl font-black italic tracking-tighter text-on-surface">
                     {eventToEdit ? "Edit Expedition" : "Plan Expedition"}
                   </h3>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary mt-1">
-                    {eventToEdit ? "Update your dive event" : "Host a Dive event"}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">
+                      {eventToEdit ? "Update your dive event" : "Host a Dive event"}
+                    </p>
+                    {Object.keys(errors).length > 0 && (
+                      <span className="text-[10px] font-black uppercase tracking-widest text-error bg-error/10 px-3 py-1 rounded-full border border-error/20 flex items-center gap-1.5 animate-pulse">
+                        <AlertCircle size={10} />
+                        Missing Required Fields
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-2 ml-4">
+                  {eventToEdit && (
+                    <div className="bg-surface-container-high rounded-full border border-white/10 p-1">
+                      <ActionMenu 
+                        items={[
+                          { label: "Delete Expedition", icon: <Trash2 size={16} />, onClick: () => setShowDeleteConfirm(true), destructive: true }
+                        ]}
+                      />
+                    </div>
+                  )}
+                  <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 no-scrollbar bg-surface-container-highest/50">
@@ -1156,33 +1197,57 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Expedition Title</label>
                     <input 
-                      required
                       type="text"
                       value={formData.title}
-                      onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={e => {
+                        setFormData(prev => ({ ...prev, title: e.target.value }));
+                        if (errors.title) setErrors(prev => { const n = {...prev}; delete n.title; return n; });
+                      }}
                       placeholder="e.g. Midnight Wreck Exploration"
-                      className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                      className={cn(
+                        "w-full rounded-2xl bg-white/5 border p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all",
+                        errors.title ? "border-error/50 bg-error/5" : "border-white/10"
+                      )}
                     />
+                    {errors.title && (
+                      <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.title}</p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Description</label>
                     <textarea 
-                      required
                       rows={3}
                       value={formData.description}
-                      onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={e => {
+                        setFormData(prev => ({ ...prev, description: e.target.value }));
+                        if (errors.description) setErrors(prev => { const n = {...prev}; delete n.description; return n; });
+                      }}
                       placeholder="Share details about the dive, what to bring, and expectations..."
-                      className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                      className={cn(
+                        "w-full rounded-2xl bg-white/5 border p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all",
+                        errors.description ? "border-error/50 bg-error/5" : "border-white/10"
+                      )}
                     />
+                    {errors.description && (
+                      <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.description}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Location</label>
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-outline">Location</label>
+                    </div>
                     <button 
                       type="button"
-                      onClick={() => setShowLocationPicker(true)}
-                      className="w-full group flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 p-4 text-left transition-all hover:border-secondary/50"
+                      onClick={() => {
+                        setShowLocationPicker(true);
+                        if (errors.location) setErrors(prev => { const n = {...prev}; delete n.location; return n; });
+                      }}
+                      className={cn(
+                        "w-full group flex items-center justify-between rounded-2xl bg-white/5 border p-4 text-left transition-all hover:border-secondary/50",
+                        errors.location ? "border-error/50 bg-error/5" : "border-white/10"
+                      )}
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
                         <MapPin className="text-secondary shrink-0" size={18} />
@@ -1193,8 +1258,10 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                           {formData.location || "Select location on map"}
                         </span>
                       </div>
-                      <ArrowUpRight size={16} className="text-outline/40 group-hover:text-secondary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                     </button>
+                    {errors.location && (
+                      <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.location}</p>
+                    )}
                   </div>
 
                 <div className="space-y-2">
@@ -1202,7 +1269,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   <select 
                     value={formData.type}
                     onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
-                    className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary"
+                    className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary appearance-none"
                   >
                     {["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"].map(t => (
                       <option key={t} value={t} className="bg-surface-container-highest">{t}</option>
@@ -1213,30 +1280,44 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" size={18} />
                     <input 
-                      required
                       type="date"
                       min={new Date().toISOString().split('T')[0]}
                       value={formData.date}
-                      onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                      className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none"
+                      onChange={e => {
+                        setFormData(prev => ({ ...prev, date: e.target.value }));
+                        if (errors.date) setErrors(prev => { const n = {...prev}; delete n.date; return n; });
+                      }}
+                      className={cn(
+                        "w-full rounded-2xl bg-white/5 border py-4 px-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none",
+                        errors.date ? "border-error/50 bg-error/5" : "border-white/10"
+                      )}
                     />
                   </div>
+                  {errors.date && (
+                    <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.date}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Time</label>
                   <div className="relative">
-                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" size={18} />
                     <input 
-                      required
                       type="time"
                       value={formData.time}
-                      onChange={e => setFormData(prev => ({ ...prev, time: e.target.value }))}
-                      className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none"
+                      onChange={e => {
+                        setFormData(prev => ({ ...prev, time: e.target.value }));
+                        if (errors.time) setErrors(prev => { const n = {...prev}; delete n.time; return n; });
+                      }}
+                      className={cn(
+                        "w-full rounded-2xl bg-white/5 border py-4 px-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none",
+                        errors.time ? "border-error/50 bg-error/5" : "border-white/10"
+                      )}
                     />
                   </div>
+                  {errors.time && (
+                    <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.time}</p>
+                  )}
                 </div>
 
 
@@ -1255,7 +1336,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   <div className="relative">
                     <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={18} />
                     {formData.maxParticipants === 0 ? (
-                      <div className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface flex items-center">
+                      <div className="w-full rounded-2xl bg-white/5 border-white/10 py-4 pr-4 pl-12 text-on-surface flex items-center">
                         <span className="text-xl">∞</span>
                         <span className="ml-2 text-xs font-bold text-outline/40">(Unlimited)</span>
                       </div>
@@ -1266,7 +1347,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                         max={100}
                         value={formData.maxParticipants}
                         onChange={e => setFormData(prev => ({ ...prev, maxParticipants: Math.max(2, parseInt(e.target.value) || 2) }))}
-                        className="w-full rounded-2xl bg-white/5 border-white/10 pl-12 p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                        className="w-full rounded-2xl bg-white/5 border-white/10 py-4 pr-4 pl-12 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
                       />
                     )}
                   </div>
@@ -1325,6 +1406,51 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   )}
                 </button>
               </div>
+
+              {eventToEdit && (
+                <div className="mt-4 pt-4 border-t border-error/10">
+                  {showDeleteConfirm && (
+                    <div className="rounded-2xl border border-error/20 bg-error/10 p-4">
+                      <p className="text-center text-sm font-bold text-on-surface mb-4">
+                        Are you sure you want to delete this expedition?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="flex-1 py-3 rounded-xl bg-white/5 text-on-surface text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await deleteDoc(doc(db, "events", eventToEdit.id));
+                              
+                              // Delete associated posts
+                              const postsQuery = query(collection(db, "posts"), where("eventId", "==", eventToEdit.id));
+                              const postsSnapshot = await getDocs(postsQuery);
+                              const deletePromises = postsSnapshot.docs.map(postDoc => 
+                                deleteDoc(doc(db, "posts", postDoc.id))
+                              );
+                              await Promise.all(deletePromises);
+
+                              setShowDeleteConfirm(false);
+                              onClose();
+                            } catch (err) {
+                              console.error("Error deleting event:", err);
+                            }
+                          }}
+                          className="flex-1 py-3 rounded-xl bg-error text-white text-xs font-black uppercase tracking-widest hover:bg-error/80 transition-colors"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
           </motion.div>
         </div>
@@ -1340,7 +1466,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
   );
 };
 
-const ParticipantsModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null }) => {
+const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState<UserProfile | null>(null);
@@ -1438,10 +1564,16 @@ const ParticipantsModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClos
                         className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group"
                       >
                         <div className="flex items-center gap-4">
-                          <img 
-                            src={member.photoURL || `https://i.pravatar.cc/150?u=${member.id}`} 
-                            className="h-12 w-12 rounded-xl object-cover border border-white/10" 
-                          />
+                          {member.photoURL ? (
+                            <img 
+                              src={member.photoURL} 
+                              className="h-12 w-12 shrink-0 rounded-xl object-cover border border-white/10" 
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-surface/50 text-secondary">
+                              <UserIcon size={24} />
+                            </div>
+                          )}
                           <div className="flex flex-col">
                             <span className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">{member.displayName}</span>
                             <div className="flex flex-col">
@@ -1483,12 +1615,14 @@ const ParticipantsModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClos
         isOpen={!!selectedParticipant}
         onClose={() => setSelectedParticipant(null)}
         user={selectedParticipant}
+        isBuddy={profile?.friends?.includes(selectedParticipant?.id || "") || false}
+        onRemoveBuddy={onRemoveBuddy}
       />
     </>
   );
 };
 
-const UserProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose: () => void, user: UserProfile | null }) => {
+const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -1541,10 +1675,16 @@ const UserProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose:
           >
             <div className="p-8 text-center flex flex-col items-center bg-gradient-to-b from-secondary/10 to-transparent shrink-0">
               <div className="relative mb-4">
-                <img 
-                  src={user.photoURL || `https://i.pravatar.cc/150?u=${user.id}`} 
-                  className="h-24 w-24 rounded-3xl border-4 border-secondary/20 object-cover shadow-2xl" 
-                />
+                {user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    className="h-24 w-24 rounded-3xl border-4 border-secondary/20 object-cover shadow-2xl" 
+                  />
+                ) : (
+                  <div className="flex h-24 w-24 rounded-3xl border-4 border-secondary/20 bg-surface/50 text-secondary shadow-2xl items-center justify-center">
+                    <UserIcon size={48} />
+                  </div>
+                )}
                 <div className="absolute -bottom-2 -right-2 bg-secondary p-2 rounded-xl border-4 border-surface-container-highest shadow-xl">
                   <HeartPulse size={16} className="text-on-secondary" />
                 </div>
@@ -1585,7 +1725,23 @@ const UserProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose:
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                  <Award size={12} />
+                  Diving Certifications
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(user.certificates || []).length > 0 ? (
+                    user.certificates?.map((cert: string) => (
+                      <span key={cert} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
+                        {cert}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
                   <Phone size={12} />
                   Contact Info
                 </div>
@@ -1651,7 +1807,18 @@ const UserProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose:
               </div>
             </div>
 
-            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5 space-y-3">
+              {isBuddy && onRemoveBuddy && (
+                <button 
+                  onClick={() => {
+                    onRemoveBuddy(user.id);
+                    onClose();
+                  }}
+                  className="w-full py-4 rounded-2xl bg-error/10 border border-error/20 text-error text-[10px] font-black uppercase tracking-widest transition-all hover:bg-error/20 active:scale-95"
+                >
+                  Remove Buddy
+                </button>
+              )}
               <button 
                 onClick={onClose}
                 className="w-full py-4 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95"

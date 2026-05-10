@@ -12,10 +12,10 @@ interface LayoutProps {
 
 export const Layout = ({ children, currentView, setView }: LayoutProps) => {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background text-on-background">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background text-on-background">
       <DesktopNav currentView={currentView} setView={setView} />
       
-      <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+      <div className="flex flex-1 flex-col overflow-hidden relative min-w-0 pt-[env(safe-area-inset-top)]">
         <main className="flex-1 flex flex-col overflow-y-auto no-scrollbar relative min-w-0 w-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -26,7 +26,7 @@ export const Layout = ({ children, currentView, setView }: LayoutProps) => {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className={cn(
                 "flex-1 w-full flex flex-col min-w-0",
-                currentView === 'explorer' ? 'pb-0' : 'pb-28 md:pb-6'
+                currentView === 'explorer' ? 'pb-0' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6'
               )}
             >
               {children}

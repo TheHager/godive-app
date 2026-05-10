@@ -4,6 +4,7 @@ export interface UserProfile {
   email: string;
   photoURL?: string;
   bio?: string;
+  certificates?: string[];
   rank: string;
   points: number;
   rankingPoints?: number;
@@ -67,6 +68,8 @@ export interface CommunityEvent {
   timestamp: string;
   lat?: number;
   lng?: number;
+  reportedBy?: string[];
+  reportsCount?: number;
 }
 
 export interface Post {
@@ -78,6 +81,8 @@ export interface Post {
   commentsCount: number;
   tags: string[];
   timestamp: string;
+  reportedBy?: string[];
+  reportsCount?: number;
 }
 
-export type View = "dashboard" | "explorer" | "feed" | "buddy" | "pricing" | "profile";
+export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile";

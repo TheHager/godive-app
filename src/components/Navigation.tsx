@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   BarChart3, 
   Map as MapIcon, 
@@ -12,7 +12,8 @@ import {
   LogOut,
   Compass,
   User as UserIcon,
-  CreditCard
+  CreditCard,
+  Users
 } from "lucide-react";
 import { View } from "../types";
 import { cn } from "../lib/utils";
@@ -34,14 +35,14 @@ const NavItem = ({ view, currentView, label, icon: Icon, onClick }: NavItemProps
     <button
       onClick={() => onClick(view)}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-all duration-300",
+        "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-all duration-300 relative",
         isActive ? "text-secondary" : "text-on-surface-variant opacity-60 hover:opacity-100"
       )}
     >
       <Icon size={20} className={cn(isActive && "fill-secondary/20")} />
-      <span className="text-[9px] font-medium uppercase tracking-wider">{label}</span>
+      <span className="text-[9px] font-medium uppercase tracking-wider text-center">{label}</span>
       {isActive && (
-        <span className="absolute bottom-1 h-1 w-1 rounded-full bg-secondary" />
+        <span className="absolute bottom-0 h-1 w-1 rounded-full bg-secondary" />
       )}
     </button>
   );
@@ -49,31 +50,29 @@ const NavItem = ({ view, currentView, label, icon: Icon, onClick }: NavItemProps
 
 export const BottomNav = ({ currentView, setView }: { currentView: View; setView: (v: View) => void }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around border-t border-white/5 bg-surface-container-high/60 px-1 py-1 backdrop-blur-3xl md:hidden">
-      <NavItem view="dashboard" currentView={currentView} label="Stats" icon={BarChart3} onClick={setView} />
-      <NavItem view="explorer" currentView={currentView} label="Map" icon={Compass} onClick={setView} />
-      <NavItem view="feed" currentView={currentView} label="Feed" icon={LayoutGrid} onClick={setView} />
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t border-white/5 bg-surface-container-high/60 px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] backdrop-blur-3xl md:hidden w-full max-w-full">
+      <NavItem view="friends" currentView={currentView} label="Friends" icon={Users} onClick={setView} />
       <NavItem view="buddy" currentView={currentView} label="Events" icon={Calendar} onClick={setView} />
-      <NavItem view="pricing" currentView={currentView} label="Pro" icon={CreditCard} onClick={setView} />
-      <NavItem view="profile" currentView={currentView} label="Profile" icon={UserIcon} onClick={setView} />
+      <NavItem view="dashboard" currentView={currentView} label="Start" icon={BarChart3} onClick={setView} />
+      <NavItem view="feed" currentView={currentView} label="Feed" icon={LayoutGrid} onClick={setView} />
+      <NavItem view="explorer" currentView={currentView} label="Map" icon={Compass} onClick={setView} />
     </nav>
   );
 };
 
 export const DesktopNav = ({ currentView, setView }: { currentView: View; setView: (v: View) => void }) => {
   return (
-    <aside className="hidden w-64 flex-col border-r border-white/5 bg-surface-container-high p-6 md:flex">
+    <aside className="hidden w-64 flex-col border-r border-white/5 bg-surface-container-high p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:flex">
       <div className="mb-10 px-2">
-        <h1 className="text-2xl font-black italic tracking-tighter text-primary">GoDive</h1>
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h1>
       </div>
       
       <nav className="flex flex-grow flex-col gap-2">
-        <DesktopNavItem view="dashboard" currentView={currentView} label="Dashboard" icon={BarChart3} onClick={setView} />
-        <DesktopNavItem view="explorer" currentView={currentView} label="Explorer Map" icon={Compass} onClick={setView} />
-        <DesktopNavItem view="feed" currentView={currentView} label="Community Feed" icon={LayoutGrid} onClick={setView} />
+        <DesktopNavItem view="friends" currentView={currentView} label="Friends & Rankings" icon={Users} onClick={setView} />
         <DesktopNavItem view="buddy" currentView={currentView} label="Expeditions & Events" icon={Calendar} onClick={setView} />
-        <DesktopNavItem view="pricing" currentView={currentView} label="Membership" icon={CreditCard} onClick={setView} />
-        <DesktopNavItem view="profile" currentView={currentView} label="Profile" icon={UserIcon} onClick={setView} />
+        <DesktopNavItem view="dashboard" currentView={currentView} label="Start" icon={BarChart3} onClick={setView} />
+        <DesktopNavItem view="feed" currentView={currentView} label="Community Feed" icon={LayoutGrid} onClick={setView} />
+        <DesktopNavItem view="explorer" currentView={currentView} label="Explorer Map" icon={Compass} onClick={setView} />
       </nav>
       
       <div className="mt-auto opacity-40 hover:opacity-100 transition-opacity">

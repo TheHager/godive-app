@@ -33,7 +33,8 @@ service cloud.firestore {
         && data.id == request.auth.uid
         && data.email is string && data.email.size() <= 200
         && data.displayName is string && data.displayName.size() <= 100
-        && data.subscriptionTier in ['free', 'pro', 'expedition'];
+        && data.subscriptionTier in ['free', 'pro', 'expedition']
+        && (!('rank' in data) || (data.rank is string && data.rank.size() <= 100));
     }
 
     function isValidDive(data) {
@@ -83,9 +84,12 @@ service cloud.firestore {
     }
 
     function isValidPost(data) {
-      return data.keys().hasAll(['userId', 'timestamp', 'content', 'likesCount', 'commentsCount', 'userDisplayName', 'userPhotoURL', 'location', 'image', 'tags'])
+      return data.keys().hasAll(['userId', 'timestamp', 'content', 'likesCount', 'commentsCount', 'userDisplayName', 'userPhotoURL', 'location', 'tags'])
         && data.userId == request.auth.uid
         && data.content is string && data.content.size() <= 5000
+        && (!('title' in data) || (data.title is string && data.title.size() <= 200))
+        && (!('image' in data) || (data.image is string && data.image.size() <= 10000000))
+        && (!('eventId' in data) || (data.eventId is string))
         && data.likesCount is int
         && data.commentsCount is int
         && (!('likedBy' in data) || data.likedBy is list)
@@ -110,16 +114,18 @@ service cloud.firestore {
     function isValidEvent(data) {
       return data.keys().hasAll(['title', 'description', 'location', 'date', 'hostId', 'timestamp', 'participants', 'maxParticipants', 'type', 'hostDisplayName', 'hostPhotoURL'])
         && data.hostId == request.auth.uid
-        && data.title is string && data.title.size() <= 100
-        && data.description is string && data.description.size() <= 2000
-        && data.location is string && data.location.size() <= 200
+        && data.title is string && data.title.size() <= 500
+        && data.description is string && data.description.size() <= 10000
+        && data.location is string && data.location.size() <= 500
         && data.date is string
         && data.timestamp == request.time
         && data.participants is list
-        && data.maxParticipants is int
+        && data.maxParticipants is number
         && data.type in ["Beginner Friendly", "Deep Water Cert", "Wreck Dive", "Night Dive", "Social"]
         && (!('image' in data) || (data.image is string && data.image.size() <= 10000000))
-        && (!('time' in data) || (data.time is string));
+        && (!('time' in data) || (data.time is string))
+        && (!('lat' in data) || data.lat is number)
+        && (!('lng' in data) || data.lng is number);
     }
 
     function isValidPrivateInfo(data) {
@@ -141,9 +147,8 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && (
-        (incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber'])) ||
-        (incoming().diff(existing()).affectedKeys().hasOnly(['photoURL']) && incoming().photoURL is string && incoming().photoURL.size() <= 500000) ||
-        (isValidUser(incoming()) && incoming().id == existing().id && incoming().email == existing().email)
+        (incoming().diff(existing()).affectedKeys().hasAny(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'rank', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber', 'photoURL'])) ||
+        (isValidUser(incoming()))
       );
       allow delete: if isOwner(userId);
 
@@ -226,12 +231,9 @@ service cloud.firestore {
     match /events/{eventId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(incoming().hostId) && isValidEvent(incoming());
-      allow update: if isSignedIn() && (
-        (isOwner(existing().hostId) && isValidEvent(incoming()) && incoming().hostId == existing().hostId) || 
-        (incoming().diff(existing()).affectedKeys().hasOnly(['participants']) && incoming().participants is list)
-      );
-      allow delete: if isSignedIn() && (resource == null || isOwner(existing().hostId));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
   }
 }

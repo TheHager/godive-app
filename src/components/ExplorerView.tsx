@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2 } from "lucide-react";
+import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../lib/utils";
+import { cn, formatDate } from "../lib/utils";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { useAuth } from "../contexts/AuthContext";
+import { ActionMenu } from "./ActionMenu";
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, increment, query, orderBy, limit, onSnapshot, writeBatch, getDoc, getDocs, where, Timestamp, runTransaction } from "firebase/firestore";
@@ -550,8 +551,8 @@ export const ExplorerView = () => {
               if (viewMode === 'sightings') return m.type !== 'site';
               return true;
             })
-            .map((marker) => (
-             <MapErrorBoundary key={marker.id}>
+            .map((marker, mIdx) => (
+             <MapErrorBoundary key={`marker-${marker.type}-${marker.id || mIdx}`}>
                <AdvancedMarker 
                   position={{lat: marker.lat, lng: marker.lng}} 
                   title={marker.label}
@@ -575,7 +576,7 @@ export const ExplorerView = () => {
                       <span>{marker.label}</span>
                       {marker.createdAt && (
                         <span className="text-[8px] text-on-surface-variant font-medium normal-case tracking-normal mt-0.5">
-                          {formatTimeAgo(marker.createdAt)}
+                          {formatDate(marker.createdAt)}
                         </span>
                       )}
                     </div>
@@ -644,9 +645,10 @@ export const ExplorerView = () => {
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col p-6 pb-24 md:pb-6">
-        <div className="pointer-events-auto mx-auto w-full max-w-md relative">
-          <div className="flex gap-2 rounded-full bg-surface-container-high/90 p-1.5 backdrop-blur-md shadow-lg border border-white/10 focus-within:border-primary/50 transition-colors">
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col p-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6 justify-between">
+        <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
+          <div className="pointer-events-auto w-full max-w-md relative flex-1">
+            <div className="flex gap-2 rounded-full bg-surface-container-high/90 p-1.5 backdrop-blur-md shadow-lg border border-white/10 focus-within:border-primary/50 transition-colors">
             <div className="flex flex-1 items-center gap-3 px-4">
               <Search size={18} className="text-on-surface-variant" />
               <input
@@ -720,32 +722,29 @@ export const ExplorerView = () => {
             )}
           </AnimatePresence>
         </div>
-
-        <div className="flex-1" />
-
-        <div className="pointer-events-auto flex w-full items-end justify-between gap-2 sm:gap-4 pb-4">
-          <div className="overflow-x-auto no-scrollbar rounded-full bg-surface-container-high/80 p-1 backdrop-blur-md shadow-lg border border-white/5">
-            <div className="flex gap-1 min-w-max">
-              <button 
-                onClick={() => setViewMode('all')}
-                className={cn("rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all", viewMode === 'all' ? "bg-surface-container-lowest text-on-surface shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
-              >All</button>
-              <button 
-                onClick={() => setViewMode('sites')}
-                className={cn("rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all", viewMode === 'sites' ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
-              >Sites</button>
-              <button 
-                onClick={() => setViewMode('sightings')}
-                className={cn("rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all", viewMode === 'sightings' ? "bg-surface-container-lowest text-secondary shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
-              >Sightings</button>
-              <button 
-                onClick={() => setViewMode('unverified')}
-                className={cn("rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all", viewMode === 'unverified' ? "bg-surface-container-lowest text-orange-500 shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
-              >Unverified</button>
-            </div>
+        <div className="pointer-events-auto relative shrink-0">
+          <div className="rounded-full bg-surface-container-high/90 backdrop-blur-md shadow-lg border border-white/10 p-1.5 flex items-center justify-center">
+            <ActionMenu 
+              triggerIcon={<Settings size={20} className="text-on-surface-variant" />}
+              buttonClassName="hover:bg-white/10 rounded-full w-[34px] h-[34px] flex items-center justify-center p-0 m-0 transition-colors"
+              items={[
+                { label: "View Mode", isHeader: true },
+                { label: "All", icon: <Filter size={16} />, onClick: () => setViewMode("all"), active: viewMode === "all" },
+                { label: "Sites", icon: <MapPin size={16} />, onClick: () => setViewMode("sites"), active: viewMode === "sites" },
+                { label: "Sightings", icon: <Fish size={16} />, onClick: () => setViewMode("sightings"), active: viewMode === "sightings" },
+                { label: "Unverified", icon: <MapPin size={16} />, onClick: () => setViewMode("unverified"), active: viewMode === "unverified" },
+              ]}
+            />
           </div>
-          
-          <div className="relative shrink-0">
+        </div>
+      </div>
+
+      <div className="flex-1" />
+
+      <div className="pointer-events-auto flex w-full items-end justify-between gap-2 sm:gap-4 pb-4">
+        <div className="flex-1" />
+        
+        <div className="relative shrink-0">
             <AnimatePresence>
               {showAddMenu && (
                 <motion.div 
@@ -778,8 +777,8 @@ export const ExplorerView = () => {
             <button 
               onClick={() => setShowAddMenu(!showAddMenu)}
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-2xl shadow-2xl transition-all active:scale-95",
-                showAddMenu ? "bg-surface-container-highest text-on-surface" : "bg-secondary text-on-secondary hover:bg-secondary-container"
+                "flex h-14 w-14 items-center justify-center rounded-[1.25rem] transition-all active:scale-95 border border-white/20 hover:scale-110",
+                showAddMenu ? "bg-surface-container-highest text-on-surface" : "bg-secondary text-on-secondary hover:bg-secondary-container hover:-rotate-12 shadow-[0_0_40px_rgba(76,214,251,0.3)]"
               )}
             >
               <Plus size={28} className={cn("transition-transform", showAddMenu && "rotate-45")} />
@@ -1102,7 +1101,7 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
                 onFocus={() => setShowSearchDropdown(true)}
                 onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
                 placeholder="Search marine life..."
-                className="w-full rounded-2xl bg-black/40 py-4.5 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="w-full rounded-2xl bg-black/40 py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
               />
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/20 z-10">
                 <Fish size={22} />
@@ -1238,11 +1237,13 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
             </div>
             <h2 className="text-xl font-black text-on-surface">{site.name}</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {profile?.id === site.userId && !isEditing && (
-              <button onClick={() => setIsEditing(true)} className="rounded-full p-2 text-primary hover:bg-white/5 transition-colors" title="Edit Site">
-                <Edit2 size={16} />
-              </button>
+              <ActionMenu 
+                items={[
+                  { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) }
+                ]}
+              />
             )}
             <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
                <X size={20} />

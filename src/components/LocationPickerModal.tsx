@@ -241,14 +241,14 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
                   {placesSuggestions.length > 0 && (
                      <div className="px-4 py-2 mt-2 text-[10px] font-black uppercase tracking-widest text-outline border-t border-white/5 pt-4">Global Locations</div>
                   )}
-                  {placesSuggestions.map(suggestion => {
+                  {placesSuggestions.map((suggestion, idx) => {
                     const isPrediction = 'place_id' in suggestion;
                     const id = isPrediction ? suggestion.place_id : suggestion.placePrediction?.placeId;
                     const text = isPrediction ? suggestion.description : suggestion.placePrediction?.text.text;
 
                     return (
                       <button 
-                        key={id}
+                        key={id ? `${id}-${idx}` : `place-${idx}`}
                         onClick={() => handlePlaceSelect(id, text)}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
                       >

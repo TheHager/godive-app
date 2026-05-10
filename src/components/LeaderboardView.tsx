@@ -90,6 +90,7 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [viewMode, setViewMode] = useState<"global" | "friends">("global");
   const [rankings, setRankings] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const { profile } = useAuth();
   const { pinnedBadgeId, badgeStats } = useUser();
   const allBadges = computeBadgesWithStats(badgeStats);
@@ -137,7 +138,8 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
              points: totalPoints,
              badge: rankInfo.title,
              photo: u.photoURL || null,
-             hasPinnedBadge: false
+             hasPinnedBadge: false,
+             userDocument: u
            };
         });
 
@@ -231,8 +233,9 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => setSelectedUser(rank)}
                   className={cn(
-                    "group flex items-center gap-2 sm:gap-6 rounded-3xl p-2 sm:p-4 transition-all border shadow-lg backdrop-blur-sm cursor-default overflow-hidden",
+                    "group flex items-center gap-2 sm:gap-6 rounded-3xl p-2 sm:p-4 transition-all border shadow-lg backdrop-blur-sm cursor-pointer overflow-hidden",
                     rankPos === 1 ? "bg-tertiary/10 border-tertiary/30 hover:border-tertiary/50" : 
                     rankPos === 2 ? "bg-surface-container/80 border-white/10 hover:border-white/30" :
                     rankPos === 3 ? "bg-surface-container/50 border-white/5 hover:border-white/20" :
@@ -398,6 +401,107 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
           </div>
         )}
       </AnimatePresence>
+      <PublicProfileModal 
+        isOpen={!!selectedUser} 
+        onClose={() => setSelectedUser(null)} 
+        user={selectedUser?.userDocument} 
+      />
+
     </div>
+  );
+};
+
+const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClose: () => void, user: any }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && user && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/80 backdrop-blur-xl"
+            onClick={onClose}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-[2rem] bg-surface-container-high shadow-2xl border border-white/10 flex flex-col max-h-[90vh]"
+          >
+            <div className="flex items-center justify-between border-b border-white/5 p-6 bg-surface-container-highest shrink-0">
+              <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Explorer Profile</h3>
+              <button onClick={onClose} className="rounded-full p-2 text-on-surface hover:bg-white/10 transition-colors bg-surface-container border border-white/5 shadow-md">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto no-scrollbar p-6 flex-1">
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-6 p-6 rounded-3xl bg-surface-container border border-white/5 shadow-inner">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName} className="h-24 w-24 rounded-full object-cover shadow-2xl border-4 border-surface-container ring-2 ring-white/10" />
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-surface-container-low shadow-inner border-2 border-white/5 ring-1 ring-white/10">
+                      <UserIcon size={40} className="text-secondary" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <h3 className="text-2xl font-black tracking-tight text-on-surface truncate">{user.displayName || "Unknown Explorer"}</h3>
+                    <div className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                       {user.rank || "Apprentice Diver"}
+                    </div>
+                  </div>
+                </div>
+                
+                {user.bio && (
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 shadow-sm">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 flex items-center gap-2"><UserIcon size={12}/> Biography</h4>
+                    <p className="text-sm font-medium text-on-surface whitespace-pre-wrap">{user.bio}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center shadow-sm">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Total Dives</div>
+                     <div className="text-xl font-black text-on-surface italic">{user.divesCount || 0}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center shadow-sm">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Exp. Points</div>
+                     <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                  <Award size={12} />
+                  Diving Certifications
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(user.certificates || user.certifications || []).length > 0 ? (
+                    (user.certificates || user.certifications).map((cert: string) => (
+                      <span key={cert} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
+                        {cert}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                   <UserIcon size={12} />
+                   Bio
+                </div>
+                <div>
+                   <p className="text-sm font-medium leading-relaxed text-on-surface-variant bg-surface-container rounded-2xl p-5 border border-white/5 shadow-inner min-h-[80px]">
+                     {user.bio || "This explorer is a person of few words, letting their dives speak for themselves."}
+                   </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

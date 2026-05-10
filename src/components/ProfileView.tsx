@@ -3,13 +3,18 @@ import { useAuth } from "../contexts/AuthContext";
 import { auth, db } from "../lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import { doc, updateDoc, getDoc, setDoc, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
-import { LogOut, User as UserIcon, Phone, HeartPulse, UserPlus, Save, Edit3, X, Trash2, AlertTriangle } from "lucide-react";
+import { LogOut, User as UserIcon, Phone, HeartPulse, UserPlus, Save, Edit3, X, Trash2, AlertTriangle, CreditCard, Star, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPrivateInfo } from "../types";
+import { View, UserPrivateInfo } from "../types";
 import { filterProfanity } from "../lib/profanity";
+import { ActionMenu } from "./ActionMenu";
 import { calculateLevel, getRankInfo } from "../constants/ranks";
 
-export const ProfileView = () => {
+interface ProfileViewProps {
+  setView?: (v: View) => void;
+}
+
+export const ProfileView = ({ setView }: ProfileViewProps) => {
   const { profile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -18,6 +23,9 @@ export const ProfileView = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState(profile?.displayName || "");
+  const [editBio, setEditBio] = useState(profile?.bio || "");
+  const [editCertificates, setEditCertificates] = useState<string[]>(profile?.certificates || []);
+  const [newCertificate, setNewCertificate] = useState("");
   const [totalPoints, setTotalPoints] = useState<number>(profile?.points || 0);
 
   useEffect(() => {
@@ -83,7 +91,13 @@ export const ProfileView = () => {
     if (profile?.displayName) {
       setEditDisplayName(profile.displayName);
     }
-  }, [profile?.displayName]);
+    if (profile?.bio !== undefined) {
+      setEditBio(profile.bio);
+    }
+    if (profile?.certificates) {
+      setEditCertificates(profile.certificates);
+    }
+  }, [profile?.displayName, profile?.bio, profile?.certificates]);
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
@@ -173,6 +187,17 @@ export const ProfileView = () => {
       
       if (filteredName !== profile.displayName) {
         userUpdates.displayName = filteredName;
+      }
+
+      const filteredBio = filterProfanity(editBio.trim());
+      if (filteredBio !== profile.bio) {
+        userUpdates.bio = filteredBio;
+      }
+      
+      // We don't filter certificates with profanity filter since they are typed by the user, but we can if we want.
+      // E.g., Open Water Diver
+      if (JSON.stringify(editCertificates) !== JSON.stringify(profile.certificates || [])) {
+        userUpdates.certificates = editCertificates;
       }
       
       if (filteredPhone !== profile.phoneNumber) {
@@ -412,15 +437,19 @@ export const ProfileView = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="p-3 md:p-6 max-w-2xl mx-auto flex flex-col gap-3 md:gap-6 pb-8"
+      className="p-3 md:p-6 max-w-2xl mx-auto flex flex-col gap-3 md:gap-6 pb-2"
     >
       <div className="flex flex-col items-center justify-center p-3 md:p-8 bg-surface-container-high rounded-3xl border border-white/5 shadow-xl relative overflow-hidden">
-        <button 
-          onClick={() => setIsEditing(!isEditing)}
-          className="absolute top-4 right-4 p-2 rounded-xl bg-surface-container hover:bg-surface transition-colors border border-white/5 text-on-surface z-10 flex items-center justify-center"
-        >
-          {isEditing ? <X size={20} className="text-error" /> : <Edit3 size={20} />}
-        </button>
+        <div className="absolute top-4 right-4 z-10">
+          <ActionMenu 
+            triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
+            buttonClassName="hover:bg-white/10"
+            items={[
+              { label: isEditing ? "Cancel Edit" : "Edit Profile", icon: isEditing ? <X size={16} /> : <Edit3 size={16} />, onClick: () => setIsEditing(!isEditing) },
+              { label: "Delete Profile", icon: <Trash2 size={16} />, onClick: () => setShowDeleteConfirm(true), destructive: true }
+            ]}
+          />
+        </div>
         
         <label className="relative mb-6 flex-shrink-0 cursor-pointer group mt-4">
           <input 
@@ -481,6 +510,92 @@ export const ProfileView = () => {
         </div>
 
         <div className="w-full space-y-3 md:space-y-4">
+          <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border border-white/5 space-y-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <UserIcon className="text-secondary" size={18} />
+                <h3 className="font-black italic uppercase tracking-widest text-xs">Biography</h3>
+              </div>
+              {isEditing ? (
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Tell us about your diving journey..."
+                  rows={3}
+                  className="w-full bg-surface-container p-3 rounded-xl border border-white/5 outline-none text-sm font-medium resize-none focus:border-secondary transition-colors"
+                />
+              ) : (
+                <p className="text-sm text-on-surface-variant font-medium whitespace-pre-wrap">{profile?.bio || "No biography provided yet."}</p>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="text-tertiary" size={18} />
+                <h3 className="font-black italic uppercase tracking-widest text-xs">Certifications</h3>
+              </div>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={newCertificate}
+                      onChange={e => setNewCertificate(e.target.value)}
+                      placeholder="e.g. PADI Open Water"
+                      className="flex-1 bg-surface-container p-3 rounded-xl border border-white/5 outline-none text-sm font-medium focus:border-secondary transition-colors"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newCertificate.trim()) {
+                            setEditCertificates([...editCertificates, newCertificate.trim()]);
+                            setNewCertificate("");
+                          }
+                        }
+                      }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (newCertificate.trim()) {
+                          setEditCertificates([...editCertificates, newCertificate.trim()]);
+                          setNewCertificate("");
+                        }
+                      }}
+                      className="bg-tertiary text-on-tertiary px-4 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-tertiary/90 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {editCertificates.map((cert, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-surface py-1.5 pl-3 pr-1.5 rounded-lg border border-white/10">
+                        <span className="text-xs font-bold">{cert}</span>
+                        <button 
+                          onClick={() => setEditCertificates(editCertificates.filter((_, idx) => idx !== i))}
+                          className="p-1 rounded-md hover:bg-white/10 text-on-surface-variant hover:text-error transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {profile?.certificates && profile.certificates.length > 0 ? (
+                    profile.certificates.map((cert, i) => (
+                      <div key={i} className="bg-surface py-1.5 px-3 rounded-lg border border-white/10">
+                        <span className="text-xs font-bold text-on-surface">{cert}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-on-surface-variant font-medium">No certifications added yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border border-white/5">
             <div className="flex items-center gap-2 mb-4">
               <HeartPulse className="text-error" size={18} />
@@ -625,20 +740,24 @@ export const ProfileView = () => {
             )}
           </div>
 
-          <div className="flex w-full flex-col gap-3">
+          <div className="flex w-full flex-col gap-3 mt-6">
+            {setView && (
+              <button 
+                onClick={() => setView('pricing')}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-tertiary/20 to-secondary/20 py-4 text-white transition-colors hover:from-tertiary/30 hover:to-secondary/30 font-black tracking-widest uppercase border border-secondary/20 shadow-[0_0_15px_rgba(76,214,251,0.15)] group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-tertiary/0 via-white/10 to-secondary/0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
+                <Star size={20} className="text-secondary fill-secondary/50 group-hover:scale-110 transition-transform" />
+                <span className="bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent group-hover:text-white transition-colors text-sm font-black uppercase tracking-tighter">GO DIVE PRO</span>
+              </button>
+            )}
+            
             <button 
               onClick={() => signOut(auth)}
-              className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-surface-container-high/50 p-4 text-on-surface transition-colors hover:bg-white/5 font-black tracking-widest uppercase border border-white/5"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-surface-container-high/50 py-4 text-on-surface transition-colors hover:bg-white/5 font-black tracking-widest uppercase border border-white/5"
             >
               <LogOut size={20} />
-              Log Out
-            </button>
-            <button 
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-error/10 p-4 text-error transition-colors hover:bg-error/20 font-black tracking-widest uppercase border border-error/10"
-            >
-              <Trash2 size={20} />
-              Delete Profile
+              <span className="text-sm">Log Out</span>
             </button>
           </div>
         </div>

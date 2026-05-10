@@ -12,18 +12,51 @@ import {
   ArrowDown,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
   Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock,
-  Share2, Upload, Crosshair, HelpCircle
+  Share2, Upload, Crosshair, HelpCircle,
+  Wind,
+  Snowflake,
+  Mountain,
+  FlaskConical,
+  Activity,
+  Timer,
+  Droplet,
+  Shield,
+  HardHat,
+  Ship,
+  TrendingDown,
+  Rocket
 } from "lucide-react";
 
-export const BADGE_SCHEMA = [
-  { id: 'recreational', label: "Rec Diver", icon: Waves, color: "primary", unit: "dives", thresholds: [5, 10, 25, 50, 100], desc: "Log recreational dives." },
-  { id: 'deep', label: "Deep Specialist", icon: ArrowDown, color: "secondary", unit: "dives", thresholds: [5, 10, 20, 40, 80], desc: "Log dives deeper than 30m." },
-  { id: 'night', label: "Night Owl", icon: Moon, color: "primary", unit: "dives", thresholds: [5, 10, 25, 50, 100], desc: "Complete dives after sunset." },
-  { id: 'cave', label: "Cavern Explorer", icon: Box, color: "secondary", unit: "dives", thresholds: [3, 7, 15, 30, 50], desc: "Navigate through caves and caverns." },
-  { id: 'photography', label: "Photo Master", icon: Camera, color: "tertiary", unit: "dives", thresholds: [5, 15, 30, 60, 120], desc: "Log dives focused on photography." },
-  { id: 'navigation', label: "Master Navigator", icon: Compass, color: "tertiary", unit: "dives", thresholds: [5, 10, 25, 50, 100], desc: "Dives focused on precise navigation." },
-  { id: 'rescue', label: "Guardian", icon: HeartPulse, color: "primary", unit: "dives", thresholds: [1, 5, 10, 25, 50], desc: "Rescue training or related activities." },
-  { id: 'training', label: "Scholar", icon: Award, color: "secondary", unit: "dives", thresholds: [5, 10, 25, 50, 100], desc: "Training and certification dives." },
+export const BADGE_SCHEMA: any[] = [
+  // Recreational Diving
+  { id: 'Drift Dive', label: 'Drift Master', icon: Waves, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Master the art of riding the currents.' },
+  { id: 'Enriched Dive (nitrox)', label: 'Oxygen Optimizer', icon: Wind, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Extend your bottom time with enriched air.' },
+  { id: 'Deep Dive', label: 'Abyss Explorer', icon: ArrowDown, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Venture into the deep blue (30m+).' },
+  { id: 'Night Dive', label: 'Night Owl', icon: Moon, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Discover the ocean’s secrets after sunset.' },
+  { id: 'Wreck Dive', label: 'Iron Ghost Hunter', icon: Ship, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Explore the history of sunken vessels.' },
+  { id: 'Ice Dive', label: 'Frost Bitten', icon: Snowflake, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Brave the freezing waters beneath the ice.' },
+  { id: 'Altitude Dive', label: 'Mountain Diver', icon: Mountain, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Submerge in high-altitude lakes.' },
+
+  // Technical diving
+  { id: 'Cave Dive', label: 'Dark Zone Navigator', icon: Box, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Master the complexity of overhead environments.' },
+  { id: 'Rebreather Diving', label: 'Silent Voyager', icon: Activity, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Dive without bubbles using CCR technology.' },
+  { id: 'Deep Sea/Trimix Diving', label: 'Trimix Titan', icon: FlaskConical, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Go beyond the limits of air with helium mixes.' },
+
+  // Freediving
+  { id: 'Constant Weight (CWT)', label: 'Monofin Monarch', icon: Anchor, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Reach new depths with a single breath and weight.' },
+  { id: 'Constant No Fins (CNF)', label: 'Pure Human', icon: HeartPulse, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'The ultimate test of technique without any fins.' },
+  { id: 'Free Immersion (FIM)', label: 'Line Puller', icon: ArrowDown, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Pull yourself into the depths and back.' },
+  { id: 'Variable Weight (VWT)', label: 'Sled Rider', icon: TrendingDown, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Descend fast with weight and ascend on your own.' },
+  { id: 'No Limits (NLT)', label: 'The Limitless', icon: Rocket, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Push the absolute boundaries of human depth.' },
+
+  // Pool Disciplines
+  { id: 'Static Apnea (STA)', label: 'Zen Master', icon: Timer, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Master the mind and hold your breath in total stillness.' },
+  { id: 'Dynamic Apnea (DYN)', label: 'Pool Glider', icon: Droplet, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Cover incredible distances on a single breath.' },
+
+  // Professional & Scientific Diving
+  { id: 'Commercial Diving', label: 'Underground Worker', icon: HardHat, color: 'tertiary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Build and repair in the world\'s toughest environments.' },
+  { id: 'Scientific Diving', label: 'Marine Researcher', icon: Globe, color: 'primary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Dive for data and protect our oceans.' },
+  { id: 'Public Safety Diving', label: 'Guardian Diver', icon: Shield, color: 'secondary', unit: 'dives', thresholds: [1, 5, 10, 25, 50], desc: 'Serve and protect in challenging underwater missions.' },
 ];
 
 export const TIER_NAMES = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];

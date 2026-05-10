@@ -13,12 +13,14 @@ import {
   Calendar,
   Search,
   ArrowDown,
+  ArrowLeft,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
   Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock,
   Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../lib/utils";
+import { cn, formatDate } from "../lib/utils";
+import { ActionMenu } from "./ActionMenu";
 import { computeBadgesWithStats } from "../constants/badges";
 import { RANKS, calculateLevel, getRankInfo } from "../constants/ranks";
 import { useUser } from "../contexts/UserContext";
@@ -28,6 +30,7 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, li
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const API_KEY =
   process.env.GOOGLE_MAPS_PLATFORM_KEY ||
@@ -36,7 +39,7 @@ const API_KEY =
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
-export const DashboardView = () => {
+export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
   const { profile } = useAuth();
   const { badgeStats: contextBadgeStats, updateBadgeStats } = useUser();
   const [activeHistory, setActiveHistory] = useState<'dives' | 'sightings' | null>(null);
@@ -47,12 +50,14 @@ export const DashboardView = () => {
 
   const [allDives, setAllDives] = useState<any[]>([]);
   const [allSightings, setAllSightings] = useState<any[]>([]);
+  const [myEvents, setMyEvents] = useState<any[]>([]);
 
   useEffect(() => {
     if (!profile?.id) return;
     
     const qD = query(collection(db, "dives"), where("userId", "==", profile.id), orderBy("timestamp", "desc"));
     const qS = query(collection(db, "sightings"), where("userId", "==", profile.id), orderBy("timestamp", "desc"));
+    const qE = query(collection(db, "events"), where("participants", "array-contains", profile.id));
 
     const unsubscribeD = onSnapshot(qD, (snapshot) => {
       setAllDives(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -66,9 +71,23 @@ export const DashboardView = () => {
       handleFirestoreError(error, OperationType.GET, "sightings");
     });
 
+    const unsubscribeE = onSnapshot(qE, (snapshot) => {
+      // sort events by date locally as we can't sort by timestamp and use array-contains on another field unless index is built
+      const evs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      evs.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+        const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+        return dateA - dateB;
+      });
+      setMyEvents(evs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "events");
+    });
+
     return () => {
       unsubscribeD();
       unsubscribeS();
+      unsubscribeE();
     };
   }, [profile?.id]);
 
@@ -172,7 +191,7 @@ export const DashboardView = () => {
   const earnedBadges = allBadges.filter(b => b.earned);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
+    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
       {/* Immersive Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#0ea5e925_0%,transparent_50%)]" />
@@ -182,15 +201,30 @@ export const DashboardView = () => {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-1 md:px-8 md:pt-4">
-        <header className="mb-2 flex flex-col gap-6 md:mb-4 md:flex-row md:items-end md:justify-between">
+        <header className="mb-2 flex items-center justify-between md:mb-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
             <h1 className="text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl md:text-7xl">
-              GoDive<span className="text-secondary">.</span>
+              GO<span className="text-secondary">DIVE</span>
             </h1>
           </motion.div>
+          
+          <motion.button 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => onNavigateToProfile?.()}
+            className="h-14 w-14 md:h-16 md:w-16 rounded-full overflow-hidden border-2 border-white/10 hover:border-secondary transition-colors shrink-0"
+          >
+            {profile?.photoURL ? (
+              <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full bg-surface-container flex items-center justify-center">
+                <UserIcon size={28} className="text-on-surface-variant" />
+              </div>
+            )}
+          </motion.button>
         </header>
 
         <section 
@@ -202,13 +236,6 @@ export const DashboardView = () => {
           <div className="p-6 md:p-8 relative z-10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-6">
               <div className="flex items-center gap-4">
-                <div className="relative h-12 w-12 overflow-hidden rounded-2xl border-2 border-secondary/50 shadow-lg shadow-secondary/20 md:h-16 md:w-16 md:rounded-3xl shrink-0 flex items-center justify-center bg-surface-container">
-                  {profile?.photoURL ? (
-                    <img src={profile.photoURL} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    <UserIcon size={24} className="text-secondary" />
-                  )}
-                </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50 md:text-xs">Current Rank</p>
                   <h3 className="text-2xl font-black text-secondary leading-tight italic md:text-4xl whitespace-nowrap">{rankInfo.title}</h3>
@@ -283,6 +310,55 @@ export const DashboardView = () => {
           />
         </div>
 
+        {myEvents.length > 0 && (
+          <section className="w-full min-w-0 pb-10">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-2xl font-bold tracking-tight text-on-surface">Your Events</h3>
+            </div>
+            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-8 md:px-8 snap-x snap-mandatory">
+              {myEvents.map((e) => {
+                const isHost = e.hostId === profile?.id;
+                return (
+                  <div 
+                    key={e.id} 
+                    onClick={() => onNavigateToEvent?.(e.id)}
+                    className="snap-start shrink-0 w-64 p-5 rounded-3xl bg-surface-container-high/40 border border-white/5 shadow-lg relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Calendar size={64} />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
+                          {isHost ? 'Hosting' : 'Joined'}
+                        </span>
+                        <span className="text-xs font-bold text-on-surface-variant/80">{e.date}</span>
+                      </div>
+                      <h4 className="font-black italic text-lg text-on-surface mb-1 truncate">{e.title}</h4>
+                      <div className="flex items-center text-xs font-medium text-on-surface-variant mb-4 truncate">
+                        <MapPin size={12} className="mr-1 inline text-primary"/>{e.location}
+                      </div>
+
+                      <div className="flex -space-x-2">
+                        {e.participants?.slice(0, 5).map((p: string, i: number) => (
+                           <div key={i} className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-container bg-surface/50 text-secondary pointer-events-none overflow-hidden">
+                             <UserIcon size={12} />
+                           </div>
+                        ))}
+                        {(e.participants?.length || 0) > 5 && (
+                          <div className="h-6 w-6 rounded-full border-2 border-surface-container bg-surface flex items-center justify-center pointer-events-none">
+                            <span className="text-[8px] font-bold text-on-surface">+{e.participants.length - 5}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <section className="w-full min-w-0 pb-10">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-2xl font-bold tracking-tight text-on-surface">Dive Badges</h3>
@@ -295,9 +371,9 @@ export const DashboardView = () => {
           </div>
           
           {earnedBadges.length > 0 ? (
-            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory">
-              {earnedBadges.map(badge => (
-                <div key={badge.id} className="snap-start shrink-0 cursor-pointer" onClick={() => setActiveBadgeId(badge.id)}>
+            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-8 md:px-8 snap-x snap-mandatory">
+              {earnedBadges.map((badge, idx) => (
+                <div key={`badge-${badge.id}-${idx}`} className="snap-start shrink-0 cursor-pointer" onClick={() => setActiveBadgeId(badge.id)}>
                   <BadgeCard {...badge} id={badge.id} />
                 </div>
               ))}
@@ -527,6 +603,46 @@ const HistoryModal = ({
   const [activeTab, setActiveTab] = useState<'log' | 'collection'>(isDives ? 'log' : 'collection');
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<'all' | 'spotted' | 'unspotted'>('all');
+  const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
+
+  const speciesLogMap = React.useMemo(() => {
+    const map = new window.Map<string, { count: number, appearances: any[] }>();
+    
+    const addSighting = (species: string, item: any, source: string) => {
+      const sp = species.trim();
+      if (!sp) return;
+      const key = MARINE_LIFE_DATABASE.find(s => s.toLowerCase() === sp.toLowerCase()) || sp;
+      if (!map.has(key)) map.set(key, { count: 0, appearances: [] });
+      const entry = map.get(key)!;
+      entry.count += 1;
+      entry.appearances.push({...item, source});
+    };
+
+    allSightings.forEach(item => {
+      const s = item.species || item.label;
+      if (s) addSighting(s, item, 'sighting');
+    });
+    
+    allDives.forEach(item => {
+      if (item.fishSpotted && Array.isArray(item.fishSpotted)) {
+        item.fishSpotted.forEach((f: string) => addSighting(f, item, 'dive'));
+      }
+    });
+
+    map.forEach(value => {
+      value.appearances.sort((a, b) => {
+        const timeA = a.timestamp?.seconds || 0;
+        const timeB = b.timestamp?.seconds || 0;
+        if (timeA !== timeB) return timeB - timeA;
+        
+        const dateA = a.date || "";
+        const dateB = b.date || "";
+        return dateB.localeCompare(dateA);
+      });
+    });
+    
+    return map;
+  }, [allSightings, allDives]);
 
   const items = isDives ? allDives : allSightings;
   const loading = false; // Data is already loaded by parent
@@ -612,7 +728,43 @@ const HistoryModal = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar bg-gradient-to-b from-transparent to-black/20">
-          {activeTab === 'collection' ? (
+          {selectedSpecies ? (
+            <div className="flex flex-col h-full w-full">
+              <div className="flex items-center gap-3 mb-6">
+                <button 
+                  onClick={() => setSelectedSpecies(null)}
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h4 className="text-xl font-black italic uppercase tracking-tighter text-white">
+                  {selectedSpecies} Sightings
+                </h4>
+              </div>
+              <div className="flex flex-col gap-4 pb-8">
+                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: any, i: number) => {
+                  const isDive = item.source === 'dive';
+                  return (
+                  <motion.div 
+                    key={`${selectedSpecies}-${i}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="group relative overflow-hidden p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300"
+                  >
+                    <div className="flex justify-between items-center gap-4">
+                      <h4 className={cn("text-lg font-black tracking-tight leading-tight md:text-xl", isDive ? "text-primary" : "text-secondary")}>
+                        {item.location || "Unknown Location"}
+                      </h4>
+                      <span className="flex shrink-0 items-center gap-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40 px-2 py-1 rounded-lg bg-white/5 border border-white/5 whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
+                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
+                      </span>
+                    </div>
+                  </motion.div>
+                )})}
+              </div>
+            </div>
+          ) : activeTab === 'collection' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-8">
               {MARINE_LIFE_DATABASE
                 .filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -624,14 +776,21 @@ const HistoryModal = ({
                 .map(species => {
                 const isDiscovered = discoveredSpecies.has(species);
                 const rarity = getSpeciesRarity(species);
+                const details = speciesLogMap.get(species);
+                const count = details?.count || 0;
                 
                 return (
                   <div 
                     key={species}
+                    onClick={() => {
+                      if (isDiscovered) {
+                        setSelectedSpecies(species);
+                      }
+                    }}
                     className={cn(
                       "p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center text-center gap-2",
                       isDiscovered 
-                        ? "bg-secondary/10 border-secondary/30 shadow-lg shadow-secondary/5" 
+                        ? "bg-secondary/10 border-secondary/30 shadow-lg shadow-secondary/5 cursor-pointer hover:bg-secondary/20" 
                         : "bg-white/5 border-white/5 grayscale opacity-40 hover:opacity-100 transition-opacity"
                     )}
                   >
@@ -648,14 +807,21 @@ const HistoryModal = ({
                       {species}
                     </span>
                     {isDiscovered && (
-                      <span className={cn(
-                        "text-[7px] font-black uppercase px-2 py-0.5 rounded-full",
-                        rarity === 'rare' ? "bg-amber-500/20 text-amber-500" : 
-                        rarity === 'uncommon' ? "bg-secondary/20 text-secondary" : 
-                        "bg-white/10 text-white/40"
-                      )}>
-                        {rarity}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={cn(
+                          "text-[7px] font-black uppercase px-2 py-0.5 rounded-full",
+                          rarity === 'rare' ? "bg-amber-500/20 text-amber-500" : 
+                          rarity === 'uncommon' ? "bg-secondary/20 text-secondary" : 
+                          "bg-white/10 text-white/40"
+                        )}>
+                          {rarity}
+                        </span>
+                        {count > 0 && (
+                          <span className="text-[10px] font-black uppercase text-secondary/80 tracking-widest mt-0.5">
+                            {count} {count === 1 ? 'Sighting' : 'Sightings'}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -721,7 +887,7 @@ const HistoryModal = ({
                         )}
                       </div>
                       <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40 px-2 py-1 rounded-lg bg-white/5 border border-white/5 whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
-                        <Calendar size={10} className="text-secondary md:size-3" /> {item.date || "Observed"}
+                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
                       </span>
                     </div>
 
@@ -758,8 +924,8 @@ const HistoryModal = ({
                           <Fish size={10} className="text-secondary" /> Marine Life Spotted
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {item.fishSpotted.map((fish: string, idx: number) => (
-                            <span key={idx} className="text-[10px] font-bold px-3 py-1.5 rounded-xl bg-white/5 text-on-surface hover:bg-secondary/20 hover:text-secondary transition-colors border border-white/5 group-hover:border-secondary/20">
+                          {item.fishSpotted.map((fish: string, fIdx: number) => (
+                            <span key={`history-fish-${item.id}-${fIdx}`} className="text-[10px] font-bold px-3 py-1.5 rounded-xl bg-white/5 text-on-surface hover:bg-secondary/20 hover:text-secondary transition-colors border border-white/5 group-hover:border-secondary/20">
                               {fish}
                             </span>
                           ))}
@@ -781,9 +947,9 @@ const HistoryModal = ({
                       <div className="mt-4">
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30 mb-3">Expedition Media</p>
                         <div className="grid grid-cols-4 gap-3">
-                          {item.photos.map((p: string, idx: number) => (
+                          {item.photos.map((p: string, pIdx: number) => (
                             <motion.div 
-                              key={idx} 
+                              key={`history-photo-${item.id}-${pIdx}`} 
                               whileHover={{ scale: 1.05, y: -2 }}
                               onClick={() => setSelectedImage(p)}
                               className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-secondary transition-all shadow-xl"
@@ -802,9 +968,7 @@ const HistoryModal = ({
           )}
         </div>
 
-      </motion.div>
-
-      {/* Full Image Box */}
+      </motion.div>      {/* Full Image Box */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div 
@@ -817,17 +981,26 @@ const HistoryModal = ({
               setSelectedImage(null);
             }}
           >
-            <div className="relative max-w-full max-h-full">
-              <img 
-                src={selectedImage} 
-                className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain border border-white/10" 
-                alt="Dive Preview"
-              />
+            <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <TransformWrapper
+                initialScale={1}
+                minScale={0.5}
+                maxScale={4}
+                centerOnInit={true}
+              >
+                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
+                  <img 
+                    src={selectedImage} 
+                    className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain border border-white/10 cursor-grab active:cursor-grabbing" 
+                    alt="Dive Preview"
+                  />
+                </TransformComponent>
+              </TransformWrapper>
               <button 
                 onClick={() => setSelectedImage(null)}
-                className="absolute -top-4 -right-4 p-3 rounded-full bg-surface-container-highest text-on-surface border border-white/10 shadow-xl"
+                className="absolute top-6 right-6 p-3 rounded-full bg-surface-container-highest text-on-surface border border-white/10 shadow-xl z-10"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
           </motion.div>
@@ -879,13 +1052,13 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
         className="relative w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh] rounded-[32px] bg-surface-container-high border border-white/10 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-white/5">
+        <div className="flex items-center justify-center p-6 border-b border-white/5 relative">
           <h3 className="text-2xl font-black italic tracking-tight text-on-surface">
             All Badges
           </h3>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full text-on-surface-variant hover:bg-white/5 transition-colors"
+            className="absolute right-6 p-2 rounded-full text-on-surface-variant hover:bg-white/5 transition-colors"
           >
             <X size={24} />
           </button>
@@ -893,7 +1066,7 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
 
         <div className="flex-1 overflow-y-auto p-6 no-scrollbar flex flex-col gap-10">
           <div>
-            <h4 className="text-xl font-black italic text-on-surface mb-6 flex items-center gap-2">
+            <h4 className="text-xl font-black italic text-on-surface mb-6 flex justify-center items-center gap-2">
               <Award className="text-secondary" /> Earned ({earned.length})
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -919,7 +1092,7 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
                   <p className="text-[10px] font-medium text-on-surface-variant text-center px-1 line-clamp-2">{b.desc}</p>
                   
                   <div className="w-full mt-2">
-                    <div className="flex justify-between items-end mb-1">
+                    <div className="flex justify-center items-end mb-1">
                       <span className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest">{b.currentValue}/{b.nextTierRequirement} {b.unit}</span>
                     </div>
                     <div className="h-1 w-full rounded-full bg-surface-variant/30 overflow-hidden">
@@ -932,7 +1105,7 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
           </div>
 
           <div>
-            <h4 className="text-xl font-black italic text-on-surface-variant/60 mb-6 flex items-center gap-2">
+            <h4 className="text-xl font-black italic text-on-surface-variant/60 mb-6 flex justify-center items-center gap-2">
               <Lock size={20} /> Locked ({locked.length})
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
@@ -946,7 +1119,7 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
                   <p className="text-[10px] font-medium text-on-surface-variant/50 text-center px-1 line-clamp-2">{b.desc}</p>
                   
                   <div className="w-full mt-2 opacity-50">
-                    <div className="flex justify-between items-end mb-1">
+                    <div className="flex justify-center items-end mb-1">
                       <span className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest">{b.currentValue}/{b.nextTierRequirement} {b.unit}</span>
                     </div>
                     <div className="h-1 w-full rounded-full bg-surface-variant/30 overflow-hidden">
@@ -997,7 +1170,7 @@ const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentV
       <div className={cn("absolute inset-0 -z-10 rounded-3xl blur-xl transition-opacity opacity-0 group-hover:opacity-30", tier !== 'Locked' ? getTierColor(tier) : colors[color])} />
       
       <div className="w-full mt-2">
-        <div className="flex justify-between items-end mb-1">
+        <div className="flex justify-center items-end mb-1">
           <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{currentValue} / {nextTierRequirement} {unit}</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-surface-variant/30 overflow-hidden border border-white/5">
@@ -1036,17 +1209,6 @@ const BadgeDetailModal = ({ badgeId, onClose, onAction }: { badgeId: string, onC
         onClick={e => e.stopPropagation()}
       >
         <div className="absolute top-6 right-6 z-10 flex gap-3">
-          <motion.button 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setPinnedBadgeId(pinnedBadgeId === badge.id ? null : badge.id)}
-            className={cn(
-              "p-2.5 rounded-full transition-all border shadow-lg",
-              pinnedBadgeId === badge.id ? "bg-primary/20 text-primary border-primary/30" : "bg-black/40 text-on-surface-variant hover:text-primary hover:bg-primary/10 border-white/10"
-            )}
-          >
-            <Pin size={18} className={cn({ "fill-current": pinnedBadgeId === badge.id })} />
-          </motion.button>
           <motion.button 
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
@@ -1106,15 +1268,6 @@ const BadgeDetailModal = ({ badgeId, onClose, onAction }: { badgeId: string, onC
               </p>
             )}
           </div>
-          
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onAction}
-            className="group w-full flex justify-center items-center gap-3 rounded-xl bg-secondary py-4 font-black uppercase tracking-[0.2em] text-on-secondary shadow-[0_12px_24px_-8px_rgba(76,214,251,0.4)] transition-all md:rounded-2xl md:py-5"
-          >
-            Start Earning <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </motion.button>
         </div>
       </motion.div>
     </motion.div>
@@ -1217,11 +1370,12 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
   const { profile } = useAuth();
   const [gpsLoading, setGpsLoading] = useState(true);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showDiveTypePicker, setShowDiveTypePicker] = useState(false);
   
   const [diveData, setDiveData] = useState({
     location: "Getting GPS location...",
     date: new Date().toISOString().split('T')[0],
-    diveType: "Recreational",
+    diveType: "Drift Dive", // Default to one of the new options
     depth: "",
     duration: "",
     fishSpotted: [] as string[],
@@ -1404,7 +1558,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                         } catch (err) {}
                       }
                     }}
-                    className="w-full rounded-2xl bg-black/40 py-4.5 px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60 [color-scheme:dark] cursor-pointer"
+                    className="w-full rounded-2xl bg-black/40 py-4 px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60 [color-scheme:dark] cursor-pointer"
                   />
                 </div>
               </div>
@@ -1414,21 +1568,13 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors pointer-events-none z-10">
                     <Compass size={20} />
                   </div>
-                  <select 
-                    name="diveType"
-                    value={diveData.diveType}
-                    onChange={handleChange}
-                    className="w-full rounded-2xl bg-black/40 py-4.5 pl-12 pr-10 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/40 border border-white/5 transition-all hover:border-white/10 hover:bg-black/60 appearance-none cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => setShowDiveTypePicker(true)}
+                    className="w-full text-left rounded-2xl bg-black/40 py-4 pl-12 pr-10 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/40 border border-white/5 transition-all hover:border-white/10 hover:bg-black/60 cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis"
                   >
-                    <option>Recreational</option>
-                    <option>Wreck</option>
-                    <option>Night</option>
-                    <option>Cave</option>
-                    <option>Photography</option>
-                    <option>Navigation</option>
-                    <option>Rescue</option>
-                    <option>Training</option>
-                  </select>
+                    {diveData.diveType}
+                  </button>
                   <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 rotate-90" />
                 </div>
               </div>
@@ -1445,7 +1591,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                     placeholder="Depth"
                     value={diveData.depth}
                     onChange={handleChange}
-                    className="w-full rounded-2xl bg-black/40 py-4.5 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                    className="w-full rounded-2xl bg-black/40 py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
                   />
                 </div>
               </div>
@@ -1459,7 +1605,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                     placeholder="Time"
                     value={diveData.duration}
                     onChange={handleChange}
-                    className="w-full rounded-2xl bg-black/40 py-4.5 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-tertiary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                    className="w-full rounded-2xl bg-black/40 py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-tertiary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
                   />
                 </div>
               </div>
@@ -1484,7 +1630,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                     setShowFishDropdown(true);
                   }}
                   onFocus={() => setShowFishDropdown(true)}
-                  className="w-full rounded-2xl bg-black/40 py-4.5 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                  className="w-full rounded-2xl bg-black/40 py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
                 />
                 
                 <AnimatePresence>
@@ -1528,12 +1674,12 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
               {diveData.fishSpotted.length > 0 && (
                 <div className="flex flex-wrap gap-2.5 mb-2">
                   <AnimatePresence>
-                    {diveData.fishSpotted.map((fish, idx) => (
+                    {diveData.fishSpotted.map((fish, fIdx) => (
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.8, x: -10 }}
                         animate={{ opacity: 1, scale: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        key={`${fish}-${idx}`} 
+                        key={`new-dive-fish-${fish}-${fIdx}`} 
                         className="flex items-center gap-2.5 rounded-xl bg-secondary/5 border border-secondary/20 py-2 pl-4 pr-2 group/tag hover:bg-secondary/10 transition-colors"
                       >
                         <span className="text-[11px] font-black uppercase tracking-wider text-secondary/80 group-hover/tag:text-secondary">{fish}</span>
@@ -1579,23 +1725,24 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                   <AnimatePresence>
                     {diveData.photos.map((photo, i) => (
                       <motion.div 
-                        key={i}
+                        key={`new-dive-photo-${photo}-${i}`}
                         initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.5 }}
-                        className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 group/photo"
+                        className="relative aspect-square overflow-hidden rounded-2xl border border-white/10"
                       >
-                        <img src={photo} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover/photo:scale-110" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDiveData(prev => ({ ...prev, photos: prev.photos.filter((_, idx) => idx !== i) }));
-                            }}
-                            className="rounded-full bg-error p-2 text-white shadow-xl hover:scale-110 transition-transform"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                        <img src={photo} alt="" className="h-full w-full object-cover transition-transform duration-700 hover:scale-110" />
+                        <div className="absolute top-2 right-2 z-10 bg-black/40 backdrop-blur-md rounded-full">
+                          <ActionMenu 
+                            items={[
+                              { 
+                                label: "Remove Photo", 
+                                icon: <Trash2 size={16} />, 
+                                onClick: () => setDiveData(prev => ({ ...prev, photos: prev.photos.filter((_, idx) => idx !== i) })),
+                                destructive: true
+                              }
+                            ]}
+                          />
                         </div>
                       </motion.div>
                     ))}
@@ -1689,8 +1836,8 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                 if (diveData.shareToFeed) {
                   await addDoc(collection(db, "posts"), {
                     userId: profile.id,
-                    userDisplayName: profile.displayName,
-                    userPhotoURL: profile.photoURL,
+                    userDisplayName: profile.displayName || "Unknown Diver",
+                    userPhotoURL: profile.photoURL || "",
                     location: filterProfanity(diveData.location),
                     content: filterProfanity(diveData.feedDescription || `Logged a ${diveData.diveType} dive at ${diveData.location}!`),
                     image: diveData.photos[0] || "",
@@ -1709,18 +1856,8 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                 
                 // Calculate XP
                 const baseXP = 100;
-                const typeMultipliers: Record<string, number> = {
-                  'Cave': 2.5,
-                  'Wreck': 1.8,
-                  'Night': 1.8,
-                  'Rescue': 2.0,
-                  'Photography': 1.5,
-                  'Navigation': 1.3,
-                  'Training': 1.1,
-                  'Recreational': 1.0
-                };
                 
-                const multiplier = typeMultipliers[diveData.diveType] || 1.0;
+                const multiplier = 1.0;
                 const depthValue = parseFloat(diveData.depth) || 0;
                 const depthBonus = Math.floor(depthValue / 10) * 25; // 25 XP per 10m
                 const photoBonus = diveData.photos.length * 50; // 50 XP per photo
@@ -1738,15 +1875,17 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
 
                 // 4. Calculate badge updates
                 const statsToUpdate: Partial<Record<string, number>> = {};
-                const typeMap: Record<string, string> = {
-                  'Recreational': 'recreational', 'Wreck': 'wreck', 'Night': 'night', 'Cave': 'cave',
-                  'Photography': 'photography', 'Navigation': 'navigation', 'Rescue': 'rescue', 'Training': 'training'
-                };
-                const id = typeMap[diveData.diveType] || 'recreational';
-                statsToUpdate[id] = 1;
-
+                
+                if (diveData.diveType) {
+                  statsToUpdate[diveData.diveType] = 1;
+                }
+                
                 if (!isNaN(depthValue) && depthValue > 30) {
-                  statsToUpdate.deep = 1;
+                  // We can either keep giving them the old 'deep' badge or log their Deep Dive specifically
+                  // Let's increment 'Deep Dive' anyway if depth is > 30 besides the selected dive type
+                  if (diveData.diveType !== 'Deep Dive') {
+                    statsToUpdate['Deep Dive'] = 1;
+                  }
                 }
 
                 updateBadgeStats(statsToUpdate);
@@ -1784,8 +1923,91 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
             }}
           />
         )}
+        {showDiveTypePicker && (
+          <DiveTypePickerModal 
+            isOpen={showDiveTypePicker}
+            onClose={() => setShowDiveTypePicker(false)}
+            onSelect={(type) => {
+              setDiveData(prev => ({ ...prev, diveType: type }));
+            }}
+          />
+        )}
       </AnimatePresence>
     </motion.div>
   );
 };
+
+const EXPEDITION_TYPES: Record<string, string[]> = {
+  "Recreational Diving": ["Drift Dive", "Enriched Dive (nitrox)", "Deep Dive", "Night Dive", "Wreck Dive", "Ice Dive", "Altitude Dive"],
+  "Technical Diving": ["Cave Dive", "Rebreather Diving", "Deep Sea/Trimix Diving"],
+  "Freediving": ["Constant Weight (CWT)", "Constant No Fins (CNF)", "Free Immersion (FIM)", "Variable Weight (VWT)", "No Limits (NLT)"],
+  "Pool Disciplines": ["Static Apnea (STA)", "Dynamic Apnea (DYN)"],
+  "Professional & Scientific Diving": ["Commercial Diving", "Scientific Diving", "Public Safety Diving"]
+};
+
+const DiveTypePickerModal = ({ isOpen, onClose, onSelect }: { isOpen: boolean, onClose: () => void, onSelect: (val: string) => void }) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) setSelectedCategory(null);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={onClose} />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[2rem] bg-surface-container-high border border-white/10 shadow-2xl p-6 no-scrollbar"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            {selectedCategory && (
+              <button 
+                onClick={() => setSelectedCategory(null)}
+                className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5"
+                title="Go Back"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            )}
+            <h3 className="text-xl font-black italic tracking-tighter text-white">Select Expedition</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full bg-white/5 text-on-surface-variant hover:text-white transition-colors border border-white/5">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {!selectedCategory ? (
+            Object.keys(EXPEDITION_TYPES).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="flex items-center justify-between w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-left"
+              >
+                <span className="text-sm font-bold text-white">{cat}</span>
+                <ChevronRight size={16} className="text-white/40" />
+              </button>
+            ))
+          ) : (
+            EXPEDITION_TYPES[selectedCategory].map(type => (
+              <button
+                key={type}
+                onClick={() => { onSelect(type); onClose(); }}
+                className="w-full p-4 rounded-xl bg-secondary/10 hover:bg-secondary/20 border border-secondary/20 text-secondary text-sm font-bold transition-all text-left"
+              >
+                {type}
+              </button>
+            ))
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 
