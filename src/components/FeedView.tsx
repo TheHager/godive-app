@@ -1,3 +1,4 @@
+import { UserProfile } from "../types";
 import React, { useEffect, useState, useRef } from "react";
 import { Heart, MessageSquare, MoreVertical, MapPin, Tag, Trophy, X as CloseIcon, Edit2, Trash2, Flag, ArrowUpRight, Plus, Compass, Clock, Users, Settings, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -656,7 +657,13 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   );
 };
 
-const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+interface CreatePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile | null;
+}
+
+const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => {
   const { updateBadgeStats } = useUser();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -681,7 +688,7 @@ const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
         userDisplayName: profile.displayName || "Unknown Diver",
         userPhotoURL: profile.photoURL,
         content: content.trim(),
-        location: profile.homeBase || "Ocean Explorer",
+        location: profile?.homeBase || "Ocean Explorer",
         timestamp: serverTimestamp(),
         likesCount: 0,
         likedBy: [],

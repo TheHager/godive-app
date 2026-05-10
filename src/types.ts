@@ -17,6 +17,7 @@ export interface UserProfile {
   hasEmergencyContactBonus?: boolean;
   pinnedBadgeId?: string;
   badgeStats?: Record<string, number>;
+  homeBase?: string;
 }
 
 export interface UserPrivateInfo {
