@@ -189,7 +189,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
       {/* Immersive Background */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#0ea5e925_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,#0c4a6e20_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,#07598515_0%,transparent_50%)]" />
@@ -202,7 +202,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl md:text-7xl">
+            <h1 className="text-4xl font-black uppercase tracking-tighter text-on-surface sm:text-5xl md:text-7xl">
               GO<span className="text-secondary">DIVE</span>
             </h1>
           </motion.div>
