@@ -9,12 +9,42 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { View } from "../types";
 
-export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
+export interface FeedPostData {
+  id: string;
+  user: string;
+  userId: string;
+  location?: string;
+  title?: string;
+  content: string;
+  image?: string;
+  avatar?: string;
+  likesCount: number;
+  likes: string;
+  comments: string;
+  tags?: string[];
+  isCurrentUser: boolean;
+  likedBy: string[];
+  reportsCount: number;
+  reportedBy: string[];
+  timestamp?: any;
+  updatedAt?: any;
+  eventId?: string;
+}
+
+export interface PostCardProps extends FeedPostData {
+  currentUserId?: string;
+  setView: (v: View) => void;
+  onNavigateToEvent: (id: string) => void;
+  pinnedBadge?: any;
+}
+
+export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: View) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
   const { profile } = useAuth();
   const allBadges = computeBadgesWithStats(badgeStats);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<FeedPostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"all" | "expeditions" | "friends">("all");
   const [sortBy, setSortBy] = useState<"date" | "popular">("date");
@@ -29,20 +59,25 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Mocking some data that might be missing in older docs or for variety
-        likesCount: (doc.data() as any).likesCount || 0,
-        likes: (doc.data() as any).likesCount?.toLocaleString() || "0",
-        comments: (doc.data() as any).commentsCount?.toString() || "0",
-        likedBy: (doc.data() as any).likedBy || [],
-        reportsCount: (doc.data() as any).reportsCount || 0,
-        reportedBy: (doc.data() as any).reportedBy || [],
-        user: ((doc.data() as any).userId === profile?.id ? profile?.displayName : (doc.data() as any).userDisplayName) || "Explorer",
-        avatar: (doc.data() as any).userPhotoURL,
-        isCurrentUser: (doc.data() as any).userId === profile?.id
-      }));
+      const postsData = snapshot.docs.map(doc => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          userId: data.userId || "",
+          content: data.content || "",
+          ...data,
+          // Mocking some data that might be missing in older docs or for variety
+          likesCount: data.likesCount || 0,
+          likes: data.likesCount?.toLocaleString() || "0",
+          comments: data.commentsCount?.toString() || "0",
+          likedBy: data.likedBy || [],
+          reportsCount: data.reportsCount || 0,
+          reportedBy: data.reportedBy || [],
+          user: (data.userId === profile?.id ? profile?.displayName : data.userDisplayName) || "Explorer",
+          avatar: data.userPhotoURL,
+          isCurrentUser: data.userId === profile?.id
+        } as FeedPostData;
+      });
       setPosts(postsData);
       setLoading(false);
     }, (error) => {
@@ -132,7 +167,7 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
   );
 };
 
-const PostCard = ({ id, user, userId, location, title, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: any) => {
+const PostCard = ({ id, user, userId, location, title, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: PostCardProps) => {
   const { profile } = useAuth();
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
