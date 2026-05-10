@@ -1,3 +1,4 @@
+import type React from 'react';
 import { 
   Waves, 
   Moon, 
@@ -27,7 +28,28 @@ import {
   Rocket
 } from "lucide-react";
 
-export const BADGE_SCHEMA: any[] = [
+export type BadgeDef = {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  unit: string;
+  thresholds: number[];
+  desc: string;
+  isChallenge?: boolean;
+};
+
+export type ComputedBadge = {
+  earned: boolean;
+  tier: string;
+  nextTierName: string;
+  nextTierRequirement: number;
+  currentValue: number;
+  isMaxed: boolean;
+  progressRatio: number;
+} & BadgeDef;
+
+export const BADGE_SCHEMA: BadgeDef[] = [
   // Recreational Diving
   { id: 'Drift Dive', label: 'Drift Master', icon: Waves, color: 'primary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Master the art of riding the currents.' },
   { id: 'Enriched Dive (nitrox)', label: 'Oxygen Optimizer', icon: Wind, color: 'secondary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Extend your bottom time with enriched air.' },
@@ -106,8 +128,8 @@ export const getBadgeProgress = (currentValue: number, thresholds: number[]) => 
   };
 };
 
-export const computeBadgesWithStats = (stats: Record<string, number>) => {
-  return BADGE_SCHEMA.map(def => ({
+export const computeBadgesWithStats = (stats: Record<string, number>): ComputedBadge[] => {
+  return BADGE_SCHEMA.map((def) => ({
     ...def,
     ...getBadgeProgress(stats[def.id] || 0, def.thresholds)
   }));
