@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { auth, db } from "../lib/firebase";
-import { signOut, deleteUser } from "firebase/auth";
-import { doc, updateDoc, getDoc, setDoc, serverTimestamp, deleteDoc, increment } from "firebase/firestore";
+import { signOut, deleteUser, updateProfile, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
+import { doc, updateDoc, getDoc, setDoc, serverTimestamp, deleteDoc, increment, query, collection, limit, getDocs, where } from "firebase/firestore";
 import { LogOut, User as UserIcon, Phone, Trophy, HeartPulse, UserPlus, Save, Edit3, X, Trash2, AlertTriangle, CreditCard, Star, Settings, ShieldAlert, Box } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { View, UserPrivateInfo } from "../types";
@@ -35,7 +35,6 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
     const fetchPoints = async () => {
       if (!profile?.id) return;
       try {
-        const { query, collection, limit, getDocs } = await import('firebase/firestore');
         const xp = profile?.points || 0;
         const rankingPoints = profile?.rankingPoints || 0;
         let likes = 0;
@@ -219,7 +218,6 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
       if (Object.keys(userUpdates).length > 0) {
         await updateDoc(doc(db, "users", profile.id), userUpdates);
         if (userUpdates.displayName) {
-          const { updateProfile } = await import('firebase/auth');
           if (auth.currentUser) {
             await updateProfile(auth.currentUser, { displayName: filteredName });
           }
@@ -347,7 +345,6 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
     try {
       const uid = auth.currentUser.uid;
       try {
-        const { query, collection, where, getDocs, deleteDoc } = await import('firebase/firestore');
 
         // Delete Dives
         try {
@@ -396,12 +393,10 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         const providerId = auth.currentUser.providerData[0]?.providerId;
         if (providerId === 'google.com') {
           try {
-            const { GoogleAuthProvider, reauthenticateWithPopup } = await import('firebase/auth');
             const provider = new GoogleAuthProvider();
             await reauthenticateWithPopup(auth.currentUser, provider);
             // Try deleting again after reauth
             try {
-              const { doc, deleteDoc } = await import('firebase/firestore');
               const uid = auth.currentUser.uid;
               await deleteDoc(doc(db, "users", uid, "private", "info")).catch(() => {});
               await deleteDoc(doc(db, "users", uid)).catch(() => {});

@@ -7,6 +7,7 @@ import {
   sendEmailVerification,
   signOut
 } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "../lib/firebase";
 import { motion } from "framer-motion";
 import { Compass, Mail, Lock, User as UserIcon, AlertCircle, Ship } from "lucide-react";
@@ -25,7 +26,6 @@ export const LoginView = () => {
     try {
       setLoading(true);
       const userCred = await signInWithPopup(auth, googleProvider);
-      const { doc, getDoc, setDoc } = await import('firebase/firestore');
       const userDocRef = doc(db, "users", userCred.user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (!userDocSnap.exists()) {
@@ -75,7 +75,6 @@ export const LoginView = () => {
 
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCred.user, { displayName: name });
-        const { doc, setDoc } = await import('firebase/firestore');
         try {
            await setDoc(doc(db, "users", userCred.user.uid), { 
              id: userCred.user.uid,

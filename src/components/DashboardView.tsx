@@ -35,8 +35,7 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { WEEKLY_CHALLENGES } from "../constants/challenges";
 
 const API_KEY =
-  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
-  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
   (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
@@ -114,7 +113,6 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     const fetchDynamicStats = async () => {
       if (!profile?.id) return;
       try {
-        const { query, collection, getDocs, where } = await import('firebase/firestore');
         
         const mySitesSnap = await getDocs(query(collection(db, "dive_sites"), where("userId", "==", profile.id), where("status", "==", "verified")));
         const verifiedSitesCount = mySitesSnap.size;
@@ -196,7 +194,6 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     const syncProfileStats = async () => {
       if (!profile?.id) return;
       try {
-        const { doc, updateDoc } = await import('firebase/firestore');
         const userRef = doc(db, "users", profile.id);
         await updateDoc(userRef, {
           badgeStats,
@@ -215,7 +212,6 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     const fetchPoints = async () => {
       if (!profile?.id) return;
       try {
-        const { query, collection, limit, getDocs } = await import('firebase/firestore');
         const xp = profile?.points || 0;
         const rankingPoints = profile?.rankingPoints || 0;
         let likes = 0;
