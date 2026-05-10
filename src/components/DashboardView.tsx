@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { ActionMenu } from "./ActionMenu";
-import { computeBadgesWithStats } from "../constants/badges";
+import { computeBadgesWithStats, type ComputedBadge } from "../constants/badges";
 import { RANKS, calculateLevel, getRankInfo } from "../constants/ranks";
 import { useUser } from "../contexts/UserContext";
 import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useMapsLibrary } from '@vis.gl/react-google-maps';
@@ -1157,7 +1157,7 @@ const getTierSolidColor = (tier: string) => {
   }
 };
 
-const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
+const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: ComputedBadge[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
   const earned = badges.filter(b => b.earned);
   const locked = badges.filter(b => !b.earned && !b.isChallenge);
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
