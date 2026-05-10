@@ -1,3 +1,4 @@
+import { Badge, BadgeProgress, BadgeWithProgress } from "../types";
 import { 
   Waves, 
   Moon, 
@@ -27,7 +28,7 @@ import {
   Rocket
 } from "lucide-react";
 
-export const BADGE_SCHEMA: any[] = [
+export const BADGE_SCHEMA: Badge[] = [
   // Recreational Diving
   { id: 'Drift Dive', label: 'Drift Master', icon: Waves, color: 'primary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Master the art of riding the currents.' },
   { id: 'Enriched Dive (nitrox)', label: 'Oxygen Optimizer', icon: Wind, color: 'secondary', unit: 'dives', thresholds: [5, 10, 20, 50, 100], desc: 'Extend your bottom time with enriched air.' },
@@ -76,7 +77,7 @@ export const BADGE_SCHEMA: any[] = [
 
 export const TIER_NAMES = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
 
-export const getBadgeProgress = (currentValue: number, thresholds: number[]) => {
+export const getBadgeProgress = (currentValue: number, thresholds: number[]): BadgeProgress => {
   let tierIndex = -1;
   for (let i = 0; i < thresholds.length; i++) {
     if (currentValue >= thresholds[i]) {
@@ -106,7 +107,7 @@ export const getBadgeProgress = (currentValue: number, thresholds: number[]) => 
   };
 };
 
-export const computeBadgesWithStats = (stats: Record<string, number>) => {
+export const computeBadgesWithStats = (stats: Record<string, number>): BadgeWithProgress[] => {
   return BADGE_SCHEMA.map(def => ({
     ...def,
     ...getBadgeProgress(stats[def.id] || 0, def.thresholds)

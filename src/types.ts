@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -108,3 +110,26 @@ export interface Equipment {
   isStandardSetup?: boolean;
   timestamp: any;
 }
+
+export interface Badge {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  color: 'primary' | 'secondary' | 'tertiary';
+  unit: string;
+  thresholds: number[];
+  desc: string;
+  isChallenge?: boolean;
+}
+
+export interface BadgeProgress {
+  earned: boolean;
+  tier: string;
+  nextTierName: string;
+  nextTierRequirement: number;
+  currentValue: number;
+  isMaxed: boolean;
+  progressRatio: number;
+}
+
+export interface BadgeWithProgress extends Badge, BadgeProgress {}

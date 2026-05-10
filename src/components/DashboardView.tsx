@@ -28,7 +28,7 @@ import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useM
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { View, Equipment } from "../types";
+import { View, Equipment, BadgeWithProgress } from "../types";
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -1157,7 +1157,7 @@ const getTierSolidColor = (tier: string) => {
   }
 };
 
-const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
+const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: BadgeWithProgress[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
   const earned = badges.filter(b => b.earned);
   const locked = badges.filter(b => !b.earned && !b.isChallenge);
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
@@ -1261,10 +1261,10 @@ const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose
   );
 };
 
-const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, isMaxed, unit }: any) => {
+const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, isMaxed, unit }: BadgeWithProgress) => {
   const { pinnedBadgeId, setPinnedBadgeId } = useUser();
 
-  const colors: any = {
+  const colors: Record<'primary' | 'secondary' | 'tertiary', string> = {
     primary: "bg-primary/20 text-primary border-primary/20 ring-primary/10",
     secondary: "bg-secondary/20 text-secondary border-secondary/20 ring-secondary/10",
     tertiary: "bg-tertiary/20 text-tertiary border-tertiary/20 ring-tertiary/10"
