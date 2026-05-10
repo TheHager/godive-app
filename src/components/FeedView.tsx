@@ -9,6 +9,7 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { PostComment } from "../types";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -140,7 +141,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const [showFullImage, setShowFullImage] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [commentsList, setCommentsList] = useState<any[]>([]);
+  const [commentsList, setCommentsList] = useState<PostComment[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const optionsRef = useRef<HTMLDivElement>(null);
@@ -152,7 +153,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       orderBy("timestamp", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostComment));
       setCommentsList(data);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, `posts/${id}/comments`);
@@ -212,7 +213,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleToggleCommentLike = async (comment: any) => {
+  const handleToggleCommentLike = async (comment: PostComment) => {
     if (!currentUserId) return;
     try {
       const commentRef = doc(db, "posts", id, "comments", comment.id);
@@ -239,7 +240,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReportComment = async (comment: any) => {
+  const handleReportComment = async (comment: PostComment) => {
     if (!currentUserId) return;
     try {
       const commentRef = doc(db, "posts", id, "comments", comment.id);
