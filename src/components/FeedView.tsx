@@ -5,10 +5,34 @@ import { cn, formatDate } from "../lib/utils";
 import { computeBadgesWithStats } from "../constants/badges";
 import { useUser } from "../contexts/UserContext";
 import { useAuth } from "../contexts/AuthContext";
-import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, getDocs, FieldValue } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { UserProfile } from "../types";
+
+export interface CreatePostData {
+  userId: string;
+  userDisplayName: string;
+  userPhotoURL?: string;
+  content: string;
+  location: string;
+  timestamp: FieldValue;
+  likesCount: number;
+  likedBy: string[];
+  commentsCount: number;
+  tags: string[];
+  reportsCount: number;
+  reportedBy: string[];
+  title?: string;
+  image?: string;
+}
+
+export interface CreatePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile | null;
+}
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -656,7 +680,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   );
 };
 
-const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => {
   const { updateBadgeStats } = useUser();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -676,12 +700,12 @@ const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
     if (!content.trim() || !title.trim() || !profile?.id) return;
     setIsSubmitting(true);
     try {
-      const postData: any = {
+      const postData: CreatePostData = {
         userId: profile.id,
         userDisplayName: profile.displayName || "Unknown Diver",
         userPhotoURL: profile.photoURL,
         content: content.trim(),
-        location: profile.homeBase || "Ocean Explorer",
+        location: (profile as any).homeBase || profile.currentLocation || "Ocean Explorer",
         timestamp: serverTimestamp(),
         likesCount: 0,
         likedBy: [],
