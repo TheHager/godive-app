@@ -90,6 +90,19 @@ export interface Post {
   reportsCount?: number;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  userDisplayName: string;
+  userPhotoURL?: string;
+  content: string;
+  timestamp: any;
+  reportsCount: number;
+  reportedBy: string[];
+  likesCount: number;
+  likedBy: string[];
+}
+
 export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile" | "admin" | "equipment";
 
 export interface Equipment {
