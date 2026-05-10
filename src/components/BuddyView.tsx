@@ -117,10 +117,11 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
         
         try {
           await deleteDoc(doc(db, "events", event.id));
-        } catch (err: any) {
+        } catch (err) {
           // Ignore permission errors during cleanup as they usually mean
           // the document was already deleted by another client/instance
-          if (err.code !== 'permission-denied') {
+          const firestoreErr = err as { code?: string };
+          if (firestoreErr?.code !== 'permission-denied') {
             console.error("Cleanup error for event", event.id, err);
           }
         }
