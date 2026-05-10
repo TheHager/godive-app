@@ -1528,7 +1528,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
-    Array.from(files).slice(0, remainingSlots).forEach((file: any) => {
+    Array.from(files).slice(0, remainingSlots).forEach((file: File) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const img = new Image();
