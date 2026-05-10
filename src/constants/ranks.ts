@@ -1,4 +1,13 @@
-export const RANKS = [
+export interface Rank {
+  min: number;
+  title: string;
+  status: string;
+  nextGoal: string;
+  cert: string;
+  desc: string;
+}
+
+export const RANKS: Rank[] = [
   { min: 0, title: "Coastal Wanderer", status: "Rookie", nextGoal: "Reef Guardian", cert: "Open Water Diver", desc: "Just starting to feel at home in the waves." },
   { min: 3, title: "Reef Guardian", status: "Explorer", nextGoal: "Island Hopper", cert: "Advanced Open Water", desc: "A reliable presence in shallow and mid-range waters." },
   { min: 6, title: "Island Hopper", status: "Pathfinder", nextGoal: "Oceanic Sentinel", cert: "Rescue Diver", desc: "Mastering the currents and discovering distant horizons." },
