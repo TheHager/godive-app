@@ -28,7 +28,7 @@ import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useM
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { View, Equipment } from "../types";
+import { View, Equipment, Sighting, DiveLog } from "../types";
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -710,6 +710,18 @@ const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: any) => {
   );
 };
 
+export type LogItem = Omit<Partial<Sighting>, 'location'> & Omit<Partial<DiveLog>, 'location'> & {
+  location?: string;
+  label?: string;
+  diveType?: string;
+  notes?: string;
+  photos?: string[];
+  fishSpotted?: string[];
+  species?: string;
+  source?: 'dive' | 'sighting';
+  timestamp?: { seconds: number; nanoseconds: number } | string | number | null | any;
+};
+
 const HistoryModal = ({ 
   type, 
   onClose,
@@ -719,8 +731,8 @@ const HistoryModal = ({
 }: { 
   type: 'dives' | 'sightings', 
   onClose: () => void,
-  allDives: any[],
-  allSightings: any[],
+  allDives: LogItem[],
+  allSightings: LogItem[],
   discoveredSpecies: Set<string>
 }) => {
   const isDives = type === 'dives';
@@ -731,9 +743,9 @@ const HistoryModal = ({
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
 
   const speciesLogMap = React.useMemo(() => {
-    const map = new window.Map<string, { count: number, appearances: any[] }>();
+    const map = new window.Map<string, { count: number, appearances: LogItem[] }>();
     
-    const addSighting = (species: string, item: any, source: string) => {
+    const addSighting = (species: string, item: LogItem, source: 'dive' | 'sighting') => {
       const sp = species.trim();
       if (!sp) return;
       const key = MARINE_LIFE_DATABASE.find(s => s.toLowerCase() === sp.toLowerCase()) || sp;
@@ -867,7 +879,7 @@ const HistoryModal = ({
                 </h4>
               </div>
               <div className="flex flex-col gap-4 pb-8">
-                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: any, i: number) => {
+                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: LogItem, i: number) => {
                   const isDive = item.source === 'dive';
                   return (
                   <motion.div 
