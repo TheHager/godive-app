@@ -32,11 +32,7 @@ import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constan
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
-const API_KEY =
-  process.env.GOOGLE_MAPS_PLATFORM_KEY ||
-  (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
-  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
-  '';
+const API_KEY = (import.meta as any).env?.VITE_GOOGLE_MAPS_PLATFORM_KEY || '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
