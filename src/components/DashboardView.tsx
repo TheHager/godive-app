@@ -28,7 +28,8 @@ import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useM
 import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import { View, Equipment } from "../types";
+import { View, Equipment, DiveLog, Sighting } from "../types";
+import { Timestamp } from "firebase/firestore";
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -40,6 +41,28 @@ const API_KEY =
   '';
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
+export type HistoryDiveData = Partial<DiveLog> & {
+  id: string;
+  diveType?: string;
+  fishSpotted?: string[];
+  photos?: string[];
+  notes?: string;
+  timestamp?: Timestamp | number | { seconds: number; nanoseconds: number };
+  location?: string;
+};
+
+export type HistorySightingData = Partial<Sighting> & {
+  id: string;
+  species?: string;
+  label?: string;
+  timestamp?: Timestamp | number | { seconds: number; nanoseconds: number };
+  date?: string;
+  notes?: string;
+  photos?: string[];
+};
+
+export type HistoryItem = HistoryDiveData | HistorySightingData;
+
 export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
   const { profile } = useAuth();
   const { badgeStats: contextBadgeStats, updateBadgeStats } = useUser();
@@ -49,8 +72,8 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   const [isLoggingDive, setIsLoggingDive] = useState(false);
   const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
 
-  const [allDives, setAllDives] = useState<any[]>([]);
-  const [allSightings, setAllSightings] = useState<any[]>([]);
+  const [allDives, setAllDives] = useState<HistoryDiveData[]>([]);
+  const [allSightings, setAllSightings] = useState<HistorySightingData[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
 
   useEffect(() => {
@@ -719,8 +742,8 @@ const HistoryModal = ({
 }: { 
   type: 'dives' | 'sightings', 
   onClose: () => void,
-  allDives: any[],
-  allSightings: any[],
+  allDives: HistoryDiveData[],
+  allSightings: HistorySightingData[],
   discoveredSpecies: Set<string>
 }) => {
   const isDives = type === 'dives';
@@ -731,9 +754,9 @@ const HistoryModal = ({
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
 
   const speciesLogMap = React.useMemo(() => {
-    const map = new window.Map<string, { count: number, appearances: any[] }>();
+    const map = new window.Map<string, { count: number, appearances: (HistoryItem & { source: string })[] }>();
     
-    const addSighting = (species: string, item: any, source: string) => {
+    const addSighting = (species: string, item: HistoryItem, source: string) => {
       const sp = species.trim();
       if (!sp) return;
       const key = MARINE_LIFE_DATABASE.find(s => s.toLowerCase() === sp.toLowerCase()) || sp;
@@ -756,8 +779,8 @@ const HistoryModal = ({
 
     map.forEach(value => {
       value.appearances.sort((a, b) => {
-        const timeA = a.timestamp?.seconds || 0;
-        const timeB = b.timestamp?.seconds || 0;
+        const timeA = typeof a.timestamp === 'object' && a.timestamp && 'seconds' in a.timestamp ? a.timestamp.seconds : 0;
+        const timeB = typeof b.timestamp === 'object' && b.timestamp && 'seconds' in b.timestamp ? b.timestamp.seconds : 0;
         if (timeA !== timeB) return timeB - timeA;
         
         const dateA = a.date || "";
@@ -879,10 +902,10 @@ const HistoryModal = ({
                   >
                     <div className="flex justify-between items-center gap-4">
                       <h4 className={cn("text-lg font-black tracking-tight leading-tight md:text-xl", isDive ? "text-primary" : "text-secondary")}>
-                        {item.location || "Unknown Location"}
+                        {isDive ? ((item as HistoryDiveData).locationName || ((item as HistoryDiveData).location as string)) : (((item as HistorySightingData).locationName || (typeof (item as HistorySightingData).location === 'string' ? (item as HistorySightingData).location as unknown as string : undefined) || "Unknown Location"))}
                       </h4>
                       <span className="flex shrink-0 items-center gap-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40 px-2 py-1 rounded-lg bg-white/5 border border-white/5 whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
-                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
+                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (typeof item.timestamp === 'object' && item.timestamp && 'seconds' in item.timestamp ? item.timestamp.seconds * 1000 : (typeof item.timestamp === 'number' ? item.timestamp : undefined))) || "Observed"}
                       </span>
                     </div>
                   </motion.div>
@@ -960,7 +983,10 @@ const HistoryModal = ({
                   <p className="text-xs font-black uppercase tracking-widest text-secondary/60 animate-pulse">Retrieving Logs...</p>
                 </div>
               ) : items.filter(item => {
-                  const name = (item.species || item.label || item.location || "").toLowerCase();
+                  const diveObj = item as HistoryDiveData;
+                  const sightingObj = item as HistorySightingData;
+                  const loc = isDives ? (diveObj.location || diveObj.locationName) : (sightingObj.species || sightingObj.label || (typeof sightingObj.location === 'string' ? sightingObj.location : sightingObj.locationName));
+                  const name = (typeof loc === 'string' ? loc : '').toLowerCase();
                   return name.includes(searchQuery.toLowerCase());
                 }).length === 0 ? (
                 <div className="text-center p-20 flex flex-col items-center gap-4">
@@ -975,10 +1001,17 @@ const HistoryModal = ({
               ) : (
                 items
                   .filter(item => {
-                    const name = (item.species || item.label || item.location || "").toLowerCase();
+                    const diveObj = item as HistoryDiveData;
+                    const sightingObj = item as HistorySightingData;
+                    const loc = isDives ? (diveObj.location || diveObj.locationName) : (sightingObj.species || sightingObj.label || (typeof sightingObj.location === 'string' ? sightingObj.location : sightingObj.locationName));
+                    const name = (typeof loc === 'string' ? loc : '').toLowerCase();
                     return name.includes(searchQuery.toLowerCase());
                   })
-                  .map((item, index) => (
+                  .map((item, index) => {
+                    const dive = isDives ? (item as HistoryDiveData) : null;
+                    const sighting = !isDives ? (item as HistorySightingData) : null;
+
+                    return (
                   <motion.div 
                     key={item.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -989,12 +1022,12 @@ const HistoryModal = ({
                     <div className="flex justify-between items-start mb-3 md:mb-4">
                       <div className="flex flex-col gap-1">
                         <h4 className={cn("text-lg font-black tracking-tight transition-colors leading-tight md:text-xl", isDives ? "text-primary group-hover:text-secondary" : "text-secondary group-hover:text-primary")}>
-                          {isDives ? item.location : (item.species || item.label)}
+                          {isDives ? (dive?.location || dive?.locationName) : (sighting?.species || sighting?.label)}
                         </h4>
-                        {isDives && item.diveType && (
+                        {isDives && dive?.diveType && (
                           <div className="flex items-center gap-2">
                             <span className="text-[8px] font-black uppercase tracking-[0.2em] text-secondary bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20 md:text-[10px] md:px-2.5 md:py-1">
-                              {item.diveType}
+                              {dive.diveType}
                             </span>
                           </div>
                         )}
@@ -1002,17 +1035,17 @@ const HistoryModal = ({
                            <div className="flex items-center gap-2">
                              <span className={cn(
                                "text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-lg border",
-                               getSpeciesRarity(item.species || item.label) === 'rare' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                               getSpeciesRarity(item.species || item.label) === 'uncommon' ? "bg-secondary/10 text-secondary border-secondary/20" :
+                               getSpeciesRarity(sighting?.species || sighting?.label || '') === 'rare' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                               getSpeciesRarity(sighting?.species || sighting?.label || '') === 'uncommon' ? "bg-secondary/10 text-secondary border-secondary/20" :
                                "bg-white/5 text-white/40 border-white/10"
                              )}>
-                               {getSpeciesRarity(item.species || item.label)}
+                               {getSpeciesRarity(sighting?.species || sighting?.label || '')}
                              </span>
                            </div>
                         )}
                       </div>
                       <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40 px-2 py-1 rounded-lg bg-white/5 border border-white/5 whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
-                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
+                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (typeof item.timestamp === 'object' && item.timestamp && 'seconds' in item.timestamp ? item.timestamp.seconds * 1000 : (typeof item.timestamp === 'number' ? item.timestamp : undefined))) || "Observed"}
                       </span>
                     </div>
 
@@ -1022,14 +1055,14 @@ const HistoryModal = ({
                           <div className="flex flex-col">
                             <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Depth</span>
                             <span className="flex items-center gap-1 text-white">
-                              <ArrowDown size={12} className="text-secondary md:size-14" /> {item.depth}m
+                              <ArrowDown size={12} className="text-secondary md:size-14" /> {dive?.depth}m
                             </span>
                           </div>
                           <div className="h-5 w-px bg-white/10 md:h-6" />
                           <div className="flex flex-col">
                             <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Duration</span>
                             <span className="flex items-center gap-1 text-white">
-                              <Waves size={12} className="text-tertiary md:size-14" /> {item.duration}m
+                              <Waves size={12} className="text-tertiary md:size-14" /> {dive?.duration}m
                             </span>
                           </div>
                         </>
@@ -1037,19 +1070,19 @@ const HistoryModal = ({
                         <div className="flex flex-col">
                           <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Location</span>
                           <span className="flex items-center gap-2 text-white">
-                            <MapPin size={12} className="text-secondary md:size-14" /> {item.location || "Ocean Deep"}
+                            <MapPin size={12} className="text-secondary md:size-14" /> {typeof sighting?.location === 'string' ? sighting.location : (sighting?.locationName || "Ocean Deep")}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {isDives && item.fishSpotted && item.fishSpotted.length > 0 && (
+                    {isDives && dive?.fishSpotted && dive.fishSpotted.length > 0 && (
                       <div className="mb-4">
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30 mb-2.5 flex items-center gap-2">
                           <Fish size={10} className="text-secondary" /> Marine Life Spotted
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {item.fishSpotted.map((fish: string, fIdx: number) => (
+                          {dive.fishSpotted.map((fish: string, fIdx: number) => (
                             <span key={`history-fish-${item.id}-${fIdx}`} className="text-[10px] font-bold px-3 py-1.5 rounded-xl bg-white/5 text-on-surface hover:bg-secondary/20 hover:text-secondary transition-colors border border-white/5 group-hover:border-secondary/20">
                               {fish}
                             </span>
@@ -1058,21 +1091,39 @@ const HistoryModal = ({
                       </div>
                     )}
 
-                    {isDives && item.notes && (
+                    {isDives && dive?.notes && (
                       <div className="mb-4 p-4 rounded-2xl bg-black/40 border border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-5">
                           <ImageIcon size={40} />
                         </div>
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30 mb-2">Observations</p>
-                        <p className="text-xs text-on-surface-variant/80 italic leading-relaxed font-medium">"{item.notes}"</p>
+                        <p className="text-xs text-on-surface-variant/80 italic leading-relaxed font-medium">"{dive.notes}"</p>
                       </div>
                     )}
 
-                    {item.photos && item.photos.length > 0 && (
+                    {isDives && dive?.photos && dive.photos.length > 0 && (
                       <div className="mt-4">
                         <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30 mb-3">Expedition Media</p>
                         <div className="grid grid-cols-4 gap-3">
-                          {item.photos.map((p: string, pIdx: number) => (
+                          {dive.photos.map((p: string, pIdx: number) => (
+                            <motion.div
+                              key={`history-photo-${item.id}-${pIdx}`}
+                              whileHover={{ scale: 1.05, y: -2 }}
+                              onClick={() => setSelectedImage(p)}
+                              className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-secondary transition-all shadow-xl"
+                            >
+                              <img src={p} className="h-full w-full object-cover" alt="" />
+                              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  {!isDives && sighting?.photos && sighting.photos.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-on-surface-variant/30 mb-3">Expedition Media</p>
+                        <div className="grid grid-cols-4 gap-3">
+                          {sighting.photos.map((p: string, pIdx: number) => (
                             <motion.div 
                               key={`history-photo-${item.id}-${pIdx}`} 
                               whileHover={{ scale: 1.05, y: -2 }}
@@ -1087,7 +1138,8 @@ const HistoryModal = ({
                       </div>
                     )}
                   </motion.div>
-                ))
+                );
+                })
               )}
             </div>
           )}
