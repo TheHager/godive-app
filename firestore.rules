@@ -204,7 +204,10 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'lat', 'lng', 'timestamp', 'photo']) && (!('name' in incoming()) || (incoming().name is string && incoming().name.size() <= 200)) && (!('lat' in incoming()) || incoming().lat is number) && (!('lng' in incoming()) || incoming().lng is number) && (!('timestamp' in incoming()) || incoming().timestamp == request.time) && (!('photo' in incoming()) || incoming().photo == null || (incoming().photo is string && incoming().photo.size() <= 10485760))) ||
         (
-          incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'status', 'avgRating', 'reviewCount', 'timestamp'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'status', 'timestamp']) &&
+          (!incoming().diff(existing()).affectedKeys().hasAny(['upvotes']) || (incoming().upvotes == existing().upvotes + 1 || incoming().upvotes == existing().upvotes - 1)) &&
+          (!incoming().diff(existing()).affectedKeys().hasAny(['downvotes']) || (incoming().downvotes == existing().downvotes + 1 || incoming().downvotes == existing().downvotes - 1)) &&
+          (!incoming().diff(existing()).affectedKeys().hasAny(['status']) || (incoming().status in ['unverified', 'verified'] && (existing().status == incoming().status || (incoming().status == 'verified' && existing().status == 'unverified' && incoming().upvotes >= 10))))
         )
       );
       allow delete: if isSignedIn() && isOwner(existing().userId);
