@@ -39,19 +39,14 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         const rankingPoints = profile?.rankingPoints || 0;
         let likes = 0;
 
-        const postsSnapshot = await getDocs(query(collection(db, "posts"), limit(1000)));
+        const postsSnapshot = await getDocs(query(collection(db, "posts"), where("userId", "==", profile.id), limit(100)));
         const postPromises = postsSnapshot.docs.map(async (docSnap) => {
            const pData = docSnap.data();
-           if (pData.userId === profile.id) {
-             likes += (pData.likesCount || 0);
-           }
+           likes += (pData.likesCount || 0);
            try {
-             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments")));
+             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments"), where("userId", "==", profile.id)));
              commentsSnapshot.forEach(c => {
-               const cData = c.data();
-               if (cData.userId === profile.id) {
-                 likes += (cData.likesCount || 0);
-               }
+               likes += (c.data().likesCount || 0);
              });
            } catch (e) {
              console.error("Error fetching comments for points calculation", e);
@@ -318,7 +313,11 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         throw new Error(errorData?.error || "Failed to validate image.");
       }
 
-      const moderationResult = await response.json();
+      const text = await response.text();
+      if (!text) {
+        throw new Error("Empty response from moderation server");
+      }
+      const moderationResult = JSON.parse(text);
       if (!moderationResult.safe) {
         setToast("Image rejected. Please upload an appropriate profile picture.");
         setIsUploadingPhoto(false);
