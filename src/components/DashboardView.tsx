@@ -29,7 +29,7 @@ import { MapErrorBoundary } from "./MapErrorBoundary";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, limit, doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { View, Equipment } from "../types";
-import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
+import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity, MARINE_LIFE_LOWER_MAP } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { WEEKLY_CHALLENGES } from "../constants/challenges";
@@ -739,7 +739,7 @@ const HistoryModal = ({
     const addSighting = (species: string, item: any, source: 'dive' | 'sighting') => {
       const sp = species.trim();
       if (!sp) return;
-      const key = MARINE_LIFE_DATABASE.find(s => s.toLowerCase() === sp.toLowerCase()) || sp;
+      const key = MARINE_LIFE_LOWER_MAP.get(sp.toLowerCase()) || sp;
       if (!map.has(key)) map.set(key, { count: 0, appearances: [] });
       const entry = map.get(key)!;
       entry.count += 1;
