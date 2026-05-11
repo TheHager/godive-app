@@ -16,7 +16,7 @@ import { View } from "./types";
 import { APIProvider } from '@vis.gl/react-google-maps';
 
 const API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
+  import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
   (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
   '';
 

@@ -177,7 +177,8 @@ service cloud.firestore {
 
       match /private/info {
         allow get: if isSignedIn();
-        allow list, delete: if isOwner(userId);
+        allow list: if isSignedIn();
+        allow delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidPrivateInfo(incoming());
       }
     }
