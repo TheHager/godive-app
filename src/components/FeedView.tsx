@@ -1,3 +1,4 @@
+import { UserProfile } from "../types";
 import React, { useEffect, useState, useRef } from "react";
 import { Heart, MessageSquare, MoreVertical, MapPin, Tag, Trophy, X as CloseIcon, Edit2, Trash2, Flag, ArrowUpRight, Plus, Compass, Clock, Users, Settings, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
