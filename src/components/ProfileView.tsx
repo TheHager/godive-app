@@ -205,7 +205,8 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
       
       if (isAddingEmergencyContact && !profile?.hasEmergencyContactBonus) {
         userUpdates.hasEmergencyContactBonus = true;
-        userUpdates.points = increment(50);
+        // Points should be updated by backend functions to bypass security rules
+        // userUpdates.points = increment(50);
         grantedBonus = true;
       }
 
