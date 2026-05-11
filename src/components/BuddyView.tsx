@@ -808,7 +808,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
         {(isHost || (!isHost && profile?.id)) && (
           <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10">
             <ActionMenu 
-              items={isHost ? [
+              items={(isHost || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
                 { label: "Edit Event", icon: <Edit2 size={16} />, onClick: () => onEdit && onEdit() }
               ] : [
                 { label: hasReported ? "Remove Report" : "Report Event", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
@@ -1016,8 +1016,8 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be smaller than 2MB");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image must be smaller than 10MB");
       return;
     }
 
