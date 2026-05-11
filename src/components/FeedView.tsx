@@ -398,7 +398,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
         
         <div className="flex items-center gap-1">
           <ActionMenu 
-            items={isCurrentUser ? [
+            items={(isCurrentUser || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
               { label: "Edit Post", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) },
               { label: "Delete Post", icon: <Trash2 size={16} />, onClick: handleDelete, destructive: true }
             ] : [
@@ -574,7 +574,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                           
                           <div className="flex items-center gap-1">
                             <ActionMenu
-                              items={isCommentOwner ? [
+                              items={(isCommentOwner || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
                                 { label: "Edit Comment", icon: <Edit2 size={16} />, onClick: () => { setEditingCommentId(comment.id); setEditedCommentContent(comment.content); } },
                                 { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
                               ] : [
@@ -715,8 +715,8 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 700 * 1024) {
-      alert("File must be smaller than 700KB to fit within database limits");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File must be smaller than 10MB to fit within database limits");
       return;
     }
 
