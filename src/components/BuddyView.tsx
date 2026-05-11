@@ -43,7 +43,8 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [eventSearchDate, setEventSearchDate] = useState("");
   const [eventSearchLocation, setEventSearchLocation] = useState("");
-  const [eventSearchCoords, setEventSearchCoords] = useState<{ lat: number, lng: number } | null>(null);
+  const [eventSearchCoords, setEventSearchCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [eventViewMode, setEventViewMode] = useState<"upcoming" | "archive">("upcoming");
   const [eventSearchRadius, setEventSearchRadius] = useState(25); // Default 25km
   const [eventSortBy, setEventSortBy] = useState<"date" | "distance">("date");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -111,21 +112,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
 
       if (expiredEvents.length === 0) return;
 
-      // Only the host can delete the event due to security rules
-      for (const event of expiredEvents) {
-        if (!event.hostId || !user?.uid || event.hostId !== user.uid) continue;
-        
-        try {
-          await deleteDoc(doc(db, "events", event.id));
-        } catch (err) {
-          // Ignore permission errors during cleanup as they usually mean
-          // the document was already deleted by another client/instance
-          const firestoreErr = err as { code?: string };
-          if (firestoreErr?.code !== 'permission-denied') {
-            console.error("Cleanup error for event", event.id, err);
-          }
-        }
-      }
+      // Archive feature prevents deletion
     };
 
     if (events.length > 0 && user?.uid) {
@@ -133,18 +120,27 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
     }
   }, [events, user?.uid]);
 
-  const filteredEvents = events.filter(e => {
+  const now = new Date();
+
+  const activeEvents = events.filter(e => {
+    const eventDate = new Date(e.date + 'T' + (e.time || '00:00'));
+    return eventDate >= now || (now.getTime() - eventDate.getTime() < 86400000);
+  });
+
+  const archivedEvents = events.filter(e => {
+    const eventDate = new Date(e.date + 'T' + (e.time || '00:00'));
+    return eventDate < now && e.hostId === profile?.id;
+  });
+
+  const eventsToDisplay = eventViewMode === "upcoming" ? activeEvents : archivedEvents;
+
+  const filteredEvents = eventsToDisplay.filter(e => {
     // If we have a deep linked event, show only that one
     if (localInitialEventId) {
       return e.id === localInitialEventId;
     }
 
-    // Hide expired events from UI even if not deleted yet
-    const now = Date.now();
-    const dateStr = e.date;
-    const timeStr = e.time || "00:00";
-    const eventStart = new Date(`${dateStr}T${timeStr}`).getTime();
-    if (!isNaN(eventStart) && now > (eventStart + 86400000)) return false;
+
 
     const matchesDate = !eventSearchDate || e.date === eventSearchDate;
     const matchesTextLocation = !eventSearchLocation || e.location.toLowerCase().includes(eventSearchLocation.toLowerCase());
@@ -247,10 +243,26 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
   return (
     <div className="flex flex-col gap-10 p-6 w-full max-w-4xl mx-auto min-w-0 pb-32">
       <section className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Community Events</h2>
           </div>
+          {archivedEvents.length > 0 && (
+            <div className="flex gap-1 rounded-full bg-surface-container-high/50 p-1 border border-white/5 backdrop-blur-sm shrink-0">
+              <button
+                onClick={() => setEventViewMode("upcoming")}
+                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "upcoming" ? "bg-primary/20 text-primary border border-primary/30 shadow-lg" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => setEventViewMode("archive")}
+                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "archive" ? "bg-primary/20 text-primary border border-primary/30 shadow-lg" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
+              >
+                Archive
+              </button>
+            </div>
+          )}
           {!localInitialEventId && (
             <div className="relative z-10 shrink-0 mr-4">
               <ActionMenu 
@@ -714,6 +726,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
   const { profile } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
   const isFull = event.maxParticipants > 0 && event.participants.length >= event.maxParticipants && !isJoined;
+  const isPending = event.pendingParticipants?.includes(profile?.id || "");
   
   const hasReported = event.reportedBy?.includes(profile?.id || "");
 
@@ -755,7 +768,6 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
   const handleJoin = async () => {
     if (!profile?.id || isHost) return;
 
-    // Check for safety info
     if (!isJoined && !profile.hasEmergencyContactBonus) {
       onSafetyRequirement?.();
       return;
@@ -764,13 +776,17 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
     setIsJoining(true);
     try {
       const eventRef = doc(db, "events", event.id);
-      if (isJoined) {
+
+      const isPending = event.pendingParticipants?.includes(profile.id);
+
+      if (isJoined || isPending) {
         await updateDoc(eventRef, {
-          participants: arrayRemove(profile.id)
+          participants: arrayRemove(profile.id),
+          pendingParticipants: arrayRemove(profile.id)
         });
       } else {
         await updateDoc(eventRef, {
-          participants: arrayUnion(profile.id)
+          pendingParticipants: arrayUnion(profile.id)
         });
       }
     } catch (err) {
@@ -809,7 +825,16 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
           <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10">
             <ActionMenu 
               items={(isHost || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
-                { label: "Edit Event", icon: <Edit2 size={16} />, onClick: () => onEdit && onEdit() }
+                { label: "Edit Event", icon: <Edit2 size={16} />, onClick: () => onEdit && onEdit() },
+                { label: "Delete Event", icon: <Trash2 size={16} />, onClick: async () => {
+                  if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+                    try {
+                      await deleteDoc(doc(db, "events", event.id));
+                    } catch (error) {
+                      console.error("Error deleting event:", error);
+                    }
+                  }
+                }, destructive: true }
               ] : [
                 { label: hasReported ? "Remove Report" : "Report Event", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
               ]}
@@ -917,7 +942,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
         <div className="mt-auto flex justify-center pt-4 border-t border-white/5">
           <button 
             onClick={handleJoin}
-            disabled={isJoining || (isFull && !isJoined)}
+            disabled={isJoining || (isFull && !isJoined) || isPending}
             className={cn(
               "w-full max-w-[240px] rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2",
               isJoined 
@@ -930,7 +955,12 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
             ) : isJoined ? (
               <>
                 <CheckCircle2 size={16} />
-                Joined
+                Leave Event
+              </>
+            ) : isPending ? (
+              <>
+                <Loader2 size={14} className="animate-pulse" />
+                Pending Approval
               </>
             ) : isFull ? (
               "Full"
@@ -1204,15 +1234,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
-                  {eventToEdit && (
-                    <div className="bg-surface-container-high rounded-full border border-white/10 p-1">
-                      <ActionMenu 
-                        items={[
-                          { label: "Delete Expedition", icon: <Trash2 size={16} />, onClick: () => setShowDeleteConfirm(true), destructive: true }
-                        ]}
-                      />
-                    </div>
-                  )}
+
                   <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
                     <X size={24} />
                   </button>
@@ -1627,13 +1649,17 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
 };
 
 const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
+  const [pendingParticipants, setPendingParticipants] = useState<UserProfile[]>([]);
+  const isHost = event?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || event?.coHosts?.includes(profile?.id || "");
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const fetchParticipants = async () => {
-      if (!event?.participants || event.participants.length === 0) {
+      const allToFetch = [...(event?.participants || []), ...(event?.pendingParticipants || [])];
+      if (!allToFetch || allToFetch.length === 0) {
+        setPendingParticipants([]);
         setParticipants([]);
         setIsLoading(false);
         return;
@@ -1644,8 +1670,8 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: {
         const participantProfiles: UserProfile[] = [];
         // Fetch in chunks of 10
         const chunks = [];
-        for (let i = 0; i < event.participants.length; i += 10) {
-          chunks.push(event.participants.slice(i, i + 10));
+        for (let i = 0; i < allToFetch.length; i += 10) {
+          chunks.push(allToFetch.slice(i, i + 10));
         }
 
         const promises = chunks.map(chunk => 
@@ -1664,7 +1690,8 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: {
           }
         });
 
-        setParticipants(participantProfiles);
+        setParticipants(participantProfiles.filter(p => event?.participants?.includes(p.id)));
+        setPendingParticipants(participantProfiles.filter(p => event?.pendingParticipants?.includes(p.id)));
       } catch (err) {
         console.error("Error fetching participants:", err);
       } finally {
@@ -1746,7 +1773,28 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: {
                             </div>
                           </div>
                         </div>
-                        <ArrowUpRight size={16} className="text-outline/40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        <div className="flex items-center gap-4">
+                          {isHost && profile?.id !== member.id && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const eventRef = doc(db, "events", event!.id);
+                                  const isUserCoHost = event?.coHosts?.includes(member.id);
+                                  if (isUserCoHost) {
+                                    await updateDoc(eventRef, { coHosts: arrayRemove(member.id) });
+                                  } else {
+                                    await updateDoc(eventRef, { coHosts: arrayUnion(member.id) });
+                                  }
+                                } catch (error) { console.error("Error updating co-host:", error); }
+                              }}
+                              className={cn("px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all", event?.coHosts?.includes(member.id) ? "bg-error/10 text-error hover:bg-error/20" : "bg-white/5 text-on-surface hover:bg-white/10")}
+                            >
+                              {event?.coHosts?.includes(member.id) ? "Remove Co-Host" : "Make Co-Host"}
+                            </button>
+                          )}
+                          <ArrowUpRight size={16} className="text-outline/40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        </div>
                       </motion.div>
                     ))}
                   </div>
@@ -1756,6 +1804,61 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: {
                     <p className="text-xs font-bold text-outline uppercase tracking-widest">No divers yet</p>
                   </div>
                 )}
+
+              {isHost && pendingParticipants.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">Pending Approval <span className="bg-error/20 text-error px-2 py-0.5 rounded-full text-[9px]">{pendingParticipants.length}</span></h3>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {pendingParticipants.map((user) => (
+                      <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl bg-white/5 border border-white/5 p-4">
+                        <div className="flex items-center gap-4 min-w-0">
+                          {user.photoURL ? (
+                            <img src={user.photoURL} className="h-12 w-12 rounded-full border border-white/10 object-cover" />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary">
+                              <UserIcon size={20} />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-bold text-on-surface truncate text-sm">{user.displayName}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                const eventRef = doc(db, "events", event!.id);
+                                await updateDoc(eventRef, {
+                                  pendingParticipants: arrayRemove(user.id),
+                                  participants: arrayUnion(user.id)
+                                });
+                              } catch(e) {}
+                            }}
+                            className="bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-primary/30 transition-all"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const eventRef = doc(db, "events", event!.id);
+                                await updateDoc(eventRef, {
+                                  pendingParticipants: arrayRemove(user.id)
+                                });
+                              } catch(e) {}
+                            }}
+                            className="bg-error/10 text-error px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-error/20 transition-all"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               </div>
 
               <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
@@ -1777,12 +1880,13 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: {
         user={selectedParticipant}
         isBuddy={profile?.friends?.includes(selectedParticipant?.id || "") || false}
         onRemoveBuddy={onRemoveBuddy}
+        isEventHost={isHost}
       />
     </>
   );
 };
 
-const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void }) => {
+const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -1957,6 +2061,10 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                     <div className="h-10 flex items-center justify-center">
                       <Loader2 size={24} className="animate-spin text-secondary" />
                     </div>
+                  ) : !isEventHost ? (
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
+                        Private info visible only to host
+                    </div>
                   ) : privateInfo?.phoneNumber && (
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
                        <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone</div>
@@ -1965,7 +2073,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   )}
                 </div>
 
-                {!isLoading && (
+                {!isLoading && isEventHost && (
                   <>
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
                       <ShieldCheck size={12} />
