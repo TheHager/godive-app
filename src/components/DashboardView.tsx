@@ -676,7 +676,16 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
   );
 };
 
-const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: any) => {
+interface StatsCardProps {
+  title: string;
+  value: number | string;
+  unit: string;
+  icon: React.ElementType;
+  color: 'primary' | 'secondary';
+  onClick: () => void;
+}
+
+const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: StatsCardProps) => {
   return (
     <motion.div 
       whileHover={{ y: -5, scale: 1.01 }}
