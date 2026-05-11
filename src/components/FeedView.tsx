@@ -10,7 +10,6 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
-import { UserProfile } from "../types";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
