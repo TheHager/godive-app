@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { ActionMenu } from "./ActionMenu";
 import { computeBadgesWithStats } from "../constants/badges";
-import { RANKS, calculateLevel, getRankInfo } from "../constants/ranks";
+import { RANKS, calculateLevel, getRankInfo, type Rank } from "../constants/ranks";
 import { useUser } from "../contexts/UserContext";
 import { APIProvider, Map, AdvancedMarker, Pin as GooglePin, MapMouseEvent, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { MapErrorBoundary } from "./MapErrorBoundary";
@@ -558,7 +558,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   );
 };
 
-const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: any[], activeLevel: number, onClose: () => void }) => {
+const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLevel: number, onClose: () => void }) => {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
