@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == "Tobias.H.Jensen@gmail.com";
+      return isSignedIn() && (request.auth.token.email.lower() == "tobias.h.jensen@gmail.com" || request.auth.token.email == "Tobias.H.Jensen@gmail.com");
     }
 
     function isValidId(id) {
@@ -233,21 +233,21 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidPost(incoming());
       allow update: if isSignedIn() && (
-        isOwner(existing().userId) || 
+        isOwner(existing().userId) || isAdmin() ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'commentsCount', 'likedBy', 'reportedBy', 'reportsCount']))
       );
-      allow delete: if isSignedIn() && (isOwner(existing().userId) || (('reportsCount' in existing()) && existing().reportsCount >= 9));
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isAdmin() || (('reportsCount' in existing()) && existing().reportsCount >= 9));
 
       match /comments/{commentId} {
         allow get: if isSignedIn();
         allow list: if isSignedIn();
         allow create: if isSignedIn() && isOwner(incoming().userId) && isValidComment(incoming());
         allow update: if isSignedIn() && (
-          (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'timestamp'])) || 
+          (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'timestamp'])) || isAdmin() ||
           (incoming().diff(existing()).affectedKeys().hasOnly(['reportedBy', 'reportsCount', 'likedBy', 'likesCount']))
         );
         allow delete: if isSignedIn() && (
-          isOwner(existing().userId) ||
+          isOwner(existing().userId) || isAdmin() ||
           isOwner(get(/databases/$(database)/documents/posts/$(postId)).data.userId) ||
           (('reportsCount' in existing()) && existing().reportsCount >= 9)
         );
@@ -280,8 +280,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update, delete: if isSignedIn() && (isOwner(existing().hostId) || isAdmin());
     }
   }
 }
