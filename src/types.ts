@@ -77,6 +77,19 @@ export interface CommunityEvent {
   equipmentRequirements?: string[];
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  userDisplayName: string;
+  userPhotoURL?: string;
+  content: string;
+  timestamp: any;
+  reportsCount: number;
+  reportedBy: string[];
+  likesCount: number;
+  likedBy: string[];
+}
+
 export interface Post {
   id: string;
   userId: string;
@@ -85,7 +98,7 @@ export interface Post {
   likesCount: number;
   commentsCount: number;
   tags: string[];
-  timestamp: string;
+  timestamp: any;
   reportedBy?: string[];
   reportsCount?: number;
 }

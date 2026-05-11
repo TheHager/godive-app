@@ -9,12 +9,27 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { Post, Comment, UserProfile, View } from "../types";
 
-export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
+export interface FeedPost extends Omit<Post, 'likesCount' | 'commentsCount'> {
+  user: string;
+  avatar?: string;
+  isCurrentUser: boolean;
+  eventId?: string;
+  likesCount: number;
+  likes: string;
+  comments: string;
+  likedBy: string[];
+  title?: string;
+  location?: string;
+  updatedAt?: any;
+}
+
+export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: View) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
   const { profile } = useAuth();
   const allBadges = computeBadgesWithStats(badgeStats);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"all" | "expeditions" | "friends">("all");
   const [sortBy, setSortBy] = useState<"date" | "popular">("date");
@@ -29,20 +44,23 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Mocking some data that might be missing in older docs or for variety
-        likesCount: (doc.data() as any).likesCount || 0,
-        likes: (doc.data() as any).likesCount?.toLocaleString() || "0",
-        comments: (doc.data() as any).commentsCount?.toString() || "0",
-        likedBy: (doc.data() as any).likedBy || [],
-        reportsCount: (doc.data() as any).reportsCount || 0,
-        reportedBy: (doc.data() as any).reportedBy || [],
-        user: ((doc.data() as any).userId === profile?.id ? profile?.displayName : (doc.data() as any).userDisplayName) || "Explorer",
-        avatar: (doc.data() as any).userPhotoURL,
-        isCurrentUser: (doc.data() as any).userId === profile?.id
-      }));
+      const postsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Mocking some data that might be missing in older docs or for variety
+          likesCount: data.likesCount || 0,
+          likes: data.likesCount?.toLocaleString() || "0",
+          comments: data.commentsCount?.toString() || "0",
+          likedBy: data.likedBy || [],
+          reportsCount: data.reportsCount || 0,
+          reportedBy: data.reportedBy || [],
+          user: (data.userId === profile?.id ? profile?.displayName : data.userDisplayName) || "Explorer",
+          avatar: data.userPhotoURL,
+          isCurrentUser: data.userId === profile?.id
+        } as FeedPost;
+      });
       setPosts(postsData);
       setLoading(false);
     }, (error) => {
@@ -132,7 +150,32 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
   );
 };
 
-const PostCard = ({ id, user, userId, location, title, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: any) => {
+interface PostCardProps {
+  id: string;
+  user: string;
+  userId: string;
+  location?: string;
+  title?: string;
+  content: string;
+  image?: string;
+  avatar?: string;
+  likesCount: number;
+  comments: string;
+  tags?: string[];
+  pinnedBadge?: any;
+  isCurrentUser: boolean;
+  currentUserId?: string;
+  likedBy: string[];
+  reportsCount?: number;
+  reportedBy?: string[];
+  timestamp: any;
+  updatedAt?: any;
+  eventId?: string;
+  setView: (v: View) => void;
+  onNavigateToEvent: (id: string) => void;
+}
+
+const PostCard = ({ id, user, userId, location, title, content, image, avatar, likesCount, comments, tags, pinnedBadge, isCurrentUser, currentUserId, likedBy, reportsCount, reportedBy, timestamp, updatedAt, eventId, setView, onNavigateToEvent }: PostCardProps) => {
   const { profile } = useAuth();
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -140,7 +183,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const [showFullImage, setShowFullImage] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [commentsList, setCommentsList] = useState<any[]>([]);
+  const [commentsList, setCommentsList] = useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const optionsRef = useRef<HTMLDivElement>(null);
@@ -152,7 +195,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       orderBy("timestamp", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
       setCommentsList(data);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, `posts/${id}/comments`);
@@ -212,7 +255,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleToggleCommentLike = async (comment: any) => {
+  const handleToggleCommentLike = async (comment: Comment) => {
     if (!currentUserId) return;
     try {
       const commentRef = doc(db, "posts", id, "comments", comment.id);
@@ -239,7 +282,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReportComment = async (comment: any) => {
+  const handleReportComment = async (comment: Comment) => {
     if (!currentUserId) return;
     try {
       const commentRef = doc(db, "posts", id, "comments", comment.id);
@@ -656,7 +699,13 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   );
 };
 
-const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
+interface CreatePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile | null;
+}
+
+const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => {
   const { updateBadgeStats } = useUser();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -676,12 +725,12 @@ const CreatePostModal = ({ isOpen, onClose, profile }: any) => {
     if (!content.trim() || !title.trim() || !profile?.id) return;
     setIsSubmitting(true);
     try {
-      const postData: any = {
+      const postData: Partial<Post> & Record<string, any> = {
         userId: profile.id,
         userDisplayName: profile.displayName || "Unknown Diver",
         userPhotoURL: profile.photoURL,
         content: content.trim(),
-        location: profile.homeBase || "Ocean Explorer",
+        location: (profile as any).homeBase || "Ocean Explorer",
         timestamp: serverTimestamp(),
         likesCount: 0,
         likedBy: [],
