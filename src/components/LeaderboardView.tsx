@@ -33,20 +33,29 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
 
         const likesPerUser: Record<string, number> = {};
         
-        for (const post of postsData) {
+        const commentPromises = postsData.map(async (post) => {
           if (!likesPerUser[post.userId]) likesPerUser[post.userId] = 0;
           likesPerUser[post.userId] += (post.likesCount || 0);
 
           try {
             const commentsSnapshot = await getDocs(collection(db, "posts", post.id, "comments"));
-            commentsSnapshot.forEach(commentDoc => {
-               const cData = commentDoc.data();
-               if (!likesPerUser[cData.userId]) likesPerUser[cData.userId] = 0;
-               likesPerUser[cData.userId] += (cData.likesCount || 0);
-            });
+            return { postId: post.id, snapshot: commentsSnapshot };
           } catch (e) {
             console.error("Error fetching comments for post", post.id, e);
+            return null;
           }
+        });
+
+        const commentsResults = await Promise.all(commentPromises);
+
+        for (const result of commentsResults) {
+          if (!result || !result.snapshot) continue;
+
+          result.snapshot.forEach(commentDoc => {
+             const cData = commentDoc.data();
+             if (!likesPerUser[cData.userId]) likesPerUser[cData.userId] = 0;
+             likesPerUser[cData.userId] += (cData.likesCount || 0);
+          });
         }
 
         const calculatedRankings = usersData.map(u => {
