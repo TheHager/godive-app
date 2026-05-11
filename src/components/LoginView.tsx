@@ -8,6 +8,7 @@ import {
   signOut
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
 import { auth, googleProvider, db } from "../lib/firebase";
 import { motion } from "framer-motion";
 import { Compass, Mail, Lock, User as UserIcon, AlertCircle, Ship } from "lucide-react";
@@ -101,10 +102,14 @@ export const LoginView = () => {
         setLoading(false);
         return;
       }
-    } catch (err: any) {
-      if (err.code === 'auth/invalid-credential') setError("Invalid email or password.");
-      else if (err.code === 'auth/email-already-in-use') setError("This email is already in use.");
-      else setError("An error occurred. Please try again.");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === 'auth/invalid-credential') setError("Invalid email or password.");
+        else if (err.code === 'auth/email-already-in-use') setError("This email is already in use.");
+        else setError("An error occurred. Please try again.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
