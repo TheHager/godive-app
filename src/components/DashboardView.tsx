@@ -267,14 +267,9 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   const rankInfo = getRankInfo(level);
 
   useEffect(() => {
-    if (profile?.id && rankInfo.title && profile.rank !== rankInfo.title) {
-      const userRef = doc(db, "users", profile.id);
-      updateDoc(userRef, {
-        rank: rankInfo.title
-      }).catch(err => {
-        console.error("Error syncing rank to profile:", err);
-      });
-    }
+    // Note: The 'rank' field is protected in firestore.rules and should be updated by a secure backend function
+    // triggered by point changes. Updating it from the client will fail for non-admin users.
+    // if (profile?.id && rankInfo.title && profile.rank !== rankInfo.title) { ... }
   }, [profile?.id, rankInfo.title, profile?.rank]);
 
   const allBadges = computeBadgesWithStats(badgeStats);
@@ -2145,8 +2140,10 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                 }
 
                 await updateDoc(userRef, {
-                  divesCount: increment(1),
-                  ...(finalXP > 0 ? { points: increment(finalXP) } : {})
+                  divesCount: increment(1)
+                  // Note: The 'points' field is protected in firestore.rules and should be updated by a secure backend function.
+                  // Updating it from the client will fail for non-admin users.
+                  // ...(finalXP > 0 ? { points: increment(finalXP) } : {})
                 });
 
                 // 4. Calculate badge updates

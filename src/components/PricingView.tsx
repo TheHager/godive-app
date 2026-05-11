@@ -12,14 +12,11 @@ export const PricingView = () => {
   const handleUpgrade = async (tier: string) => {
     if (!user) return;
     try {
-      const userRef = doc(db, "users", user.uid);
-      
-      const updates: any = { subscriptionTier: tier };
-      if (tier === 'premium') updates.points = increment(2500);
-      if (tier === 'vip') updates.points = increment(5000);
-
-      await updateDoc(userRef, updates);
-      alert(`Welcome to the ${tier.toUpperCase()} tier!`);
+      // In a real application, upgrading to premium or VIP should be handled via a secure
+      // backend payment endpoint that verifies payment and uses firebase-admin to perform
+      // the update, since `subscriptionTier` and `points` are restricted fields.
+      // Doing this via frontend will cause a permission denied error in production for non-admins.
+      alert(`Upgrading to the ${tier.toUpperCase()} tier requires server-side payment processing. This functionality is disabled on the client.`);
     } catch (err) {
       console.error("Upgrade failed:", err);
     }

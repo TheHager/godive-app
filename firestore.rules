@@ -171,8 +171,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if (isOwner(userId) && (
-        (incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'points', 'subscriptionTier', 'rankingPoints', 'rank', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber', 'photoURL', 'badgeStats', 'pinnedBadgeId', 'emailVerified', 'currentLocation'])) ||
-        (isValidUser(incoming()))
+        incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'hasEmergencyContactBonus', 'displayName', 'friends', 'phoneNumber', 'photoURL', 'badgeStats', 'pinnedBadgeId', 'emailVerified', 'currentLocation'])
       )) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
