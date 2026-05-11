@@ -32,11 +32,18 @@ export interface DiveLog {
   id: string;
   userId: string;
   locationName: string;
+  location?: string;
   depth: number;
   duration: number;
   date: string;
   description: string;
   tags: string[];
+  fishSpotted?: string[];
+  photos?: string[];
+  diveType?: string;
+  notes?: string;
+  equipmentIds?: string[];
+  timestamp?: { seconds: number; nanoseconds: number };
 }
 
 export interface Sighting {
@@ -47,10 +54,23 @@ export interface Sighting {
   location: {
     lat: number;
     lng: number;
-  };
+  } | string;
   locationName: string;
-  timestamp: string;
+  timestamp: string | { seconds: number; nanoseconds: number };
   imageUrl: string;
+  species?: string;
+  label?: string;
+  date?: string;
+}
+
+export type HistoryItem = (DiveLog | Sighting) & { source?: string };
+
+export function isDiveLog(item: HistoryItem): item is DiveLog & { source?: string } {
+  return 'diveType' in item || 'depth' in item || 'duration' in item || item.source === 'dive';
+}
+
+export function isSighting(item: HistoryItem): item is Sighting & { source?: string } {
+  return !isDiveLog(item);
 }
 
 export interface CommunityEvent {
