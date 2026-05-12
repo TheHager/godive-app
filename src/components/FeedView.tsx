@@ -20,6 +20,7 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
   const [activeFilter, setActiveFilter] = useState<"all" | "expeditions" | "friends">("all");
   const [sortBy, setSortBy] = useState<"date" | "popular">("date");
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const sortField = sortBy === "popular" ? "likesCount" : "timestamp";
@@ -30,6 +31,26 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // Check for changes (new likes or comments)
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const data = change.doc.data();
+          const oldData = change.oldIndex !== -1 && snapshot.docs[change.oldIndex] ? snapshot.docs[change.oldIndex].data() : null;
+
+          if (data.userId === profile?.id) {
+            // It's my post, check for new likes
+            if (data.likesCount > (oldData?.likesCount || 0)) {
+
+              setToastMessage("Someone liked your post!");
+              setTimeout(() => setToastMessage(null), 3000);
+            }
+            if (data.commentsCount > (oldData?.commentsCount || 0)) {
+              setToastMessage("Someone commented on your post!");
+              setTimeout(() => setToastMessage(null), 3000);
+            }
+          }
+        }
+      });
       const postsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
