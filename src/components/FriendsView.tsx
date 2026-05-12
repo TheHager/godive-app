@@ -166,7 +166,7 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({profile?.friends?.length || 0})</h3>
+        <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({buddies.length})</h3>
         
         {isLoadingBuddies ? (
           <div className="flex h-16 w-full items-center justify-center">

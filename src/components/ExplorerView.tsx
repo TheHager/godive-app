@@ -12,10 +12,10 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, increme
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 
-const API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
-  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
-  '';
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY || '';
+if (!API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn("Google Maps API key is missing. Maps will not load correctly.");
+}
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
 const INITIAL_DIVE_SITES = [
@@ -500,6 +500,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         await updateDoc(userRef, {
           points: increment(xp)
         });
+        updateBadgeStats({ 'Species Sage': 1 });
       }
     } catch (err) {
       console.error("Error saving sighting:", err);
@@ -587,6 +588,8 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                   onClick={() => {
                     if (marker.type === 'site' || marker.type === 'unverified') {
                       setSelectedSite(marker as any);
+                    } else if (marker.type === 'fish' || marker.type === 'rare') {
+                      window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(marker.label || marker.species)}`, '_blank');
                     } else if (marker.type === 'event' && onNavigateToEvent) {
                       onNavigateToEvent(marker.id);
                     }
