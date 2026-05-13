@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2, Settings, Camera, Calendar } from "lucide-react";
+import { Search, Filter, Fish, Star, MapPin, Plus, X, Send, Edit2, Settings, Camera, Calendar, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary, MapMouseEvent } from '@vis.gl/react-google-maps';
@@ -41,6 +41,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   const [search, setSearch] = useState("");
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any | null>(null);
+  const [selectedSighting, setSelectedSighting] = useState<any | null>(null);
   const [sites, setSites] = useState<any[]>(INITIAL_DIVE_SITES);
   const [sightings, setSightings] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -575,7 +576,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             .filter(m => {
               if (viewMode === 'unverified') return m.type === 'unverified';
               if (viewMode === 'events') return m.type === 'event';
-              if (m.type === 'unverified' || m.type === 'event') return false; // Hide unverified and events from sights/sites modes
+              if (viewMode !== 'all' && (m.type === 'unverified' || m.type === 'event')) return false;
               if (viewMode === 'sites') return m.type === 'site';
               if (viewMode === 'sightings') return m.type !== 'site';
               return true;
@@ -589,7 +590,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                     if (marker.type === 'site' || marker.type === 'unverified') {
                       setSelectedSite(marker as any);
                     } else if (marker.type === 'fish' || marker.type === 'rare') {
-                      window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(marker.label || marker.species)}`, '_blank');
+                      setSelectedSighting(marker);
                     } else if (marker.type === 'event' && onNavigateToEvent) {
                       onNavigateToEvent(marker.id);
                     }
@@ -654,6 +655,44 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             onDelete={() => handleDeleteSite(selectedSite.id)}
           />
         )}
+        {selectedSighting && (
+          <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSelectedSighting(null)} />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black uppercase text-on-surface flex items-center gap-2">
+                  <Fish size={24} className="text-secondary" />
+                  {selectedSighting.label || selectedSighting.species}
+                </h2>
+                <button onClick={() => setSelectedSighting(null)} className="rounded-full bg-surface-container p-2 text-on-surface hover:bg-white/10 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="bg-surface-container-high rounded-2xl p-6 flex items-center justify-center border border-white/5 mb-6 shadow-inner">
+                <Fish size={64} className="text-secondary opacity-50" />
+              </div>
+
+              <p className="text-sm font-medium text-on-surface-variant mb-8 text-center leading-relaxed">
+                A recent sighting of a {selectedSighting.label || selectedSighting.species} logged by the community. Learn more about this marine species and its habitat.
+              </p>
+
+              <button
+                onClick={() => window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(selectedSighting.label || selectedSighting.species)}`, '_blank')}
+                className="w-full bg-secondary text-on-secondary py-4 rounded-xl font-black uppercase tracking-widest hover:bg-secondary-container transition-all active:scale-95 shadow-xl shadow-secondary/20 flex items-center justify-center gap-2"
+              >
+                <Globe size={18} />
+                Read more on Wikipedia
+              </button>
+            </motion.div>
+          </div>
+        )}
+
         {isAddingSite && (
           <AddSiteModal 
             key="add-site-modal"
