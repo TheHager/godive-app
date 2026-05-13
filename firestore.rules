@@ -16,7 +16,18 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email.lower() == "tobias.h.jensen@gmail.com" || request.auth.token.email == "Tobias.H.Jensen@gmail.com");
+      return isSignedIn() && (
+        request.auth.token.email.lower() == "tobias.h.jensen@gmail.com" ||
+        request.auth.token.email == "Tobias.H.Jensen@gmail.com" ||
+        request.auth.token.email.lower() == "tobiashagerjensen1992@gmail.com"
+      );
+    }
+
+    function isModerator() {
+      return isSignedIn() && (
+        isAdmin() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderator'
+      );
     }
 
     function isValidId(id) {
@@ -38,7 +49,8 @@ service cloud.firestore {
         && data.email is string && data.email.size() <= 200
         && data.displayName is string && data.displayName.size() <= 100
         && data.subscriptionTier in ['free', 'premium', 'vip']
-        && (!('rank' in data) || (data.rank is string && data.rank.size() <= 100));
+        && (!('rank' in data) || (data.rank is string && data.rank.size() <= 100))
+        && (!('role' in data) || data.role in ['user', 'moderator', 'admin']);
     }
 
     function isValidDive(data) {
@@ -171,7 +183,7 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if (isOwner(userId) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'hasEmergencyContactBonus', 'displayName', 'bio', 'certificates', 'friends', 'phoneNumber', 'photoURL', 'badgeStats', 'pinnedBadgeId', 'emailVerified', 'currentLocation'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['divesCount', 'hasEmergencyContactBonus', 'displayName', 'bio', 'certificates', 'friends', 'phoneNumber', 'photoURL', 'badgeStats', 'pinnedBadgeId', 'emailVerified', 'currentLocation', 'role'])
       )) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
@@ -188,14 +200,14 @@ service cloud.firestore {
       allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidDive(incoming());
       allow update: if isSignedIn() && isOwner(existing().userId) && isValidDive(incoming());
-      allow delete: if isSignedIn() && isOwner(existing().userId);
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
     }
 
     match /sightings/{sightingId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || true);
       allow create: if isSignedIn() && isOwner(incoming().userId) && isValidSighting(incoming());
-      allow delete: if isSignedIn() && isOwner(existing().userId);
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
     }
 
     match /dive_sites/{siteId} {
@@ -208,10 +220,10 @@ service cloud.firestore {
           incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'downvotes', 'status', 'timestamp']) &&
           (!incoming().diff(existing()).affectedKeys().hasAny(['upvotes']) || (incoming().upvotes == existing().upvotes + 1 || incoming().upvotes == existing().upvotes - 1)) &&
           (!incoming().diff(existing()).affectedKeys().hasAny(['downvotes']) || (incoming().downvotes == existing().downvotes + 1 || incoming().downvotes == existing().downvotes - 1)) &&
-          (!incoming().diff(existing()).affectedKeys().hasAny(['status']) || (incoming().status in ['unverified', 'verified'] && (existing().status == incoming().status || (incoming().status == 'verified' && existing().status == 'unverified' && incoming().upvotes >= 10))))
+          (!incoming().diff(existing()).affectedKeys().hasAny(['status']) || (incoming().status in ['unverified', 'verified', 'rejected'] && (existing().status == incoming().status || isModerator() || (incoming().status == 'verified' && existing().status == 'unverified' && incoming().upvotes >= 10))))
         )
       );
-      allow delete: if isSignedIn() && isOwner(existing().userId);
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
 
       match /votes/{userId} {
         allow read: if isSignedIn();
@@ -225,7 +237,7 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && reviewId == request.auth.uid && isOwner(incoming().userId) && isValidReview(incoming());
         allow update: if isSignedIn() && reviewId == request.auth.uid && isOwner(existing().userId) && isValidReview(incoming());
-        allow delete: if isSignedIn() && isOwner(existing().userId);
+        allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
       }
     }
 
@@ -274,7 +286,7 @@ service cloud.firestore {
         (!('isStandardSetup' in incoming()) || incoming().isStandardSetup is bool) &&
         (!('notes' in incoming()) || (incoming().notes is string && incoming().notes.size() <= 2000))
       );
-      allow delete: if isSignedIn() && isOwner(existing().userId);
+      allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
     }
 
     match /events/{eventId} {

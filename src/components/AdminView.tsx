@@ -80,6 +80,26 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
     }
   };
 
+  const handleUpdateRole = async (role: "user" | "moderator") => {
+    if (!foundUser) return;
+    setIsUpdating(true);
+    setMessage(null);
+
+    try {
+      const userRef = doc(db, "users", foundUser.id);
+      await updateDoc(userRef, {
+        role: role
+      });
+      setFoundUser(prev => prev ? { ...prev, role } as any : null);
+      setMessage({ type: 'success', text: `Successfully updated ${foundUser.email} to ${role.toUpperCase()}.` });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: "Failed to update user's role. Check permissions." });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleUpdateTier = async (tier: "free" | "premium" | "vip") => {
     if (!foundUser) return;
     setIsUpdating(true);
@@ -174,6 +194,21 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                 </button>
               ))}
             </div>
+
+            {isAdmin && (
+              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 pt-4 border-t border-white/5">
+                {(["user", "moderator"] as const).map(role => (
+                  <button
+                    key={role}
+                    onClick={() => handleUpdateRole(role)}
+                    disabled={isUpdating || (foundUser as any).role === role || (!(foundUser as any).role && role === 'user')}
+                    className="rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 hover:border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Make {role}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
