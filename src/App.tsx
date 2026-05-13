@@ -15,10 +15,10 @@ import { EquipmentView } from "./components/EquipmentView";
 import { View } from "./types";
 import { APIProvider } from '@vis.gl/react-google-maps';
 
-const API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY ||
-  (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY ||
-  '';
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY || '';
+if (!API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn("Google Maps API key is missing. Maps will not load correctly.");
+}
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -63,7 +63,7 @@ function AppContent() {
 
   const renderView = () => {
     switch (view) {
-      case "dashboard": return <DashboardView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} onNavigateToProfile={() => setView("profile")} />;
+      case "dashboard": return <DashboardView onNavigateToEvent={(id: string) => { if (id === 'equipment') setView('equipment'); else { setSelectedEventId(id); setView("buddy"); } }} onNavigateToProfile={() => setView("profile")} />;
       case "explorer": return <ExplorerView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} />;
       case "feed": return <FeedView setView={handleSetView} onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} />;
       case "buddy": return <BuddyView setView={handleSetView} initialEventId={selectedEventId} />;
@@ -72,7 +72,7 @@ function AppContent() {
       case "profile": return <ProfileView setView={handleSetView} />;
       case "admin": return <AdminView setView={handleSetView} />;
       case "equipment": return <EquipmentView setView={handleSetView} />;
-      default: return <DashboardView onNavigateToEvent={(id: string) => { setSelectedEventId(id); setView("buddy"); }} onNavigateToProfile={() => setView("profile")} />;
+      default: return <DashboardView onNavigateToEvent={(id: string) => { if (id === 'equipment') setView('equipment'); else { setSelectedEventId(id); setView("buddy"); } }} onNavigateToProfile={() => setView("profile")} />;
     }
   };
 

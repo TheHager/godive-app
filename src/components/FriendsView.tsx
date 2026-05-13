@@ -166,7 +166,7 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({profile?.friends?.length || 0})</h3>
+        <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({buddies.length})</h3>
         
         {isLoadingBuddies ? (
           <div className="flex h-16 w-full items-center justify-center">
@@ -355,7 +355,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                         key={user.id} 
                         className="flex items-center justify-between p-3 rounded-[2rem] bg-surface-container-high/30 border border-white/5 backdrop-blur-md group hover:bg-surface-container-high hover:border-white/10 transition-all duration-300"
                       >
-                        <div className="flex items-center gap-4 ml-1">
+                        <div className="flex items-center gap-4 ml-1 min-w-0 flex-1">
                           <div className="relative shrink-0">
                             {user.photoURL ? (
                               <img 
@@ -370,7 +370,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                             )}
                             <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-secondary border-4 border-surface-container-highest shadow-xl" />
                           </div>
-                          <div className="flex flex-col min-w-0">
+                          <div className="flex flex-col min-w-0 flex-1 pr-2">
                             <span className="font-extrabold text-on-surface group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[9px] text-on-surface-variant uppercase font-black tracking-[0.1em]">
@@ -611,10 +611,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   Contact Info
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Email</div>
-                     <div className="text-sm font-bold text-on-surface">{user.email}</div>
-                  </div>
+
                   {isLoading ? (
                     <div className="h-10 flex items-center justify-center">
                       <Loader2 size={24} className="animate-spin text-secondary" />
