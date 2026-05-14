@@ -10,7 +10,6 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
-import { UserProfile } from "../types";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -21,6 +20,7 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
   const [activeFilter, setActiveFilter] = useState<"all" | "expeditions" | "friends">("all");
   const [sortBy, setSortBy] = useState<"date" | "popular">("date");
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const sortField = sortBy === "popular" ? "likesCount" : "timestamp";
@@ -31,6 +31,26 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // Check for changes (new likes or comments)
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const data = change.doc.data();
+          const oldData = change.oldIndex !== -1 && snapshot.docs[change.oldIndex] ? snapshot.docs[change.oldIndex].data() : null;
+
+          if (data.userId === profile?.id) {
+            // It's my post, check for new likes
+            if (data.likesCount > (oldData?.likesCount || 0)) {
+
+              setToastMessage("Someone liked your post!");
+              setTimeout(() => setToastMessage(null), 3000);
+            }
+            if (data.commentsCount > (oldData?.commentsCount || 0)) {
+              setToastMessage("Someone commented on your post!");
+              setTimeout(() => setToastMessage(null), 3000);
+            }
+          }
+        }
+      });
       const postsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -249,8 +269,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       
       if (hasReportedComment) {
         await updateDoc(commentRef, {
-          reportedBy: arrayRemove(currentUserId),
-          reportsCount: increment(-1)
+          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
         });
       } else {
         const newReportsCount = (comment.reportsCount || 0) + 1;
@@ -262,8 +281,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           });
         } else {
           await updateDoc(commentRef, {
-            reportedBy: arrayUnion(currentUserId),
-            reportsCount: increment(1)
+            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
           });
         }
       }
@@ -338,8 +356,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       
       if (hasReported) {
         await updateDoc(postRef, {
-          reportedBy: arrayRemove(currentUserId),
-          reportsCount: increment(-1)
+          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
         });
       } else {
         const newReportsCount = (reportsCount || 0) + 1;
@@ -348,8 +365,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           await deleteDoc(postRef);
         } else {
           await updateDoc(postRef, {
-            reportedBy: arrayUnion(currentUserId),
-            reportsCount: increment(1)
+            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
           });
         }
       }
@@ -399,7 +415,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
         
         <div className="flex items-center gap-1">
           <ActionMenu 
-            items={isCurrentUser ? [
+            items={(isCurrentUser || (profile as any)?.role === 'superadmin' || (profile as any)?.role === 'moderator' || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
               { label: "Edit Post", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) },
               { label: "Delete Post", icon: <Trash2 size={16} />, onClick: handleDelete, destructive: true }
             ] : [
@@ -575,7 +591,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                           
                           <div className="flex items-center gap-1">
                             <ActionMenu
-                              items={isCommentOwner ? [
+                              items={(isCommentOwner || (profile as any)?.role === 'superadmin' || (profile as any)?.role === 'moderator' || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
                                 { label: "Edit Comment", icon: <Edit2 size={16} />, onClick: () => { setEditingCommentId(comment.id); setEditedCommentContent(comment.content); } },
                                 { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
                               ] : [
@@ -716,8 +732,8 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 700 * 1024) {
-      alert("File must be smaller than 700KB to fit within database limits");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File must be smaller than 10MB to fit within database limits");
       return;
     }
 

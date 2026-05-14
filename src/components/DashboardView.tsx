@@ -16,7 +16,7 @@ import {
   ArrowLeft,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
   Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock,
-  Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon
+  Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon, AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
@@ -60,6 +60,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   const [allDives, setAllDives] = useState<any[]>([]);
   const [allSightings, setAllSightings] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -67,6 +68,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     const qD = query(collection(db, "dives"), where("userId", "==", profile.id), orderBy("timestamp", "desc"));
     const qS = query(collection(db, "sightings"), where("userId", "==", profile.id), orderBy("timestamp", "desc"));
     const qE = query(collection(db, "events"), where("participants", "array-contains", profile.id));
+    const qEq = query(collection(db, "equipment"), where("userId", "==", profile.id));
 
     const unsubscribeD = onSnapshot(qD, (snapshot) => {
       setAllDives(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -81,22 +83,22 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
     });
 
     const unsubscribeE = onSnapshot(qE, (snapshot) => {
-      // sort events by date locally as we can't sort by timestamp and use array-contains on another field unless index is built
-      const evs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-      evs.sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
-        const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-        return dateA - dateB;
-      });
-      setMyEvents(evs);
+      setMyEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, "events");
+    });
+
+    const unsubscribeEq = onSnapshot(qEq, (snapshot) => {
+      setEquipmentList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "equipment");
     });
 
     return () => {
       unsubscribeD();
       unsubscribeS();
       unsubscribeE();
+      unsubscribeEq();
     };
   }, [profile?.id]);
 
@@ -224,19 +226,14 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
         const rankingPoints = profile?.rankingPoints || 0;
         let likes = 0;
 
-        const postsSnapshot = await getDocs(query(collection(db, "posts"), limit(1000)));
+        const postsSnapshot = await getDocs(query(collection(db, "posts"), where("userId", "==", profile.id), limit(100)));
         const postPromises = postsSnapshot.docs.map(async (docSnap) => {
            const pData = docSnap.data();
-           if (pData.userId === profile.id) {
-             likes += (pData.likesCount || 0);
-           }
+           likes += (pData.likesCount || 0);
            try {
-             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments")));
+             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments"), where("userId", "==", profile.id)));
              commentsSnapshot.forEach(c => {
-               const cData = c.data();
-               if (cData.userId === profile.id) {
-                 likes += (cData.likesCount || 0);
-               }
+               likes += (c.data().likesCount || 0);
              });
            } catch (e) {
              console.error("Error fetching comments for points calculation", e);
@@ -282,6 +279,16 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
 
   const allBadges = computeBadgesWithStats(badgeStats);
   const earnedBadges = allBadges.filter(b => b.earned);
+
+  const now = new Date();
+  const serviceDueEquipment = equipmentList.filter(eq => {
+    if (eq.nextServiceDate) {
+      const nextService = new Date(eq.nextServiceDate);
+      if (nextService <= now) return true;
+    }
+    if (eq.useLimit && eq.useCount >= eq.useLimit) return true;
+    return false;
+  });
 
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
@@ -488,8 +495,20 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
         </section>
 
         <section className="w-full min-w-0 pb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-2xl font-bold tracking-tight text-on-surface">Dive Badges</h3>
+          {serviceDueEquipment.length > 0 && (
+          <div className="mb-8 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 flex items-start gap-4 cursor-pointer hover:bg-amber-500/20 transition-colors" onClick={() => onNavigateToEvent ? onNavigateToEvent('equipment') : null}>
+            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+            <div>
+              <h4 className="text-amber-500 font-bold text-sm tracking-tight mb-1">Equipment Service Reminder</h4>
+              <p className="text-amber-500/80 text-xs font-medium leading-relaxed">
+                You have {serviceDueEquipment.length} piece(s) of equipment that may require service soon. Please check your Equipment Log.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-2xl font-bold tracking-tight text-on-surface">Dive Badges</h3>
             <button 
               onClick={() => setShowBadges(true)}
               className="flex items-center gap-1 text-sm font-bold text-secondary transition-colors hover:text-primary"
@@ -1044,6 +1063,17 @@ const HistoryModal = ({
                               <Waves size={12} className="text-tertiary md:size-14" /> {item.duration}m
                             </span>
                           </div>
+                          {item.equipmentIds && item.equipmentIds.length > 0 && (
+                            <>
+                              <div className="h-5 w-px bg-white/10 md:h-6" />
+                              <div className="flex flex-col">
+                                <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Gear</span>
+                                <span className="flex items-center gap-1 text-white">
+                                  <Box size={12} className="text-primary md:size-14" /> {item.equipmentIds.length} items
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </>
                       ) : (
                         <div className="flex flex-col">

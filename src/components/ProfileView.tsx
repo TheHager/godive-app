@@ -39,19 +39,14 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         const rankingPoints = profile?.rankingPoints || 0;
         let likes = 0;
 
-        const postsSnapshot = await getDocs(query(collection(db, "posts"), limit(1000)));
+        const postsSnapshot = await getDocs(query(collection(db, "posts"), where("userId", "==", profile.id), limit(100)));
         const postPromises = postsSnapshot.docs.map(async (docSnap) => {
            const pData = docSnap.data();
-           if (pData.userId === profile.id) {
-             likes += (pData.likesCount || 0);
-           }
+           likes += (pData.likesCount || 0);
            try {
-             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments")));
+             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments"), where("userId", "==", profile.id)));
              commentsSnapshot.forEach(c => {
-               const cData = c.data();
-               if (cData.userId === profile.id) {
-                 likes += (cData.likesCount || 0);
-               }
+               likes += (c.data().likesCount || 0);
              });
            } catch (e) {
              console.error("Error fetching comments for points calculation", e);
@@ -210,7 +205,8 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
       
       if (isAddingEmergencyContact && !profile?.hasEmergencyContactBonus) {
         userUpdates.hasEmergencyContactBonus = true;
-        userUpdates.points = increment(50);
+        // Points should be updated by backend functions to bypass security rules
+        // userUpdates.points = increment(50);
         grantedBonus = true;
       }
 
@@ -318,7 +314,11 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         throw new Error(errorData?.error || "Failed to validate image.");
       }
 
-      const moderationResult = await response.json();
+      const text = await response.text();
+      if (!text) {
+        throw new Error("Empty response from moderation server");
+      }
+      const moderationResult = JSON.parse(text);
       if (!moderationResult.safe) {
         setToast("Image rejected. Please upload an appropriate profile picture.");
         setIsUploadingPhoto(false);
@@ -504,7 +504,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             placeholder="Your Name"
           />
         ) : (
-          <h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface mb-1">{profile?.displayName || "Aquavoyager"}</h2>
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-1"><h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface">{profile?.displayName || "Aquavoyager"}</h2>{((profile as any)?.role === 'superadmin' || profile?.email === 'tobias.h.jensen@gmail.com') && <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">ADMIN</span>}{(profile as any)?.role === 'moderator' && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">MOD</span>}</div>
         )}
         <p className="text-secondary font-black uppercase tracking-[0.2em] text-[10px] md:text-xs mb-1">
           {getRankInfo(calculateLevel(totalPoints)).title}

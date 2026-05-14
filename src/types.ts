@@ -70,6 +70,8 @@ export interface CommunityEvent {
   isFeatured?: boolean;
   type: "Beginner Friendly" | "Deep Water Cert" | "Wreck Dive" | "Night Dive" | "Social";
   timestamp: string;
+  pendingParticipants?: string[];
+  coHosts?: string[];
   lat?: number;
   lng?: number;
   reportedBy?: string[];

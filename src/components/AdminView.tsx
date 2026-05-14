@@ -13,8 +13,11 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
   const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [pendingSites, setPendingSites] = useState<any[]>([]);
+  const [isLoadingSites, setIsLoadingSites] = useState(false);
 
-  if (user?.email?.toLowerCase() !== "tobias.h.jensen@gmail.com") {
+  const isAdmin = user?.email?.toLowerCase() === "tobias.h.jensen@gmail.com" || user?.email?.toLowerCase() === "tobiashagerjensen1992@gmail.com";
+  if (!isAdmin) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background text-on-surface p-6 text-center">
         <ShieldAlert size={64} className="text-error mb-4" />
@@ -23,6 +26,33 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
       </div>
     );
   }
+
+  const fetchPendingSites = async () => {
+    setIsLoadingSites(true);
+    try {
+      const q = query(collection(db, "dive_sites"), where("status", "==", "unverified"));
+      const snapshot = await getDocs(q);
+      const sites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPendingSites(sites);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSites(false);
+    }
+  };
+
+  const handleUpdateSiteStatus = async (siteId: string, status: "verified" | "rejected") => {
+    try {
+      if (status === "rejected") {
+        await updateDoc(doc(db, "dive_sites", siteId), { status: "rejected" });
+      } else {
+        await updateDoc(doc(db, "dive_sites", siteId), { status: "verified" });
+      }
+      setPendingSites(prev => prev.filter(s => s.id !== siteId));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +77,26 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
       setMessage({ type: 'error', text: "An error occurred while searching." });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleUpdateRole = async (role: "user" | "moderator") => {
+    if (!foundUser) return;
+    setIsUpdating(true);
+    setMessage(null);
+
+    try {
+      const userRef = doc(db, "users", foundUser.id);
+      await updateDoc(userRef, {
+        role: role
+      });
+      setFoundUser(prev => prev ? { ...prev, role } as any : null);
+      setMessage({ type: 'success', text: `Successfully updated ${foundUser.email} to ${role.toUpperCase()}.` });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: "Failed to update user's role. Check permissions." });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -144,9 +194,121 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                 </button>
               ))}
             </div>
+
+            {isAdmin && (
+              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 pt-4 border-t border-white/5">
+                {(["user", "moderator"] as const).map(role => (
+                  <button
+                    key={role}
+                    onClick={() => handleUpdateRole(role)}
+                    disabled={isUpdating || (foundUser as any).role === role || (!(foundUser as any).role && role === 'user')}
+                    className="rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 hover:border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Make {role}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
+
+          <div className="mt-12 max-w-xl mx-auto w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold tracking-tight">Pending Dive Sites</h2>
+              <button
+                onClick={fetchPendingSites}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
+              >
+                <RefreshCw size={14} className={cn(isLoadingSites && "animate-spin")} />
+                Refresh
+              </button>
+            </div>
+
+            {pendingSites.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
+                No pending dive sites to moderate.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {pendingSites.map(site => (
+                  <div key={site.id} className="bg-surface-container-high/50 p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="font-bold">{site.name}</div>
+                      <div className="text-xs text-on-surface-variant flex gap-2 mt-1">
+                        <span>Lat: {site.lat}</span>
+                        <span>Lng: {site.lng}</span>
+                        <span>By: {site.userId}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => handleUpdateSiteStatus(site.id, "verified")}
+                        className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary/30"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleUpdateSiteStatus(site.id, "rejected")}
+                        className="px-4 py-2 bg-error/20 text-error border border-error/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-error/30"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+
+          <div className="mt-12 w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold tracking-tight">Pending Dive Sites</h2>
+              <button
+                onClick={fetchPendingSites}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
+              >
+                <RefreshCw size={14} className={cn(isLoadingSites && "animate-spin")} />
+                Refresh
+              </button>
+            </div>
+
+            {pendingSites.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
+                No pending dive sites to moderate.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {pendingSites.map(site => (
+                  <div key={site.id} className="bg-surface-container-high/50 p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="font-bold">{site.name}</div>
+                      <div className="text-xs text-on-surface-variant flex gap-2 mt-1">
+                        <span>Lat: {site.lat}</span>
+                        <span>Lng: {site.lng}</span>
+                        <span>By: {site.userId}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => handleUpdateSiteStatus(site.id, "verified")}
+                        className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary/30"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleUpdateSiteStatus(site.id, "rejected")}
+                        className="px-4 py-2 bg-error/20 text-error border border-error/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-error/30"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
     </div>
   );
 };
