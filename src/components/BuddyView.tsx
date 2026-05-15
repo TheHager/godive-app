@@ -1658,15 +1658,28 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
 
 const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onParticipantAction }: {
   onParticipantAction?: (msg: string) => void; isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
+  const [liveEvent, setLiveEvent] = useState<CommunityEvent | null>(event);
   const [pendingParticipants, setPendingParticipants] = useState<UserProfile[]>([]);
-  const isHost = event?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || event?.coHosts?.includes(profile?.id || "");
+  const isHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || liveEvent?.coHosts?.includes(profile?.id || "");
+  const isOriginalHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com';
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    if (isOpen && event?.id) {
+      const unsub = onSnapshot(doc(db, "events", event.id), (doc) => {
+        if (doc.exists()) {
+          setLiveEvent({ id: doc.id, ...doc.data() } as CommunityEvent);
+        }
+      });
+      return () => unsub();
+    }
+  }, [isOpen, event?.id]);
+
+  useEffect(() => {
     const fetchParticipants = async () => {
-      const allToFetch = [...(event?.participants || []), ...(event?.pendingParticipants || [])];
+      const allToFetch = [...(liveEvent?.participants || []), ...(liveEvent?.pendingParticipants || [])];
       if (!allToFetch || allToFetch.length === 0) {
         setPendingParticipants([]);
         setParticipants([]);
@@ -1699,8 +1712,8 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
           }
         });
 
-        setParticipants(participantProfiles.filter(p => event?.participants?.includes(p.id)));
-        setPendingParticipants(participantProfiles.filter(p => event?.pendingParticipants?.includes(p.id)));
+        setParticipants(participantProfiles.filter(p => liveEvent?.participants?.includes(p.id)));
+        setPendingParticipants(participantProfiles.filter(p => liveEvent?.pendingParticipants?.includes(p.id)));
       } catch (err) {
         console.error("Error fetching participants:", err);
       } finally {
@@ -1711,7 +1724,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
     if (isOpen && event) {
       fetchParticipants();
     }
-  }, [isOpen, event]);
+  }, [isOpen, liveEvent?.participants, liveEvent?.pendingParticipants]);
 
   return (
     <>
@@ -1735,7 +1748,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                 <div>
                   <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Expedition Crew</h3>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
-                    {event?.participants.length} Divers Registered
+                    {liveEvent?.participants.length} Divers Registered
                   </p>
                 </div>
                 <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
@@ -1783,13 +1796,13 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          {isHost && profile?.id !== member.id && (
+                          {isOriginalHost && profile?.id !== member.id && (
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 try {
-                                  const eventRef = doc(db, "events", event!.id);
-                                  const isUserCoHost = event?.coHosts?.includes(member.id);
+                                  const eventRef = doc(db, "events", liveEvent!.id);
+                                  const isUserCoHost = liveEvent?.coHosts?.includes(member.id);
                                   if (isUserCoHost) {
                                     await updateDoc(eventRef, { coHosts: arrayRemove(member.id) });
                                   } else {
@@ -1797,9 +1810,9 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                                   }
                                 } catch (error) { console.error("Error updating co-host:", error); }
                               }}
-                              className={cn("px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all", event?.coHosts?.includes(member.id) ? "bg-error/10 text-error hover:bg-error/20" : "bg-white/5 text-on-surface hover:bg-white/10")}
+                              className={cn("px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all", liveEvent?.coHosts?.includes(member.id) ? "bg-error/10 text-error hover:bg-error/20" : "bg-white/5 text-on-surface hover:bg-white/10")}
                             >
-                              {event?.coHosts?.includes(member.id) ? "Remove Co-Host" : "Make Co-Host"}
+                              {liveEvent?.coHosts?.includes(member.id) ? "Remove Co-Host" : "Make Co-Host"}
                             </button>
                           )}
                           <ArrowUpRight size={16} className="text-outline/40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
@@ -1838,7 +1851,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                           <button
                             onClick={async () => {
                               try {
-                                const eventRef = doc(db, "events", event!.id);
+                                const eventRef = doc(db, "events", liveEvent!.id);
                                 await updateDoc(eventRef, {
                                   pendingParticipants: arrayRemove(user.id),
                                   participants: arrayUnion(user.id)
@@ -1852,7 +1865,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                           <button
                             onClick={async () => {
                               try {
-                                const eventRef = doc(db, "events", event!.id);
+                                const eventRef = doc(db, "events", liveEvent!.id);
                                 await updateDoc(eventRef, {
                                   pendingParticipants: arrayRemove(user.id)
                                 });
@@ -1898,6 +1911,8 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
 const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile: currentUser } = useAuth();
+  const canViewPrivate = isEventHost === true || currentUser?.id === user?.id;
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
@@ -2057,19 +2072,17 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   return null;
                 })()}
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
-                  <Phone size={12} />
-                  Contact Info
-                </div>
+                {canViewPrivate && (
+                  <>
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                      <Phone size={12} />
+                      Contact Info
+                    </div>
                 <div className="space-y-3">
 
                   {isLoading ? (
                     <div className="h-10 flex items-center justify-center">
                       <Loader2 size={24} className="animate-spin text-secondary" />
-                    </div>
-                  ) : !isEventHost ? (
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
-                        Private info visible only to host
                     </div>
                   ) : privateInfo?.phoneNumber && (
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
@@ -2079,7 +2092,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   )}
                 </div>
 
-                {!isLoading && isEventHost && (
+                {!isLoading && (
                   <>
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
                       <ShieldCheck size={12} />
@@ -2121,6 +2134,8 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                     </div>
                   </>
                 )}
+              </>
+            )}
               </div>
             </div>
 
