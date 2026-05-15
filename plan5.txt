@@ -1,0 +1,34 @@
+We need to update three things:
+1. `BuddyView.tsx` `ParticipantsModal`: Right now, the "Make Co-Host"/"Remove Co-Host" button relies on `isHost` which is true if the logged-in user is the original creator OR a co-host OR Tobias. We need a stricter check: `isOriginalHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com'`. Then ONLY show the Co-Host buttons if `isOriginalHost` is true.
+Wait, let's verify where those buttons are rendered. In `ParticipantsModal`, the `isHost` variable currently includes `liveEvent?.coHosts?.includes(profile?.id || "")`. The buttons condition is currently `{isHost && profile?.id !== member.id && (<button... Make Co-Host />)}`.
+So I should introduce `isOriginalHost` and use `{isOriginalHost && profile?.id !== member.id && (<button>...Make Co-Host</button>)}`. Co-hosts still need `isHost` to see pending participants, so `isHost` shouldn't be fully redefined unless we only want original hosts to approve participants too. The prompt only explicitly mentioned: "Restrict the ability to assign or remove Co-hosts so that ONLY the original creator of the event can perform these actions. Co-hosts must NOT see these buttons for other participants."
+So I will:
+- Define `const isOriginalHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com';`
+- Change the condition for the "Make/Remove Co-Host" button to use `isOriginalHost` instead of `isHost`.
+
+2. `firestore.rules`:
+The current `events` rules are:
+```
+    match /events/{eventId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (isOwner(existing().hostId) || isAdmin());
+    }
+```
+If we want to restrict assigning or removing Co-hosts to only the original creator, we must restrict updates to the `coHosts` field.
+
+Currently `allow update: if isSignedIn();` means anyone can update an event document.
+Wait, any participant needs to be able to add themselves to `pendingParticipants` (or `participants`). So `update` generally needs to be fairly open, BUT if `coHosts` is being modified, we MUST ensure the user modifying it is the `hostId`.
+
+Let's write a rule for `allow update: if isSignedIn() && (
+  (!incoming().diff(existing()).affectedKeys().hasAny(['coHosts'])) ||
+  isOwner(existing().hostId) || isAdmin()
+);`
+This checks if the incoming data modifies `coHosts`. If it does, then the user MUST be the host (or admin). Otherwise, other updates (like adding oneself to `pendingParticipants`) are allowed by any signed-in user.
+
+Wait, is `isAdmin()` defined in `firestore.rules`?
+`isOwner(existing().hostId)` is defined since it's used in `allow delete: if isSignedIn() && (isOwner(existing().hostId) || isAdmin());`. Wait, `isAdmin()` is also defined.
+
+Let's check `firestore.rules`.
