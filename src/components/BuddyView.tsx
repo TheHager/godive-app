@@ -1660,7 +1660,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
   onParticipantAction?: (msg: string) => void; isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
   const [liveEvent, setLiveEvent] = useState<CommunityEvent | null>(event);
   const [pendingParticipants, setPendingParticipants] = useState<UserProfile[]>([]);
-  const isHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || liveEvent?.coHosts?.includes(profile?.id || "");
+  const isHost = Boolean(liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || (liveEvent?.coHosts || []).includes(profile?.id || ""));
   const isOriginalHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com';
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1912,7 +1912,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { profile: currentUser } = useAuth();
-  const canViewPrivate = isEventHost === true || currentUser?.id === user?.id;
+  const canViewPrivate = Boolean(isEventHost) || currentUser?.id === user?.id;
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
