@@ -1661,6 +1661,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
   const [liveEvent, setLiveEvent] = useState<CommunityEvent | null>(event);
   const [pendingParticipants, setPendingParticipants] = useState<UserProfile[]>([]);
   const isHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || liveEvent?.coHosts?.includes(profile?.id || "");
+  const isOriginalHost = liveEvent?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com';
   const [participants, setParticipants] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState<UserProfile | null>(null);
@@ -1795,7 +1796,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          {isHost && profile?.id !== member.id && (
+                          {isOriginalHost && profile?.id !== member.id && (
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
