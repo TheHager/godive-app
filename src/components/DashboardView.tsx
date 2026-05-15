@@ -15,7 +15,7 @@ import {
   ArrowDown,
   ArrowLeft,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
-  Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock,
+  Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock, ArrowUpRight, MessageSquare,
   Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon, AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -741,6 +741,131 @@ const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: StatsCard
   );
 };
 
+
+const DiveDetailModal = ({
+  dive,
+  onClose,
+  onSpeciesClick
+}: {
+  dive: any,
+  onClose: () => void,
+  onSpeciesClick: (species: string) => void
+}) => {
+  const heroImage = dive.mediaUrls && dive.mediaUrls.length > 0 ? dive.mediaUrls[0] : null;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-2xl bg-surface-container-high rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex flex-col max-h-[90vh]"
+      >
+        {heroImage && (
+          <div className="w-full h-48 sm:h-64 relative shrink-0">
+            <img src={heroImage} alt="Dive location" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent" />
+          </div>
+        )}
+
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+          <button onClick={onClose} className="p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors border border-white/10">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className={cn("p-6 md:p-8 flex-1 overflow-y-auto no-scrollbar", !heroImage && "pt-12")}>
+          <div className="flex flex-col gap-2 mb-8">
+            <div className="flex items-center justify-between">
+              <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-[10px] font-black uppercase tracking-widest">
+                {dive.diveType || "Standard Dive"}
+              </span>
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                <Calendar size={12} className="text-secondary" />
+                {formatDate(dive.date || (dive.timestamp?.seconds ? dive.timestamp.seconds * 1000 : dive.timestamp))}
+              </span>
+            </div>
+            <h2 className="text-3xl font-black italic text-white tracking-tighter mt-2">{dive.location}</h2>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+            <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2">
+              <ArrowDown size={20} className="text-secondary" />
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/40">Depth</span>
+                <span className="text-lg font-black text-white">{dive.depth}m</span>
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2">
+              <Waves size={20} className="text-tertiary" />
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/40">Duration</span>
+                <span className="text-lg font-black text-white">{dive.duration}m</span>
+              </div>
+            </div>
+            {dive.equipmentIds && dive.equipmentIds.length > 0 && (
+              <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2 col-span-2 sm:col-span-1">
+                <Box size={20} className="text-primary" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/40">Gear</span>
+                  <span className="text-lg font-black text-white">{dive.equipmentIds.length} Items</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {dive.fishSpotted && dive.fishSpotted.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 mb-4 flex items-center gap-2">
+                <Fish size={14} className="text-secondary" /> Observations
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {dive.fishSpotted.map((species: string, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => onSpeciesClick(species)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-secondary/20 hover:border-secondary/30 hover:text-secondary transition-all group"
+                  >
+                    <span className="text-sm font-bold text-on-surface group-hover:text-secondary transition-colors">{species}</span>
+                    <ArrowUpRight size={14} className="text-on-surface-variant/40 group-hover:text-secondary transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {dive.notes && (
+            <div className="mb-8">
+              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 mb-4 flex items-center gap-2">
+                <MessageSquare size={14} className="text-tertiary" /> Notes
+              </h3>
+              <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
+                <p className="text-sm text-on-surface-variant/90 italic leading-relaxed">"{dive.notes}"</p>
+              </div>
+            </div>
+          )}
+
+          {dive.mediaUrls && dive.mediaUrls.length > 1 && (
+            <div>
+              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 mb-4 flex items-center gap-2">
+                <ImageIcon size={14} className="text-primary" /> Gallery
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {dive.mediaUrls.slice(1).map((url: string, idx: number) => (
+                  <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-white/10">
+                    <img src={url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const HistoryModal = ({ 
   type, 
   onClose,
@@ -760,6 +885,7 @@ const HistoryModal = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<'all' | 'spotted' | 'unspotted'>('all');
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
+  const [selectedDiveDetails, setSelectedDiveDetails] = useState<any | null>(null);
 
   const speciesLogMap = React.useMemo(() => {
     const map = new window.Map<string, { count: number, appearances: SpeciesAppearance[] }>();
@@ -906,7 +1032,8 @@ const HistoryModal = ({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="group relative overflow-hidden p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300"
+                    className={cn("group relative overflow-hidden p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300", isDives && "cursor-pointer")}
+                    onClick={() => isDives ? setSelectedDiveDetails(item) : null}
                   >
                     <div className="flex justify-between items-center gap-4">
                       <h4 className={cn("text-lg font-black tracking-tight leading-tight md:text-xl", isDive ? "text-primary" : "text-secondary")}>
@@ -1015,7 +1142,8 @@ const HistoryModal = ({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="group relative overflow-hidden p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300"
+                    className={cn("group relative overflow-hidden p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300", isDives && "cursor-pointer")}
+                    onClick={() => isDives ? setSelectedDiveDetails(item) : null}
                   >
                     <div className="flex justify-between items-start mb-3 md:mb-4">
                       <div className="flex flex-col gap-1">
