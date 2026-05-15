@@ -429,6 +429,8 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
 const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile: currentUser } = useAuth();
+  const canViewPrivate = currentUser?.id === user?.id;
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
@@ -606,23 +608,27 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   return null;
                 })()}
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
-                  <Phone size={12} />
-                  Contact Info
-                </div>
-                <div className="space-y-3">
+                {canViewPrivate && (
+                  <>
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                      <Phone size={12} />
+                      Contact Info
+                    </div>
+                    <div className="space-y-3">
 
-                  {isLoading ? (
-                    <div className="h-10 flex items-center justify-center">
-                      <Loader2 size={24} className="animate-spin text-secondary" />
+                      {isLoading ? (
+                        <div className="h-10 flex items-center justify-center">
+                          <Loader2 size={24} className="animate-spin text-secondary" />
+                        </div>
+                      ) : privateInfo?.phoneNumber && (
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone Number</div>
+                           <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
+                        </div>
+                      )}
                     </div>
-                  ) : privateInfo?.phoneNumber && (
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                       <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone Number</div>
-                       <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
