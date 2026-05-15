@@ -188,8 +188,9 @@ service cloud.firestore {
       allow delete: if isOwner(userId) || isAdmin();
 
       match /private/info {
-        allow get: if isSignedIn();
-        allow list: if isSignedIn();
+        // Allows event co-hosts, hosts, the owner, and any authenticated user to read private info.
+        allow get: if isSignedIn() || isOwner(userId);
+        allow list: if isSignedIn() || isOwner(userId);
         allow delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidPrivateInfo(incoming());
       }
@@ -295,7 +296,11 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow update: if isSignedIn() && (
+        (!incoming().diff(existing()).affectedKeys().hasAny(['coHosts'])) ||
+        isOwner(existing().hostId) ||
+        isAdmin()
+      );
       allow delete: if isSignedIn() && (isOwner(existing().hostId) || isAdmin());
     }
   }
