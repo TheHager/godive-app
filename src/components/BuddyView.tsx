@@ -1910,6 +1910,8 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
 const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile: currentUser } = useAuth();
+  const canViewPrivate = isEventHost === true || currentUser?.id === user?.id;
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
@@ -2069,19 +2071,17 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   return null;
                 })()}
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
-                  <Phone size={12} />
-                  Contact Info
-                </div>
+                {canViewPrivate && (
+                  <>
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                      <Phone size={12} />
+                      Contact Info
+                    </div>
                 <div className="space-y-3">
 
                   {isLoading ? (
                     <div className="h-10 flex items-center justify-center">
                       <Loader2 size={24} className="animate-spin text-secondary" />
-                    </div>
-                  ) : !isEventHost ? (
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
-                        Private info visible only to host
                     </div>
                   ) : privateInfo?.phoneNumber && (
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
@@ -2091,7 +2091,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   )}
                 </div>
 
-                {!isLoading && isEventHost && (
+                {!isLoading && (
                   <>
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
                       <ShieldCheck size={12} />
@@ -2133,6 +2133,8 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                     </div>
                   </>
                 )}
+              </>
+            )}
               </div>
             </div>
 
