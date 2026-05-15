@@ -29,6 +29,7 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 };
 
 export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => void, initialEventId?: string | null }) => {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { profile, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
@@ -355,6 +356,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
         isOpen={!!selectedEventForParticipants}
         onClose={() => setSelectedEventForParticipants(null)}
         event={selectedEventForParticipants}
+        onParticipantAction={(msg) => setToastMessage(msg)}
         profile={profile}
         onRemoveBuddy={handleRemoveBuddy}
       />
@@ -414,6 +416,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
               onViewMap={() => setSelectedEventForMap(event)}
               onViewParticipants={() => setSelectedEventForParticipants(event)}
               onSafetyRequirement={() => setShowSafetyModal(true)}
+                onJoinRequest={() => setToastMessage("Join request sent to host!")}
             />
           ))
         ) : (
@@ -711,6 +714,7 @@ const SafetyRequirementModal = ({ isOpen, onClose, onGoToProfile }: { isOpen: bo
 };
 
 interface EventCardProps {
+  onJoinRequest?: () => void;
   key?: any;
   event: CommunityEvent;
   isJoined: boolean;
@@ -722,7 +726,7 @@ interface EventCardProps {
   onSafetyRequirement?: () => void;
 }
 
-const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, onViewParticipants, onSafetyRequirement }: EventCardProps) => {
+const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, onViewParticipants, onSafetyRequirement, onJoinRequest }: EventCardProps) => {
   const { profile } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
   const isFull = event.maxParticipants > 0 && event.participants.length >= event.maxParticipants && !isJoined;
@@ -737,8 +741,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       
       if (hasReported) {
         await updateDoc(eventRef, {
-          reportedBy: arrayRemove(profile.id),
-          reportsCount: increment(-1)
+          reportedBy: arrayRemove(profile.id), reportsCount: increment(-1), reported: hasReported ? (event.reportsCount && event.reportsCount <= 1 ? false : true) : false
         });
       } else {
         const newReportsCount = (event.reportsCount || 0) + 1;
@@ -755,8 +758,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
           await Promise.all(deletePromises);
         } else {
           await updateDoc(eventRef, {
-            reportedBy: arrayUnion(profile.id),
-            reportsCount: increment(1)
+            reportedBy: arrayUnion(profile.id), reportsCount: increment(1), reported: true
           });
         }
       }
@@ -785,9 +787,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
           pendingParticipants: arrayRemove(profile.id)
         });
       } else {
-        await updateDoc(eventRef, {
-          pendingParticipants: arrayUnion(profile.id)
-        });
+        await updateDoc(eventRef, { pendingParticipants: arrayUnion(profile.id) }); onJoinRequest?.();
       }
     } catch (err) {
       console.error("Error joining event:", err);
@@ -1656,7 +1656,8 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
   );
 };
 
-const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy }: { isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
+const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onParticipantAction }: {
+  onParticipantAction?: (msg: string) => void; isOpen: boolean, onClose: () => void, event: CommunityEvent | null, profile: UserProfile | null, onRemoveBuddy: (id: string) => void }) => {
   const [pendingParticipants, setPendingParticipants] = useState<UserProfile[]>([]);
   const isHost = event?.hostId === profile?.id || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com' || event?.coHosts?.includes(profile?.id || "");
   const [participants, setParticipants] = useState<UserProfile[]>([]);

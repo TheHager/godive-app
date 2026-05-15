@@ -269,8 +269,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       
       if (hasReportedComment) {
         await updateDoc(commentRef, {
-          reportedBy: arrayRemove(currentUserId),
-          reportsCount: increment(-1)
+          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
         });
       } else {
         const newReportsCount = (comment.reportsCount || 0) + 1;
@@ -282,8 +281,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           });
         } else {
           await updateDoc(commentRef, {
-            reportedBy: arrayUnion(currentUserId),
-            reportsCount: increment(1)
+            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
           });
         }
       }
@@ -358,8 +356,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       
       if (hasReported) {
         await updateDoc(postRef, {
-          reportedBy: arrayRemove(currentUserId),
-          reportsCount: increment(-1)
+          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
         });
       } else {
         const newReportsCount = (reportsCount || 0) + 1;
@@ -368,8 +365,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           await deleteDoc(postRef);
         } else {
           await updateDoc(postRef, {
-            reportedBy: arrayUnion(currentUserId),
-            reportsCount: increment(1)
+            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
           });
         }
       }
@@ -419,7 +415,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
         
         <div className="flex items-center gap-1">
           <ActionMenu 
-            items={(isCurrentUser || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
+            items={(isCurrentUser || (profile as any)?.role === 'superadmin' || (profile as any)?.role === 'moderator' || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
               { label: "Edit Post", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) },
               { label: "Delete Post", icon: <Trash2 size={16} />, onClick: handleDelete, destructive: true }
             ] : [
@@ -595,7 +591,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                           
                           <div className="flex items-center gap-1">
                             <ActionMenu
-                              items={(isCommentOwner || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
+                              items={(isCommentOwner || (profile as any)?.role === 'superadmin' || (profile as any)?.role === 'moderator' || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
                                 { label: "Edit Comment", icon: <Edit2 size={16} />, onClick: () => { setEditingCommentId(comment.id); setEditedCommentContent(comment.content); } },
                                 { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
                               ] : [

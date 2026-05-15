@@ -504,7 +504,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             placeholder="Your Name"
           />
         ) : (
-          <h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface mb-1">{profile?.displayName || "Aquavoyager"}</h2>
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-1"><h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface">{profile?.displayName || "Aquavoyager"}</h2>{((profile as any)?.role === 'superadmin' || profile?.email === 'tobias.h.jensen@gmail.com') && <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">ADMIN</span>}{(profile as any)?.role === 'moderator' && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">MOD</span>}</div>
         )}
         <p className="text-secondary font-black uppercase tracking-[0.2em] text-[10px] md:text-xs mb-1">
           {getRankInfo(calculateLevel(totalPoints)).title}
