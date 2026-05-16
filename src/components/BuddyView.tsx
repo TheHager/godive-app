@@ -3,6 +3,7 @@ import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserP
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc, increment } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { db, auth, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
@@ -97,7 +98,6 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       const expiredEvents = events.filter(event => {
         if (!event.date) return false;
         try {
-          // Combine date and time
           const dateStr = event.date; // YYYY-MM-DD
           const timeStr = event.time || "00:00"; // HH:mm
           const eventStart = new Date(`${dateStr}T${timeStr}`).getTime();
@@ -112,7 +112,6 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       });
 
       if (expiredEvents.length === 0) return;
-
       // Archive feature prevents deletion
     };
 
@@ -136,12 +135,9 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
   const eventsToDisplay = eventViewMode === "upcoming" ? activeEvents : archivedEvents;
 
   const filteredEvents = eventsToDisplay.filter(e => {
-    // If we have a deep linked event, show only that one
     if (localInitialEventId) {
       return e.id === localInitialEventId;
     }
-
-
 
     const matchesDate = !eventSearchDate || e.date === eventSearchDate;
     const matchesTextLocation = !eventSearchLocation || e.location.toLowerCase().includes(eventSearchLocation.toLowerCase());
@@ -165,7 +161,6 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
     
     const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
     const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-    // Show upcoming events first
     return dateA - dateB;
   });
 
@@ -178,7 +173,6 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       }
 
       try {
-        // Break friends into chunks of 10 for Firestore 'in' query
         const chunks = [];
         for (let i = 0; i < profile.friends.length; i += 10) {
           chunks.push(profile.friends.slice(i, i + 10));
@@ -198,33 +192,6 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       }
     };
 
-    fetchBuddies();
-  }, [profile?.friends]);
-
-  useEffect(() => {
-    const fetchBuddies = async () => {
-      if (!profile?.friends || profile.friends.length === 0) {
-        setBuddies([]);
-        setIsLoadingBuddies(false);
-        return;
-      }
-      try {
-        const chunks = [];
-        for (let i = 0; i < profile.friends.length; i += 10) {
-          chunks.push(profile.friends.slice(i, i + 10));
-        }
-        const buddyPromises = chunks.map(chunk => 
-          getDocs(query(collection(db, "users"), where("id", "in", chunk), limit(10)))
-        );
-        const snapshots = await Promise.all(buddyPromises);
-        const buddyData = snapshots.flatMap(snap => snap.docs.map(doc => doc.data() as UserProfile));
-        setBuddies(buddyData);
-      } catch (err) {
-        console.error("Error fetching buddies:", err);
-      } finally {
-        setIsLoadingBuddies(false);
-      }
-    };
     fetchBuddies();
   }, [profile?.friends]);
 
@@ -406,7 +373,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
             <EventCard 
               key={event.id}
               event={event}
-              isJoined={event.participants.includes(profile?.id || "")}
+              isJoined={event.participants?.includes(profile?.id || "")}
               isHost={event.hostId === profile?.id}
               userLocation={userLocation}
               onEdit={() => {
@@ -416,7 +383,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
               onViewMap={() => setSelectedEventForMap(event)}
               onViewParticipants={() => setSelectedEventForParticipants(event)}
               onSafetyRequirement={() => setShowSafetyModal(true)}
-                onJoinRequest={() => setToastMessage("Join request sent to host!")}
+              onJoinRequest={() => setToastMessage("Join request sent to host!")}
             />
           ))
         ) : (
@@ -580,7 +547,6 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
               )}
             </div>
 
-
           </motion.div>
         </div>
       )}
@@ -729,7 +695,7 @@ interface EventCardProps {
 const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, onViewParticipants, onSafetyRequirement, onJoinRequest }: EventCardProps) => {
   const { profile } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
-  const isFull = event.maxParticipants > 0 && event.participants.length >= event.maxParticipants && !isJoined;
+  const isFull = event.maxParticipants > 0 && (event.participants?.length || 0) >= event.maxParticipants && !isJoined;
   const isPending = event.pendingParticipants?.includes(profile?.id || "");
   
   const hasReported = event.reportedBy?.includes(profile?.id || "");
@@ -779,15 +745,16 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
     try {
       const eventRef = doc(db, "events", event.id);
 
-      const isPending = event.pendingParticipants?.includes(profile.id);
+      const pendingCheck = event.pendingParticipants?.includes(profile.id);
 
-      if (isJoined || isPending) {
+      if (isJoined || pendingCheck) {
         await updateDoc(eventRef, {
           participants: arrayRemove(profile.id),
           pendingParticipants: arrayRemove(profile.id)
         });
       } else {
-        await updateDoc(eventRef, { pendingParticipants: arrayUnion(profile.id) }); onJoinRequest?.();
+        await updateDoc(eventRef, { pendingParticipants: arrayUnion(profile.id) }); 
+        if(onJoinRequest) onJoinRequest();
       }
     } catch (err) {
       console.error("Error joining event:", err);
@@ -894,10 +861,10 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       <div className="flex items-center gap-1.5 mb-2 opacity-80">
         <Users size={12} className="text-primary" />
         <span className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies:</span>
-        <span className="text-[11px] font-bold text-on-surface">{event.participants.length} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
+        <span className="text-[11px] font-bold text-on-surface">{event.participants?.length || 0} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
       </div>
 
-      {(event.certificateRequirements?.length > 0 || event.equipmentRequirements?.length > 0) && (
+      {((event.certificateRequirements?.length ?? 0) > 0 || (event.equipmentRequirements?.length ?? 0) > 0) && (
         <div className="flex flex-col gap-2 mb-4">
           {event.certificateRequirements && event.certificateRequirements.length > 0 && (
             <div className="flex flex-wrap items-center gap-1">
@@ -1170,8 +1137,6 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
           timestamp: serverTimestamp()
         };
 
-        console.log("EVENT DATA", eventData);
-
         const eventDocRef = await addDoc(collection(db, "events"), eventData);
 
         if (formData.shareToFeed) {
@@ -1242,7 +1207,6 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
-
                   <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
                     <X size={24} />
                   </button>
@@ -1376,8 +1340,6 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                     <p className="text-[9px] font-bold text-error uppercase tracking-widest ml-1">{errors.time}</p>
                   )}
                 </div>
-
-
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between ml-1">
@@ -1748,7 +1710,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                 <div>
                   <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Expedition Crew</h3>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
-                    {liveEvent?.participants.length} Divers Registered
+                    {liveEvent?.participants?.length || 0} Divers Registered
                   </p>
                 </div>
                 <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
@@ -1912,6 +1874,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
 const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost, eventId }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean, eventId?: string }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { profile: currentUser } = useAuth();
   const canViewPrivate = Boolean(isEventHost) || currentUser?.id === user?.id;
 
@@ -1920,49 +1883,42 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
       if (!user?.id) return;
       
       setIsLoading(true);
+      setErrorMessage(null);
+
       try {
         if (!eventId && currentUser?.id !== user.id) {
           throw new Error("Missing eventId for secure fetch");
         }
 
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error("User not authenticated");
-
-        const response = await fetch("/api/get-private-info", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            targetUserId: user.id,
-            eventId: eventId
-          })
+        // Kører direkte igennem vores nye Cloud Function i stedet for en usikker Express server
+        const functionsInstance = getFunctions();
+        const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
+        
+        const result = await getPrivateInfoCallable({
+          targetUserId: user.id,
+          eventId: eventId
         });
 
-        if (!response.ok) {
-           const errData = await response.json();
-           throw new Error(errData.error || "Failed to fetch private info");
-        }
-        
-        const data = await response.json();
-        if (Object.keys(data).length > 0) {
-          setPrivateInfo(data as UserPrivateInfo);
+        if (result.data && Object.keys(result.data).length > 0) {
+          setPrivateInfo(result.data as UserPrivateInfo);
         } else {
           setPrivateInfo(null);
         }
-      } catch (err) {
-        console.error("Error fetching private info:", err);
+      } catch (err: any) {
+        console.error("Error fetching private info via Cloud Function:", err);
+        setErrorMessage(err.message || "Failed to load private information. Access denied.");
         setPrivateInfo(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (isOpen && user) {
+    if (isOpen && user && canViewPrivate) {
       fetchPrivateInfo();
+    } else {
+      setIsLoading(false);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, eventId, canViewPrivate, currentUser?.id]);
 
   if (!user) return null;
 
@@ -2100,64 +2056,67 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                       <Phone size={12} />
                       Contact Info
                     </div>
-                <div className="space-y-3">
-
-                  {isLoading ? (
-                    <div className="h-10 flex items-center justify-center">
-                      <Loader2 size={24} className="animate-spin text-secondary" />
-                    </div>
-                  ) : privateInfo?.phoneNumber && (
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                       <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone</div>
-                       <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
-                    </div>
-                  )}
-                </div>
-
-                {!isLoading && (
-                  <>
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
-                      <ShieldCheck size={12} />
-                      Emergency Contacts
-                    </div>
-
-                    {privateInfo?.emergencyContactName ? (
-                      <div className="space-y-3">
-                        <div className="bg-error/5 rounded-2xl p-4 border border-error/10 space-y-1">
-                           <div className="text-[9px] font-black uppercase tracking-widest text-error/60">Primary Contact</div>
-                           <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName}</div>
-                           <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone}</div>
+                    <div className="space-y-3">
+                      {isLoading ? (
+                        <div className="h-10 flex items-center justify-center">
+                          <Loader2 size={24} className="animate-spin text-secondary" />
                         </div>
-                        {privateInfo.emergencyContactName2 && (
-                          <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                             <div className="text-[9px] font-black uppercase tracking-widest text-outline">Secondary Contact</div>
-                             <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName2}</div>
-                             <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone2}</div>
+                      ) : errorMessage ? (
+                        <div className="bg-error/10 text-error p-4 rounded-2xl border border-error/20 text-center">
+                          <span className="text-[10px] font-black uppercase tracking-widest">{errorMessage}</span>
+                        </div>
+                      ) : privateInfo?.phoneNumber && (
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone</div>
+                           <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!isLoading && !errorMessage && (
+                      <>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-error/60 mb-2 pt-2">
+                          <ShieldCheck size={12} />
+                          Emergency Contacts
+                        </div>
+
+                        {privateInfo?.emergencyContactName ? (
+                          <div className="space-y-3">
+                            <div className="bg-error/5 rounded-2xl p-4 border border-error/10 space-y-1">
+                               <div className="text-[9px] font-black uppercase tracking-widest text-error/60">Primary Contact</div>
+                               <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName}</div>
+                               <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone}</div>
+                            </div>
+                            {privateInfo.emergencyContactName2 && (
+                              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
+                                 <div className="text-[9px] font-black uppercase tracking-widest text-outline">Secondary Contact</div>
+                                 <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName2}</div>
+                                 <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone2}</div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
+                            No Emergency Contact Provided
                           </div>
                         )}
-                      </div>
-                    ) : (
-                      <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
-                        No Emergency Contact Provided
-                      </div>
-                    )}
 
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60 mb-2 pt-2">
-                      <Info size={12} />
-                      Medical Information
-                    </div>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-h-[60px]">
-                       <p className={cn(
-                         "text-xs font-medium leading-relaxed",
-                         privateInfo?.medicalNotes ? "text-on-surface italic" : "text-outline/40 italic"
-                       )}>
-                         {privateInfo?.medicalNotes || "No medical history or allergies noted."}
-                       </p>
-                    </div>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60 mb-2 pt-2">
+                          <Info size={12} />
+                          Medical Information
+                        </div>
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-h-[60px]">
+                           <p className={cn(
+                             "text-xs font-medium leading-relaxed",
+                             privateInfo?.medicalNotes ? "text-on-surface italic" : "text-outline/40 italic"
+                           )}>
+                             {privateInfo?.medicalNotes || "No medical history or allergies noted."}
+                           </p>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
               </div>
             </div>
 
