@@ -1880,38 +1880,47 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
 
   useEffect(() => {
     const fetchPrivateInfo = async () => {
-      if (!user?.id) return;
-      
-      setIsLoading(true);
-      setErrorMessage(null);
+    if (!user?.id) return;
+    
+    setIsLoading(true);
+    setErrorMessage(null);
 
-      try {
-        if (!eventId && currentUser?.id !== user.id) {
-          throw new Error("Missing eventId for secure fetch");
-        }
-
-        // Kører direkte igennem vores nye Cloud Function i stedet for en usikker Express server
-        const functionsInstance = getFunctions(auth.app);
-        const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
-        
-        const result = await getPrivateInfoCallable({
-          targetUserId: user.id,
-          eventId: eventId
-        });
-
-        if (result.data && Object.keys(result.data).length > 0) {
-          setPrivateInfo(result.data as UserPrivateInfo);
-        } else {
-          setPrivateInfo(null);
-        }
-      } catch (err: any) {
-        console.error("Error fetching private info via Cloud Function:", err);
-        setErrorMessage(err.message || "Failed to load private information. Access denied.");
-        setPrivateInfo(null);
-      } finally {
-        setIsLoading(false);
+    try {
+      if (!eventId && currentUser?.id !== user.id) {
+        throw new Error("Missing eventId for secure fetch");
       }
-    };
+
+      // 1. Tjek at Firebase Auth rent faktisk har registreret dig som logget ind
+      if (!auth.currentUser) {
+        throw new Error("Session is loading. Please close and click the profile again.");
+      }
+
+      // 2. TVING Firebase til at hente et helt friskt token. Dette garanterer 100 %, 
+      // at dit "ID-kort" bliver sendt med over til Cloud Funktionen.
+      await auth.currentUser.getIdToken(true);
+
+      // 3. Tilføj eksplicit 'us-central1' regionen (nogle gange påkrævet af Firebase SDK'et)
+      const functionsInstance = getFunctions(auth.app, 'us-central1');
+      const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
+      
+      const result = await getPrivateInfoCallable({
+        targetUserId: user.id,
+        eventId: eventId
+      });
+
+      if (result.data && Object.keys(result.data).length > 0) {
+        setPrivateInfo(result.data as UserPrivateInfo);
+      } else {
+        setPrivateInfo(null);
+      }
+    } catch (err: any) {
+      console.error("Error fetching private info via Cloud Function:", err);
+      setErrorMessage(err.message || "Failed to load private information. Access denied.");
+      setPrivateInfo(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
     if (isOpen && user && canViewPrivate) {
       fetchPrivateInfo();
