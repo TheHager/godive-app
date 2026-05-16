@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc, increment } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { db, auth, handleFirestoreError, OperationType } from "../lib/firebase";
+import { db, auth, app, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
 import { useUser } from "../contexts/UserContext";
@@ -1900,7 +1900,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
       await auth.currentUser.getIdToken(true);
 
       // 3. Tilføj eksplicit 'us-central1' regionen (nogle gange påkrævet af Firebase SDK'et)
-      const functionsInstance = getFunctions(auth.app, 'us-central1');
+      const functionsInstance = getFunctions(app, 'us-central1');
       const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
       
       const result = await getPrivateInfoCallable({
