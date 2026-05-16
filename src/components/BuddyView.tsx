@@ -1890,31 +1890,48 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
         throw new Error("Missing eventId for secure fetch");
       }
 
-      // 1. Tjek at Firebase Auth rent faktisk har registreret dig som logget ind
       if (!auth.currentUser) {
-        throw new Error("Session is loading. Please close and click the profile again.");
+        throw new Error("Session is loading. Please close and click again.");
       }
 
-      // 2. TVING Firebase til at hente et helt friskt token. Dette garanterer 100 %, 
-      // at dit "ID-kort" bliver sendt med over til Cloud Funktionen.
-      await auth.currentUser.getIdToken(true);
+      // 1. Vi henter et stensikkert, dugfriskt token direkte fra brugeren
+      const token = await auth.currentUser.getIdToken(true);
 
-      // 3. Tilføj eksplicit 'us-central1' regionen (nogle gange påkrævet af Firebase SDK'et)
-      const functionsInstance = getFunctions(app, 'us-central1');
-      const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
-      
-      const result = await getPrivateInfoCallable({
-        targetUserId: user.id,
-        eventId: eventId
+      // 2. Vi by-passer Firebase SDK'et og sender tokenet manuelt via standard fetch.
+      // (En Callable Function forventer altid at modtage variabler indeni et "data"-objekt)
+      const response = await fetch("https://us-central1-project-7c683cb5-9592-4a84-97d.cloudfunctions.net/getParticipantPrivateInfo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Her afleverer vi ID-kortet personligt!
+        },
+        body: JSON.stringify({
+          data: {
+            targetUserId: user.id,
+            eventId: eventId
+          }
+        })
       });
 
-      if (result.data && Object.keys(result.data).length > 0) {
-        setPrivateInfo(result.data as UserPrivateInfo);
+      // 3. Tjek om dørmanden afviste os (hvis du f.eks. ikke er buddy)
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Hent den specifikke fejlbesked fra Firebase eller smid vores egen
+        throw new Error(errorData?.error?.message || "Failed to load private information. Access denied.");
+      }
+
+      // 4. Hvis godkendt, pakker vi dataen ud (Callable functions returnerer altid i et "data"-objekt)
+      const responseData = await response.json();
+      const result = responseData.data;
+
+      if (result && Object.keys(result).length > 0) {
+        setPrivateInfo(result as UserPrivateInfo);
       } else {
         setPrivateInfo(null);
       }
     } catch (err: any) {
-      console.error("Error fetching private info via Cloud Function:", err);
+      console.error("Error fetching private info manually:", err);
+      // Viser ren engelsk fejlbesked på skærmen
       setErrorMessage(err.message || "Failed to load private information. Access denied.");
       setPrivateInfo(null);
     } finally {
