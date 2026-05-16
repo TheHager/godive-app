@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc, increment } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { db, auth, app, handleFirestoreError, OperationType } from "../lib/firebase";
+import { db, auth, app, targetDbId, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
 import { useUser } from "../contexts/UserContext";
@@ -1906,7 +1906,8 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
         },
         body: JSON.stringify({
           targetUserId: user.id,
-          eventId: eventId
+          eventId: eventId,
+          databaseId: targetDbId
         })
       });
 
