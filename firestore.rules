@@ -188,11 +188,7 @@ service cloud.firestore {
       allow delete: if isOwner(userId) || isAdmin();
 
       match /private/info {
-        // Allows event co-hosts, hosts, the owner, and any authenticated user to read private info.
-        allow get: if isSignedIn() || isOwner(userId);
-        allow list: if isSignedIn() || isOwner(userId);
-        allow delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidPrivateInfo(incoming());
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 

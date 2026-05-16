@@ -3,7 +3,7 @@ import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserP
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { collection, query, where, getDocs, or, doc, updateDoc, arrayUnion, arrayRemove, limit, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, getDoc, increment } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+import { db, auth, handleFirestoreError, OperationType } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { filterProfanity } from "../lib/profanity";
 import { useUser } from "../contexts/UserContext";
@@ -1903,12 +1903,13 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
         isBuddy={profile?.friends?.includes(selectedParticipant?.id || "") || false}
         onRemoveBuddy={onRemoveBuddy}
         isEventHost={isHost}
+        eventId={liveEvent?.id}
       />
     </>
   );
 };
 
-const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean }) => {
+const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEventHost, eventId }: { isOpen: boolean, onClose: () => void, user: UserProfile | null, isBuddy?: boolean, onRemoveBuddy?: (id: string) => void, isEventHost?: boolean, eventId?: string }) => {
   const [privateInfo, setPrivateInfo] = useState<UserPrivateInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { profile: currentUser } = useAuth();
@@ -1920,17 +1921,38 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
       
       setIsLoading(true);
       try {
-        const privateRef = doc(db, "users", user.id, "private", "info");
-        const docSnap = await getDoc(privateRef);
+        if (!eventId && currentUser?.id !== user.id) {
+          throw new Error("Missing eventId for secure fetch");
+        }
+
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) throw new Error("User not authenticated");
+
+        const response = await fetch("/api/get-private-info", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            targetUserId: user.id,
+            eventId: eventId
+          })
+        });
+
+        if (!response.ok) {
+           const errData = await response.json();
+           throw new Error(errData.error || "Failed to fetch private info");
+        }
         
-        if (docSnap.exists()) {
-          setPrivateInfo(docSnap.data() as UserPrivateInfo);
+        const data = await response.json();
+        if (Object.keys(data).length > 0) {
+          setPrivateInfo(data as UserPrivateInfo);
         } else {
           setPrivateInfo(null);
         }
       } catch (err) {
         console.error("Error fetching private info:", err);
-        handleFirestoreError(err, OperationType.GET, `users/${user.id}/private/info`);
         setPrivateInfo(null);
       } finally {
         setIsLoading(false);
