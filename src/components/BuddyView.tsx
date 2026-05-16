@@ -1891,7 +1891,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
         }
 
         // Kører direkte igennem vores nye Cloud Function i stedet for en usikker Express server
-        const functionsInstance = getFunctions();
+        const functionsInstance = getFunctions(auth.app);
         const getPrivateInfoCallable = httpsCallable(functionsInstance, 'getParticipantPrivateInfo');
         
         const result = await getPrivateInfoCallable({
