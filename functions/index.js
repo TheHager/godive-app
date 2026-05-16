@@ -5,48 +5,56 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-exports.getParticipantPrivateInfo = functions.https.onCall(async (data, context) => {
-  // 1. Modtag både standard-data OG vores nye manuelle token
-  const { targetUserId, eventId, token } = data;
-  
-  let requestUid = context.auth ? context.auth.uid : null;
+exports.getParticipantPrivateInfo = functions.https.onRequest(async (req, res) => {
+  // 1. MANUEL CORS HÅNDTERING (Dette garanterer, at browseren lukker os igennem)
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // 2. Den ultimative Plan B: Hvis browseren klippede auth-headeren væk (CORS), 
-  // så dekoder vi bare det manuelle token, vi har sendt med i konvolutten!
-  if (!requestUid && token) {
-    try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      requestUid = decodedToken.uid;
-    } catch (error) {
-      console.error("Manual token verification failed:", error);
-    }
+  // Hvis browseren sender et "må jeg godt?" (OPTIONS) preflight-kald, siger vi ja med det samme
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
   }
 
-  // Hvis vi STADIG ikke har noget ID, så afviser vi
-  if (!requestUid) {
-    throw new functions.https.HttpsError(
-      'unauthenticated', 
-      'The function must be called while authenticated.'
-    );
-  }
-
-  if (!targetUserId || !eventId) {
-    throw new functions.https.HttpsError(
-      'invalid-argument', 
-      'The function must be called with two arguments: targetUserId and eventId.'
-    );
+  // Accepter kun POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
+    // 2. Tjekker direkte i konvolutten efter dit 'Bearer' token
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Access denied. Missing or invalid Authorization header.' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    let requestUid;
+    
+    try {
+      // 3. Vi lader Firebase låse tokenet op og bekræfte din identitet
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      requestUid = decodedToken.uid;
+    } catch (err) {
+      console.error("Token verification failed:", err);
+      return res.status(401).json({ error: 'Access denied. Invalid session token.' });
+    }
+
+    const { targetUserId, eventId } = req.body;
+
+    if (!targetUserId || !eventId) {
+      return res.status(400).json({ error: 'Missing required parameters: targetUserId and eventId' });
+    }
+
+    // 4. Den korrekte database-logik fra før
     const eventDoc = await admin.firestore().collection('events').doc(eventId).get();
 
     if (!eventDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'The requested event could not be found.');
+      return res.status(404).json({ error: 'The requested event could not be found.' });
     }
 
     const eventData = eventDoc.data();
     
-    // 3. FIX: Nu leder vi efter 'hostId' (som din frontend bruger) i stedet for 'host'
     const host = eventData.hostId || eventData.host || '';
     const coHosts = eventData.coHosts || []; 
     const participants = eventData.participants || []; 
@@ -54,24 +62,19 @@ exports.getParticipantPrivateInfo = functions.https.onCall(async (data, context)
     const isHost = requestUid === host;
     const isCoHost = Array.isArray(coHosts) && coHosts.includes(requestUid);
 
-    // (Tillad også at man kigger på sin egen profil)
+    // Må man kigge? (Er man host, co-host, eller kigger man på sig selv?)
     if (!isHost && !isCoHost && requestUid !== targetUserId) {
-      throw new functions.https.HttpsError(
-        'permission-denied', 
-        'Permission denied. Only the event host or co-hosts can view private participant details.'
-      );
+      return res.status(403).json({ error: 'Permission denied. Only event hosts can view this data.' });
     }
 
     const isParticipant = Array.isArray(participants) && participants.includes(targetUserId);
     const isTargetHost = targetUserId === host;
 
     if (!isParticipant && !isTargetHost) {
-      throw new functions.https.HttpsError(
-        'permission-denied', 
-        'The requested user is not a participant in this event.'
-      );
+      return res.status(403).json({ error: 'The user is not a participant in this event.' });
     }
 
+    // 5. Hent dataen og send den tilbage
     const privateInfoDoc = await admin.firestore()
       .collection('users')
       .doc(targetUserId)
@@ -80,19 +83,13 @@ exports.getParticipantPrivateInfo = functions.https.onCall(async (data, context)
       .get();
 
     if (!privateInfoDoc.exists) {
-      return {};
+      return res.status(200).json({});
     }
 
-    return privateInfoDoc.data();
+    return res.status(200).json(privateInfoDoc.data());
 
   } catch (error) {
     console.error('Error in getParticipantPrivateInfo:', error);
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
-    }
-    throw new functions.https.HttpsError(
-      'internal', 
-      error.message || 'An internal server error occurred while fetching data.'
-    );
+    return res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
