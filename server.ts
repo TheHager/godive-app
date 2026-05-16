@@ -7,10 +7,14 @@ import admin from 'firebase-admin';
 
 // Initialize Firebase Admin
 // We use application default credentials or explicitly provide project ID
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: 'project-7c683cb5-9592-4a84-97d'
-  });
+try {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      projectId: 'project-7c683cb5-9592-4a84-97d'
+    });
+  }
+} catch (error) {
+  console.error("Firebase Admin Initialization Error:", error);
 }
 
 
@@ -57,6 +61,9 @@ async function startServer() {
       }
 
       const eventData = eventDoc.data();
+      if (!eventData) {
+        return res.status(404).json({ error: "Event data is empty" });
+      }
       const isHost = eventData.hostId === uid || (eventData.coHosts && eventData.coHosts.includes(uid));
 
       if (!isHost) {
@@ -74,9 +81,9 @@ async function startServer() {
 
       return res.json(privateInfoDoc.data() || {});
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/get-private-info:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 
