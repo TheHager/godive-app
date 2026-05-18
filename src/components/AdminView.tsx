@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { collection, query, where, getDocs, doc, updateDoc, collectionGroup, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -20,13 +20,47 @@ export interface ReportedItem {
 
 
 
+
 export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedItem, onClose: () => void }) => {
-    const renderValue = (key: string, value: any): React.ReactNode => {
+  const [reporterNames, setReporterNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchReporterNames = async () => {
+      if (!item.reportedBy || item.reportedBy.length === 0) return;
+
+      const names: Record<string, string> = {};
+      await Promise.all(
+        item.reportedBy.map(async (uid) => {
+          try {
+            const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", uid)));
+            if (!userDoc.empty) {
+              names[uid] = userDoc.docs[0].data().displayName || uid;
+            } else {
+              names[uid] = uid; // fallback
+            }
+          } catch (e) {
+            names[uid] = uid; // fallback
+          }
+        })
+      );
+      setReporterNames(names);
+    };
+
+    fetchReporterNames();
+  }, [item.reportedBy]);
+
+  const renderValue = (key: string, value: any): React.ReactNode => {
     if (value === null || value === undefined) return <span className="text-on-surface-variant italic">Not provided</span>;
     if (typeof value === 'boolean') return value ? "Yes" : "No";
 
-    // Handle Images
+    // Handle Profile Images (userPhotoUrl, photoURL)
     const lowerKey = key.toLowerCase();
+    const isProfilePic = lowerKey === 'userphotourl' || lowerKey === 'photourl';
+    if (typeof value === 'string' && value.startsWith('http') && isProfilePic) {
+        return <img src={value} alt="User Profile" className="w-12 h-12 rounded-full object-cover border border-white/10" />;
+    }
+
+    // Handle Images
     const isImageKey = lowerKey.includes('image') || lowerKey.includes('photo');
     if (typeof value === 'string' && (value.startsWith('data:image/') || (value.startsWith('http') && isImageKey))) {
         return <img src={value} alt="Reported content" className="w-full max-h-64 object-contain rounded-md mt-2 bg-black/10" />;
@@ -67,7 +101,8 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
 
   const getFilteredData = () => {
     if (!item.originalData) return null;
-    const { id, userId, hostId, reported, reportsCount, reportedBy, authorId, ...rest } = item.originalData;
+    // Ensure we exclude eventId as requested, along with authorId and path which are in original data sometimes
+    const { id, userId, hostId, reported, reportsCount, reportedBy, authorId, eventId, documentPath, ...rest } = item.originalData;
     return rest;
   };
 
@@ -99,26 +134,12 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
           <div className="space-y-6">
             <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Author ID</h3>
-              <div className="font-mono text-sm bg-black/20 p-3 rounded-xl border border-white/5 break-all">
-                {item.authorId || 'Unknown'}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Document Path</h3>
-              <div className="font-mono text-sm bg-black/20 p-3 rounded-xl border border-white/5 break-all">
-                {item.path}
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Reported By</h3>
               <div className="bg-black/20 p-3 rounded-xl border border-white/5">
                 {item.reportedBy && item.reportedBy.length > 0 ? (
-                  <ul className="list-disc pl-5 text-sm font-mono space-y-1">
+                  <ul className="list-disc pl-5 text-sm space-y-1 text-on-surface">
                     {item.reportedBy.map((userId, idx) => (
-                      <li key={idx} className="break-all">{userId}</li>
+                      <li key={idx} className="break-all">{reporterNames[userId] || userId}</li>
                     ))}
                   </ul>
                 ) : (
