@@ -314,6 +314,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
   };
 
   return (
+    <>
     <div className="mx-auto max-w-4xl p-6 relative">
       {setView && (
         <button 
@@ -445,7 +446,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                     </div>
                                         <div className="flex gap-2 pt-3 border-t border-white/5 justify-end mt-auto flex-wrap">
                       <button
-                        onClick={() => setSelectedReportedItem(item)}
+                        onClick={() => { console.log('Button clicked', item); setSelectedReportedItem(item); }}
                         className="flex items-center gap-1.5 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-secondary/20 transition-colors"
                       >
                         <Eye size={14} />
@@ -521,6 +522,13 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
           </div>
 
 
-    </div>
+        </div>
+    {selectedReportedItem && (
+      <ReportedContentDetailModal
+        item={selectedReportedItem}
+        onClose={() => setSelectedReportedItem(null)}
+      />
+    )}
+    </>
   );
 };
