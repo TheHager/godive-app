@@ -158,6 +158,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const { profile } = useAuth();
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isReportingPost, setIsReportingPost] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [showFullImage, setShowFullImage] = useState(false);
   const [showComments, setShowComments] = useState(false);

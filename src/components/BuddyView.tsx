@@ -696,6 +696,7 @@ interface EventCardProps {
 const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, onViewParticipants, onSafetyRequirement, onJoinRequest }: EventCardProps) => {
   const { profile } = useAuth();
   const [isJoining, setIsJoining] = useState(false);
+  const [isReportingEvent, setIsReportingEvent] = useState(false);
   const isFull = event.maxParticipants > 0 && (event.participants?.length || 0) >= event.maxParticipants && !isJoined;
   const isPending = event.pendingParticipants?.includes(profile?.id || "");
   
