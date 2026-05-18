@@ -18,6 +18,7 @@ export interface UserProfile {
   pinnedBadgeId?: string;
   badgeStats?: Record<string, number>;
   homeBase?: string;
+  role?: "user" | "moderator" | "superadmin";
 }
 
 export interface UserPrivateInfo {
