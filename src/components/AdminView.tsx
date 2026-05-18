@@ -102,7 +102,7 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
   const getFilteredData = () => {
     if (!item.originalData) return null;
     // Ensure we exclude eventId as requested, along with authorId and path which are in original data sometimes
-    const { id, userId, hostId, reported, reportsCount, reportedBy, authorId, eventId, documentPath, ...rest } = item.originalData;
+    const { id, userId, hostId, reported, reportsCount, reportedBy, authorId, eventId, documentPath, reportDetails, ...rest } = item.originalData;
     return rest;
   };
 
@@ -139,7 +139,14 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
                 {item.reportedBy && item.reportedBy.length > 0 ? (
                   <ul className="list-disc pl-5 text-sm space-y-1 text-on-surface">
                     {item.reportedBy.map((userId, idx) => (
-                      <li key={idx} className="break-all">{reporterNames[userId] || userId}</li>
+                      <li key={idx} className="break-all flex flex-col mb-2">
+                        <span className="font-bold">{reporterNames[userId] || userId}</span>
+                        {item.originalData?.reportDetails?.find((r: any) => r.uid === userId)?.reason && (
+                          <span className="text-xs text-on-surface-variant italic mt-0.5 border-l-2 border-white/10 pl-2">
+                            "{item.originalData.reportDetails.find((r: any) => r.uid === userId).reason}"
+                          </span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 ) : (
