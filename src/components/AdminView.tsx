@@ -1,13 +1,25 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, collectionGroup, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { ShieldAlert, Search, RefreshCw, UserCheck, ArrowLeft } from "lucide-react";
+import { ShieldAlert, Search, RefreshCw, UserCheck, ArrowLeft, Trash2, XCircle, Flag } from "lucide-react";
 import { UserProfile, View } from "../types";
 import { cn } from "../lib/utils";
 
+export interface ReportedItem {
+  id: string;
+  type: "Post" | "Event" | "Comment";
+  reason: string;
+  reportsCount: number;
+  reportedBy: string[];
+  contentPreview: string;
+  path: string; // Used to delete the correct document
+  authorId: string;
+  originalData?: any;
+}
+
 export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [emailSearch, setEmailSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
@@ -15,9 +27,12 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [pendingSites, setPendingSites] = useState<any[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
+  const [reportedItems, setReportedItems] = useState<ReportedItem[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
 
   const isAdmin = user?.email?.toLowerCase() === "tobias.h.jensen@gmail.com" || user?.email?.toLowerCase() === "tobiashagerjensen1992@gmail.com";
-  if (!isAdmin) {
+  const hasAccess = isAdmin || profile?.role === "superadmin" || profile?.role === "moderator";
+  if (!hasAccess) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background text-on-surface p-6 text-center">
         <ShieldAlert size={64} className="text-error mb-4" />
@@ -26,6 +41,84 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
       </div>
     );
   }
+
+  const fetchReports = async () => {
+    setIsLoadingReports(true);
+    try {
+      const items: ReportedItem[] = [];
+
+      // Fetch reported posts
+      const postsQ = query(collection(db, "posts"), where("reported", "==", true));
+      const postsSnap = await getDocs(postsQ);
+      postsSnap.forEach(doc => {
+        const data = doc.data();
+        items.push({
+          id: doc.id,
+          type: "Post",
+          reason: "User reports",
+          reportsCount: data.reportsCount || 0,
+          reportedBy: data.reportedBy || [],
+          contentPreview: data.content || "(No content)",
+          path: `posts/${doc.id}`,
+          authorId: data.userId || "",
+          originalData: data
+        });
+      });
+
+      // Fetch reported events
+      const eventsQ = query(collection(db, "events"), where("reported", "==", true));
+      const eventsSnap = await getDocs(eventsQ);
+      eventsSnap.forEach(doc => {
+        const data = doc.data();
+        items.push({
+          id: doc.id,
+          type: "Event",
+          reason: "User reports",
+          reportsCount: data.reportsCount || 0,
+          reportedBy: data.reportedBy || [],
+          contentPreview: data.title || "(No title)",
+          path: `events/${doc.id}`,
+          authorId: data.hostId || "",
+          originalData: data
+        });
+      });
+
+      // Fetch reported comments using collectionGroup
+      try {
+        const commentsQ = query(collectionGroup(db, "comments"), where("reported", "==", true));
+        const commentsSnap = await getDocs(commentsQ);
+        commentsSnap.forEach(docSnap => {
+          const data = docSnap.data();
+          items.push({
+            id: docSnap.id,
+            type: "Comment",
+            reason: "User reports",
+            reportsCount: data.reportsCount || 0,
+            reportedBy: data.reportedBy || [],
+            contentPreview: data.content || "(No content)",
+            path: docSnap.ref.path, // e.g. posts/123/comments/456
+            authorId: data.userId || "",
+            originalData: data
+          });
+        });
+      } catch (e) {
+        console.warn("Could not fetch reported comments via collectionGroup (likely missing index or permissions).", e);
+      }
+
+      setReportedItems(items.sort((a, b) => b.reportsCount - a.reportsCount));
+    } catch (e) {
+      console.error("Error fetching reports", e);
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (hasAccess) {
+      fetchPendingSites();
+      fetchReports();
+    }
+  }, [hasAccess]);
 
   const fetchPendingSites = async () => {
     setIsLoadingSites(true);
@@ -51,6 +144,34 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
       setPendingSites(prev => prev.filter(s => s.id !== siteId));
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDismissReport = async (item: ReportedItem) => {
+    try {
+      await updateDoc(doc(db, item.path), {
+        reported: false,
+        reportsCount: 0,
+        reportedBy: []
+      });
+      setReportedItems(prev => prev.filter(i => i.path !== item.path));
+      setMessage({ type: 'success', text: `Dismissed report for ${item.type}.` });
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: "Failed to dismiss report." });
+    }
+  };
+
+  const handleDeleteReportedContent = async (item: ReportedItem) => {
+    if (!confirm(`Are you sure you want to delete this ${item.type}? This action cannot be undone.`)) return;
+
+    try {
+      await deleteDoc(doc(db, item.path));
+      setReportedItems(prev => prev.filter(i => i.path !== item.path));
+      setMessage({ type: 'success', text: `Deleted ${item.type} successfully.` });
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: "Failed to delete content." });
     }
   };
 
@@ -212,6 +333,65 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
           </div>
         )}
       </div>
+
+
+          <div className="mt-12 max-w-xl mx-auto w-full mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold tracking-tight">Reported Content</h2>
+              <button
+                onClick={fetchReports}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
+              >
+                <RefreshCw size={14} className={cn(isLoadingReports && "animate-spin")} />
+                Refresh
+              </button>
+            </div>
+
+            {reportedItems.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
+                No reported content. Good job!
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {reportedItems.map(item => (
+                  <div key={item.path} className="bg-surface-container-high/50 p-4 rounded-2xl border border-error/20 flex flex-col gap-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2 py-0.5 bg-error/10 text-error rounded text-[10px] font-bold uppercase tracking-widest border border-error/20">
+                            {item.type}
+                          </span>
+                          <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                            <Flag size={12} className="text-error" /> {item.reportsCount} report(s)
+                          </span>
+                        </div>
+                        <p className="text-sm text-on-surface mt-2 font-medium line-clamp-3">"{item.contentPreview}"</p>
+                        <div className="text-[10px] text-on-surface-variant mt-2 uppercase tracking-widest font-bold">
+                          Author ID: {item.authorId}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-3 border-t border-white/5 justify-end mt-auto">
+                      <button
+                        onClick={() => handleDismissReport(item)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-white/10 text-on-surface border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors"
+                      >
+                        <XCircle size={14} />
+                        Dismiss
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReportedContent(item)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-error/20 text-error border border-error/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-error/30 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        Delete Content
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="mt-12 max-w-xl mx-auto w-full">
             <div className="flex items-center justify-between mb-4">
