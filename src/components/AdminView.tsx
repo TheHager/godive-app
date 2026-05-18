@@ -262,53 +262,6 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
           </div>
 
 
-          <div className="mt-12 w-full">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold tracking-tight">Pending Dive Sites</h2>
-              <button
-                onClick={fetchPendingSites}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
-              >
-                <RefreshCw size={14} className={cn(isLoadingSites && "animate-spin")} />
-                Refresh
-              </button>
-            </div>
-
-            {pendingSites.length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
-                No pending dive sites to moderate.
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {pendingSites.map(site => (
-                  <div key={site.id} className="bg-surface-container-high/50 p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="font-bold">{site.name}</div>
-                      <div className="text-xs text-on-surface-variant flex gap-2 mt-1">
-                        <span>Lat: {site.lat}</span>
-                        <span>Lng: {site.lng}</span>
-                        <span>By: {site.userId}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => handleUpdateSiteStatus(site.id, "verified")}
-                        className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary/30"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleUpdateSiteStatus(site.id, "rejected")}
-                        className="px-4 py-2 bg-error/20 text-error border border-error/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-error/30"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
     </div>
   );
 };
