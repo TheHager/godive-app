@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ReportReasonModal } from "./ReportReasonModal";
 import { Search, MapPin, Users, Calendar, ArrowUpRight, ShieldCheck, Ship, UserPlus, UserCheck, X, Loader2, Trash2, Plus, Clock, Info, CheckCircle2, Edit2, Phone, HeartPulse, ImagePlus, ImageIcon, Map as MapIcon, Share2, AlertCircle, Flag, Award, Settings, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
@@ -700,34 +701,40 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
   
   const hasReported = event.reportedBy?.includes(profile?.id || "");
 
-  const handleReport = async () => {
+  const handleReportAction = () => {
     if (!profile?.id || isHost) return;
+    if (hasReported) {
+      handleRemoveReport();
+    } else {
+      setIsReportingEvent(true);
+    }
+  };
+
+  const handleRemoveReport = async () => {
+    if (!profile?.id) return;
     try {
       const eventRef = doc(db, "events", event.id);
-      
-      if (hasReported) {
-        await updateDoc(eventRef, {
-          reportedBy: arrayRemove(profile.id), reportsCount: increment(-1), reported: hasReported ? (event.reportsCount && event.reportsCount <= 1 ? false : true) : false
-        });
-      } else {
-        const newReportsCount = (event.reportsCount || 0) + 1;
-        
-        if (newReportsCount >= 10) {
-          await deleteDoc(eventRef);
-          
-          // Also delete associated posts
-          const postsQuery = query(collection(db, "posts"), where("eventId", "==", event.id));
-          const postsSnapshot = await getDocs(postsQuery);
-          const deletePromises = postsSnapshot.docs.map(postDoc => 
-            deleteDoc(doc(db, "posts", postDoc.id))
-          );
-          await Promise.all(deletePromises);
-        } else {
-          await updateDoc(eventRef, {
-            reportedBy: arrayUnion(profile.id), reportsCount: increment(1), reported: true
-          });
-        }
-      }
+      await updateDoc(eventRef, {
+        reportedBy: arrayRemove(profile.id),
+        reportsCount: increment(-1),
+        reported: event.reportsCount && event.reportsCount <= 1 ? false : true
+      });
+    } catch (error) {
+      console.error("Error removing event report:", error);
+    }
+  };
+
+  const handleReportSubmit = async (reason: string) => {
+    if (!profile?.id) return;
+    try {
+      const eventRef = doc(db, "events", event.id);
+      await updateDoc(eventRef, {
+        reportedBy: arrayUnion(profile.id),
+        reportDetails: arrayUnion({ uid: profile.id, reason, timestamp: new Date().toISOString() }),
+        reportsCount: increment(1),
+        reported: true
+      });
+      setIsReportingEvent(false);
     } catch (error) {
       console.error("Error reporting event:", error);
     }
@@ -803,7 +810,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
                   }
                 }, destructive: true }
               ] : [
-                { label: hasReported ? "Remove Report" : "Report Event", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
+                { label: hasReported ? "Remove Report" : "Report Event", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReportAction, destructive: true }
               ]}
             />
           </div>
