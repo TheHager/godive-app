@@ -76,6 +76,8 @@ export interface CommunityEvent {
   lat?: number;
   lng?: number;
   reportedBy?: string[];
+  reportDetails?: { uid: string; reason: string; timestamp: string }[];
+  reportDetails?: { uid: string; reason: string; timestamp: string }[];
   reportsCount?: number;
   certificateRequirements?: string[];
   equipmentRequirements?: string[];

@@ -158,6 +158,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const { profile } = useAuth();
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isReportingPost, setIsReportingPost] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [showFullImage, setShowFullImage] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -261,30 +262,47 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReportComment = async (comment: any) => {
+  const handleReportCommentAction = (comment: any, e?: any) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!currentUserId) return;
+    const hasReportedComment = comment.reportedBy?.includes(currentUserId);
+    if (hasReportedComment) {
+      // Just remove report directly
+      handleRemoveCommentReport(comment);
+    } else {
+      setReportingCommentId(comment.id);
+    }
+  };
+
+  const handleRemoveCommentReport = async (comment: any) => {
     try {
       const commentRef = doc(db, "posts", id, "comments", comment.id);
-      const hasReportedComment = comment.reportedBy?.includes(currentUserId);
+      const reportsCount = comment.reportsCount || 0;
+      await updateDoc(commentRef, {
+        reportedBy: arrayRemove(currentUserId),
+        reportsCount: increment(-1),
+        reported: reportsCount <= 1 ? false : true
+      });
+    } catch (error) {
+      console.error("Error removing comment report:", error);
+    }
+  };
+
+  const handleReportCommentSubmit = async (reason: string) => {
+    if (!currentUserId || !reportingCommentId) return;
+    try {
+      const commentRef = doc(db, "posts", id, "comments", reportingCommentId);
+      // We need to find the actual comment object to get current reportsCount
+      const comment = comments.find(c => c.id === reportingCommentId);
+      const currentCount = comment?.reportsCount || 0;
       
-      if (hasReportedComment) {
-        await updateDoc(commentRef, {
-          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
-        });
-      } else {
-        const newReportsCount = (comment.reportsCount || 0) + 1;
-        
-        if (newReportsCount >= 10) {
-          await deleteDoc(commentRef);
-          await updateDoc(doc(db, "posts", id), {
-            commentsCount: increment(-1)
-          });
-        } else {
-          await updateDoc(commentRef, {
-            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
-          });
-        }
-      }
+      await updateDoc(commentRef, {
+        reportedBy: arrayUnion(currentUserId),
+        reportDetails: arrayUnion({ uid: currentUserId, reason, timestamp: new Date().toISOString() }),
+        reportsCount: increment(1),
+        reported: true
+      });
+      setReportingCommentId(null);
     } catch (error) {
       console.error("Error reporting comment:", error);
     }
@@ -349,26 +367,40 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReport = async () => {
+  const handleReportAction = (e?: any) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (!currentUserId) return;
+    if (hasReported) {
+      handleRemovePostReport();
+    } else {
+      setIsReportingPost(true);
+    }
+  };
+
+  const handleRemovePostReport = async () => {
+    try {
+      const postRef = doc(db, "posts", id);
+      await updateDoc(postRef, {
+        reportedBy: arrayRemove(currentUserId),
+        reportsCount: increment(-1),
+        reported: (reportsCount && reportsCount <= 1) ? false : true
+      });
+    } catch (error) {
+      console.error("Error removing post report:", error);
+    }
+  };
+
+  const handleReportSubmit = async (reason: string) => {
     if (!currentUserId) return;
     try {
       const postRef = doc(db, "posts", id);
-      
-      if (hasReported) {
-        await updateDoc(postRef, {
-          reportedBy: arrayRemove(currentUserId), reportsCount: increment(-1), reported: hasReported ? (reportsCount && reportsCount <= 1 ? false : true) : false
-        });
-      } else {
-        const newReportsCount = (reportsCount || 0) + 1;
-        
-        if (newReportsCount >= 10) {
-          await deleteDoc(postRef);
-        } else {
-          await updateDoc(postRef, {
-            reportedBy: arrayUnion(currentUserId), reportsCount: increment(1), reported: true
-          });
-        }
-      }
+      await updateDoc(postRef, {
+        reportedBy: arrayUnion(currentUserId),
+        reportDetails: arrayUnion({ uid: currentUserId, reason, timestamp: new Date().toISOString() }),
+        reportsCount: increment(1),
+        reported: true
+      });
+      setIsReportingPost(false);
     } catch (error) {
       console.error("Error reporting post:", error);
     }
@@ -419,7 +451,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
               { label: "Edit Post", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) },
               { label: "Delete Post", icon: <Trash2 size={16} />, onClick: handleDelete, destructive: true }
             ] : [
-              { label: hasReported ? "Remove Report" : "Report Post", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReport, destructive: true }
+              { label: hasReported ? "Remove Report" : "Report Post", icon: <Flag size={16} className={cn(hasReported && "fill-current")} />, onClick: handleReportAction, destructive: true }
             ]}
           />
         </div>
@@ -596,7 +628,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                                 { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
                               ] : [
                                 ...(isPostOwner ? [{ label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }] : []),
-                                { label: hasReportedComment ? "Remove Report" : "Report Comment", icon: <Flag size={16} className={cn(hasReportedComment && "fill-current")} />, onClick: () => handleReportComment(comment), destructive: true }
+                                { label: hasReportedComment ? "Remove Report" : "Report Comment", icon: <Flag size={16} className={cn(hasReportedComment && "fill-current")} />, onClick: (e?: any) => handleReportCommentAction(comment, e), destructive: true }
                               ]}
                             />
                           </div>
