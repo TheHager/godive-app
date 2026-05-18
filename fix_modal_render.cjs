@@ -1,35 +1,37 @@
 const fs = require('fs');
 
-let content = fs.readFileSync('src/components/AdminView.tsx', 'utf8');
+let feedContent = fs.readFileSync('src/components/FeedView.tsx', 'utf8');
 
-// 1. First, fix the onClick and add console.log
-content = content.replace(
-    /onClick=\{\(\) => setSelectedReportedItem\(item\)\}/,
-    "onClick={() => { console.log('Button clicked', item); setSelectedReportedItem(item); }}"
-);
-
-// 2. Ensure the file has Fragments <> and </> if it doesn't already
-if (!content.includes('<>')) {
-    content = content.replace(
-        'return (\n    <div className="flex h-full flex-col overflow-y-auto bg-background text-on-surface p-4 sm:p-6 lg:p-8 scrollbar-thin pb-32">',
-        'return (\n    <>\n    <div className="flex h-full flex-col overflow-y-auto bg-background text-on-surface p-4 sm:p-6 lg:p-8 scrollbar-thin pb-32">'
-    );
-}
-
-// 3. Add the modal at the very end. The file currently ends with:
-//           </div>
-//
-//
-//     </div>
+// I need to add <ReportReasonModal /> into the return block of PostCard
+// Currently it ends like this:
 //   );
 // };
-if (!content.includes('<ReportedContentDetailModal')) {
-    content = content.replace(
-        /<\/div>\n  \);\n};\n?$/,
-        '    </div>\n    {selectedReportedItem && (\n      <ReportedContentDetailModal \n        item={selectedReportedItem} \n        onClose={() => setSelectedReportedItem(null)} \n      />\n    )}\n    </>\n  );\n};\n'
-    );
-} else {
-    console.log('Modal rendering is already in the file! (This is unexpected based on the tail output)');
-}
+//
+// const CreatePostModal
 
-fs.writeFileSync('src/components/AdminView.tsx', content);
+feedContent = feedContent.replace(
+    'return (\n    <div className="bg-surface-container rounded-3xl p-6 border border-white/5 relative flex flex-col hover:border-white/10 transition-colors">',
+    'return (\n    <>\n    <div className="bg-surface-container rounded-3xl p-6 border border-white/5 relative flex flex-col hover:border-white/10 transition-colors">'
+);
+
+feedContent = feedContent.replace(
+    /<\/div>\n  \);\n};\n\nconst CreatePostModal/m,
+    `</div>\n      <ReportReasonModal \n        isOpen={isReportingPost}\n        onClose={() => setIsReportingPost(false)}\n        onSubmit={handleReportSubmit}\n      />\n      <ReportReasonModal \n        isOpen={!!reportingCommentId}\n        onClose={() => setReportingCommentId(null)}\n        onSubmit={handleReportCommentSubmit}\n      />\n    </>\n  );\n};\n\nconst CreatePostModal`
+);
+
+fs.writeFileSync('src/components/FeedView.tsx', feedContent);
+
+
+let buddyContent = fs.readFileSync('src/components/BuddyView.tsx', 'utf8');
+
+buddyContent = buddyContent.replace(
+    'return (\n    <div className="bg-surface-container rounded-3xl p-6 border border-white/5 flex flex-col h-full hover:border-white/10 transition-colors relative group">',
+    'return (\n    <>\n    <div className="bg-surface-container rounded-3xl p-6 border border-white/5 flex flex-col h-full hover:border-white/10 transition-colors relative group">'
+);
+
+buddyContent = buddyContent.replace(
+    /<\/div>\n  \);\n};\n\nconst CreateEventModal/m,
+    `</div>\n      <ReportReasonModal \n        isOpen={isReportingEvent}\n        onClose={() => setIsReportingEvent(false)}\n        onSubmit={handleReportSubmit}\n      />\n    </>\n  );\n};\n\nconst CreateEventModal`
+);
+
+fs.writeFileSync('src/components/BuddyView.tsx', buddyContent);
