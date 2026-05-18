@@ -702,7 +702,8 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
   
   const hasReported = event.reportedBy?.includes(profile?.id || "");
 
-  const handleReportAction = () => {
+  const handleReportAction = (e?: any) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!profile?.id || isHost) return;
     if (hasReported) {
       handleRemoveReport();
@@ -779,6 +780,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
   }
 
   return (
+    <>
     <motion.div 
       layout
       initial={{ opacity: 0, y: 20 }}
@@ -951,6 +953,12 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
         <div className="absolute inset-0 bg-background/20 pointer-events-none" />
       )}
     </motion.div>
+      <ReportReasonModal
+        isOpen={isReportingEvent}
+        onClose={() => setIsReportingEvent(false)}
+        onSubmit={handleReportSubmit}
+      />
+    </>
   );
 };
 

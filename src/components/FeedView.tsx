@@ -262,7 +262,8 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReportCommentAction = (comment: any) => {
+  const handleReportCommentAction = (comment: any, e?: any) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!currentUserId) return;
     const hasReportedComment = comment.reportedBy?.includes(currentUserId);
     if (hasReportedComment) {
@@ -366,7 +367,8 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
     }
   };
 
-  const handleReportAction = () => {
+  const handleReportAction = (e?: any) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!currentUserId) return;
     if (hasReported) {
       handleRemovePostReport();
@@ -626,7 +628,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                                 { label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }
                               ] : [
                                 ...(isPostOwner ? [{ label: "Delete Comment", icon: <Trash2 size={16} />, onClick: () => handleDeleteComment(comment.id), destructive: true }] : []),
-                                { label: hasReportedComment ? "Remove Report" : "Report Comment", icon: <Flag size={16} className={cn(hasReportedComment && "fill-current")} />, onClick: () => handleReportCommentAction(comment), destructive: true }
+                                { label: hasReportedComment ? "Remove Report" : "Report Comment", icon: <Flag size={16} className={cn(hasReportedComment && "fill-current")} />, onClick: (e?: any) => handleReportCommentAction(comment, e), destructive: true }
                               ]}
                             />
                           </div>
