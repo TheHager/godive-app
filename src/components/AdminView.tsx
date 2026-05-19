@@ -23,6 +23,9 @@ export interface ReportedItem {
 
 export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedItem, onClose: () => void }) => {
   const [reporterNames, setReporterNames] = useState<Record<string, string>>({});
+  const [likedByNames, setLikedByNames] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<any[]>([]);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReporterNames = async () => {
@@ -49,6 +52,60 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
     fetchReporterNames();
   }, [item.reportedBy]);
 
+  useEffect(() => {
+    const fetchLikedByNames = async () => {
+      if (!item.originalData?.likedBy || !Array.isArray(item.originalData.likedBy) || item.originalData.likedBy.length === 0) return;
+
+      const names: Record<string, string> = {};
+      await Promise.all(
+        item.originalData.likedBy.map(async (uid: string) => {
+          try {
+            const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", uid)));
+            if (!userDoc.empty) {
+              names[uid] = userDoc.docs[0].data().displayName || uid;
+            } else {
+              names[uid] = uid; // fallback
+            }
+          } catch (e) {
+            names[uid] = uid; // fallback
+          }
+        })
+      );
+      setLikedByNames(names);
+    };
+
+    fetchLikedByNames();
+  }, [item.originalData?.likedBy]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!item.id || !item.type) return;
+
+      try {
+        let collectionName = "";
+        if (item.type === "Post") collectionName = "posts";
+        else if (item.type === "Event") collectionName = "events";
+
+        if (collectionName) {
+           const commentsQ = query(collection(db, collectionName, item.id, "comments"));
+           const commentsSnap = await getDocs(commentsQ);
+           const fetchedComments = commentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+           // Sort by timestamp descending
+           fetchedComments.sort((a: any, b: any) => {
+             const timeA = a.timestamp?.seconds || 0;
+             const timeB = b.timestamp?.seconds || 0;
+             return timeB - timeA;
+           });
+           setComments(fetchedComments);
+        }
+      } catch (e) {
+        console.error("Error fetching comments for reported item", e);
+      }
+    };
+
+    fetchComments();
+  }, [item.id, item.type]);
+
   const renderValue = (key: string, value: any): React.ReactNode => {
     if (value === null || value === undefined) return <span className="text-on-surface-variant italic">Not provided</span>;
     if (typeof value === 'boolean') return value ? "Yes" : "No";
@@ -57,13 +114,13 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
     const lowerKey = key.toLowerCase();
     const isProfilePic = lowerKey === 'userphotourl' || lowerKey === 'photourl';
     if (typeof value === 'string' && value.startsWith('http') && isProfilePic) {
-        return <img src={value} alt="User Profile" className="w-12 h-12 rounded-full object-cover border border-white/10" />;
+        return <img src={value} alt="User Profile" onClick={() => setEnlargedImage(value)} className="w-12 h-12 rounded-full object-cover border border-white/10 cursor-pointer hover:opacity-80 transition-opacity" title="Click to enlarge" />;
     }
 
     // Handle Images
     const isImageKey = lowerKey.includes('image') || lowerKey.includes('photo');
     if (typeof value === 'string' && (value.startsWith('data:image/') || (value.startsWith('http') && isImageKey))) {
-        return <img src={value} alt="Reported content" className="w-full max-h-64 object-contain rounded-md mt-2 bg-black/10" />;
+        return <img src={value} alt="Reported content" onClick={() => setEnlargedImage(value)} className="w-full max-h-64 object-contain rounded-md mt-2 bg-black/10 cursor-pointer hover:opacity-90 transition-opacity" title="Click to enlarge" />;
     }
 
     // Handle Clickable Links
@@ -78,6 +135,20 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
     // Handle Arrays (Chips)
     if (Array.isArray(value)) {
       if (value.length === 0) return <span className="text-on-surface-variant italic">None</span>;
+
+      // Special handling for likedBy
+      if (key === 'likedBy') {
+        return (
+          <div className="flex flex-wrap gap-2 mt-1">
+            {value.map((uid, i) => (
+              <span key={i} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs font-mono break-all" title={String(uid)}>
+                {likedByNames[String(uid)] || String(uid)}
+              </span>
+            ))}
+          </div>
+        );
+      }
+
       return (
         <div className="flex flex-wrap gap-2 mt-1">
           {value.map((v, i) => (
@@ -164,6 +235,30 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
                    <div className="flex flex-col gap-4">
                      {Object.entries(filteredData).map(([key, value]) => (
                        <div key={key} className="flex flex-col gap-1 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+
+                         {/* Display actual comments above commentsCount */}
+                         {key === 'commentsCount' && comments.length > 0 && (
+                           <div className="mb-4 space-y-2">
+                             <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Actual Comments ({comments.length})</span>
+                             <div className="mt-2 pl-3 border-l-2 border-white/10 space-y-2">
+                               {comments.map((comment) => (
+                                 <div key={comment.id} className="bg-black/20 p-2 rounded-lg text-xs">
+                                   <div className="flex items-center gap-2 mb-1">
+                                     {comment.userPhotoURL ? (
+                                        <img src={comment.userPhotoURL} alt="" className="w-4 h-4 rounded-full object-cover cursor-pointer" onClick={() => setEnlargedImage(comment.userPhotoURL)} />
+                                     ) : (
+                                        <div className="w-4 h-4 rounded-full bg-surface-container flex items-center justify-center"><UserCheck size={8} /></div>
+                                     )}
+                                     <span className="font-bold">{comment.userDisplayName || 'Unknown'}</span>
+                                     {comment.timestamp && <span className="text-[9px] text-on-surface-variant">{new Date(comment.timestamp.seconds * 1000).toLocaleString()}</span>}
+                                   </div>
+                                   <p className="text-on-surface">{comment.content}</p>
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+
                          <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{key}</span>
                          <div className="text-sm">{renderValue(key, value)}</div>
                        </div>
@@ -175,6 +270,31 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
           </div>
         </div>
       </div>
+
+      {enlargedImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <div className="relative max-w-5xl max-h-screen">
+            <button
+              className="absolute -top-12 right-0 p-2 text-white hover:text-white/80 transition-colors bg-white/10 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEnlargedImage(null);
+              }}
+            >
+              <X size={24} />
+            </button>
+            <img
+              src={enlargedImage}
+              alt="Enlarged view"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
