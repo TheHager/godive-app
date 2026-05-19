@@ -10,6 +10,7 @@ import { collection, onSnapshot, query, orderBy, limit, doc, deleteDoc, updateDo
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ActionMenu } from "./ActionMenu";
+import { ReportReasonModal } from "./ReportReasonModal";
 
 export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => void, onNavigateToEvent: (id: string) => void }) => {
   const { pinnedBadgeId, badgeStats } = useUser();
@@ -159,6 +160,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isReportingPost, setIsReportingPost] = useState(false);
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState(content);
   const [showFullImage, setShowFullImage] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -702,6 +704,16 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           )}
         </AnimatePresence>
       </div>
+          <ReportReasonModal
+        isOpen={isReportingPost}
+        onClose={() => setIsReportingPost(false)}
+        onSubmit={handleReportSubmit}
+      />
+      <ReportReasonModal
+        isOpen={!!reportingCommentId}
+        onClose={() => setReportingCommentId(null)}
+        onSubmit={handleReportCommentSubmit}
+      />
     </article>
   );
 };
