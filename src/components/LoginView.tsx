@@ -124,13 +124,13 @@ export const LoginView = () => {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="z-10 w-full max-w-md overflow-hidden rounded-3xl bg-surface-container-high/40 p-8 backdrop-blur-3xl border border-white/5 shadow-2xl"
+        className="z-10 w-full max-w-md overflow-hidden rounded-3xl bg-surface p-10 backdrop-blur-3xl border border-outline shadow-xl"
       >
         <div className="mb-10 text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/20 text-secondary shadow-[0_0_20px_rgba(76,214,251,0.2)]">
             <Ship size={32} />
           </div>
-          <h2 className="mb-2 text-4xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h2>
+          <h2 className="mb-2 text-4xl font-black uppercase tracking-tighter text-on-surface">GO<span className="text-secondary">DIVE</span></h2>
           <p className="text-on-surface-variant opacity-70">Explore the depths of the ocean with us.</p>
         </div>
 
@@ -158,7 +158,7 @@ export const LoginView = () => {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+                className="w-full rounded-2xl border border-outline-variant bg-transparent py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
               />
             </div>
           )}
@@ -170,7 +170,7 @@ export const LoginView = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+              className="w-full rounded-2xl border border-outline-variant bg-transparent py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
             />
           </div>
           <div className="group relative">
@@ -181,7 +181,7 @@ export const LoginView = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+              className="w-full rounded-2xl border border-outline-variant bg-transparent py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
             />
           </div>
           {!isLogin && (
@@ -211,7 +211,7 @@ export const LoginView = () => {
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-4 font-bold text-on-background transition-all hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-outline bg-transparent py-4 font-bold text-on-background transition-all hover:bg-surface-container-low"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

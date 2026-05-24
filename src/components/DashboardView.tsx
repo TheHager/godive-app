@@ -293,7 +293,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
       {/* Immersive Background */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#0ea5e925_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,#0c4a6e20_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,#07598515_0%,transparent_50%)]" />
@@ -306,7 +306,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile }: { onNa
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-white sm:text-5xl md:text-7xl">
+            <h1 className="text-4xl font-black uppercase tracking-tighter text-on-surface sm:text-5xl md:text-7xl">
               GO<span className="text-secondary">DIVE</span>
             </h1>
           </motion.div>
@@ -1126,7 +1126,7 @@ const HistoryModal = ({
                     <Search size={40} />
                   </div>
                   <div>
-                    <p className="text-xl font-black text-white italic tracking-tight">No Results Found</p>
+                    <p className="text-xl font-black text-on-surface italic tracking-tight">No Results Found</p>
                     <p className="text-sm font-medium text-on-surface-variant/50 mt-1">Try adjusting your search query.</p>
                   </div>
                 </div>
@@ -2190,7 +2190,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
                         value={diveData.feedDescription}
                         onChange={handleChange}
                         rows={3}
-                        className="w-full rounded-2xl bg-white/5 py-5 px-6 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:bg-white/10 resize-none no-scrollbar font-medium italic"
+                        className="w-full rounded-2xl bg-surface-container-low py-5 px-6 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-outline-variant transition-all hover:bg-surface-container resize-none no-scrollbar font-medium italic"
                       />
                     </div>
                   </motion.div>
@@ -2202,7 +2202,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
           <motion.button 
             whileHover={{ 
               scale: 1.02, 
-              boxShadow: "0 20px 40px -12px rgba(76,214,251,0.5)"
+              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"
             }}
             whileTap={{ scale: 0.98 }}
             onClick={async (e) => {

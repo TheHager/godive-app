@@ -69,7 +69,7 @@ export const DesktopNav = ({ currentView, setView }: { currentView: View; setVie
   return (
     <aside className="hidden w-64 flex-col border-r border-white/5 bg-surface-container-high p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:flex">
       <div className="mb-10 px-2">
-        <h1 className="text-2xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h1>
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-on-surface">GO<span className="text-secondary">DIVE</span></h1>
       </div>
       
       <nav className="flex flex-grow flex-col gap-2">
