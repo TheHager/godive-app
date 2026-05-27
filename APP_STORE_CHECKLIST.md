@@ -17,7 +17,7 @@
   - `NSCameraUsageDescription` / `NSPhotoLibraryUsageDescription`: Required if users can upload photos.
 
 ## 4. Security & Environment Variables
-- Ensure backend API keys (`GEMINI_API_KEY`) remain securely on the server and are NOT exposed to the client bundle.
+- Ensure backend API keys (`VITE_GEMINI_API_KEY`) remain securely on the server and are NOT exposed to the client bundle.
 - Ensure Firestore Security Rules prevent unauthorized reads/writes to sensitive user data.
 
 ## 5. Review Guidelines

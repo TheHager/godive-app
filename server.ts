@@ -96,7 +96,7 @@ async function startServer() {
       }
 
       // Initialize Gemini
-      const apiKey = process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
+      const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) {
         console.error("Moderation API Error: Gemini API key is missing from environment variables.");
         return res.status(500).json({ error: "Gemini API key is missing." });
@@ -144,7 +144,7 @@ async function startServer() {
         return res.status(400).json({ error: "Missing image data" });
       }
 
-      const apiKey = process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
+      const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) {
         console.error("Vision API Error: Gemini API key is missing from environment variables.");
         return res.status(500).json({ error: "Gemini API key is missing." });
