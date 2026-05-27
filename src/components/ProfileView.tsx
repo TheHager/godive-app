@@ -43,14 +43,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         const postPromises = postsSnapshot.docs.map(async (docSnap) => {
            const pData = docSnap.data();
            likes += (pData.likesCount || 0);
-           try {
-             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments"), where("userId", "==", profile.id)));
-             commentsSnapshot.forEach(c => {
-               likes += (c.data().likesCount || 0);
-             });
-           } catch (e) {
-             console.error("Error fetching comments for points calculation", e);
-           }
+           // Intentionally skipping comments query to avoid massive DB read spikes.
         });
         await Promise.all(postPromises);
         

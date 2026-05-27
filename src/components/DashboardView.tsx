@@ -244,14 +244,8 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
         const postPromises = postsSnapshot.docs.map(async (docSnap) => {
            const pData = docSnap.data();
            likes += (pData.likesCount || 0);
-           try {
-             const commentsSnapshot = await getDocs(query(collection(db, "posts", docSnap.id, "comments"), where("userId", "==", profile.id)));
-             commentsSnapshot.forEach(c => {
-               likes += (c.data().likesCount || 0);
-             });
-           } catch (e) {
-             console.error("Error fetching comments for points calculation", e);
-           }
+           // We intentionally skip querying the "comments" subcollection for every post
+           // to prevent massive database reads (1.1 million reads leak).
         });
         await Promise.all(postPromises);
         
@@ -275,7 +269,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
     };
     fetchPoints();
     return () => { isMounted = false; };
-  }, [profile?.points, profile?.rankingPoints, profile?.id, profile, myEvents]);
+  }, [profile?.points, profile?.rankingPoints, profile?.id, myEvents?.length]);
 
   const validTotalXp = Math.max(0, totalXp || 0);
   const level = calculateLevel(validTotalXp);

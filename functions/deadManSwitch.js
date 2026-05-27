@@ -8,11 +8,12 @@ const MOCK_MODE = true;
 const region = "europe-west3";
 const project = process.env.GCLOUD_PROJECT || "project-7c683cb5-9592-4a84-97d";
 const queue = "dive-timeout-queue"; 
+const database = "ai-studio-ad5f7885-906a-4242-9866-16179821203a";
 
 const tasksClient = new CloudTasksClient();
 
 exports.onActiveDiveCreated = onDocumentCreated(
-    { document: "activeDives/{diveId}", region },
+    { document: "activeDives/{diveId}", region, database },
     async (event) => {
         const snap = event.data;
         if (!snap) return;
@@ -65,7 +66,7 @@ exports.onActiveDiveCreated = onDocumentCreated(
 );
 
 exports.onActiveDiveUpdated = onDocumentUpdated(
-    { document: "activeDives/{diveId}", region },
+    { document: "activeDives/{diveId}", region, database },
     async (event) => {
         const before = event.data.before.data();
         const after = event.data.after.data();
@@ -92,7 +93,7 @@ exports.processDiveTimeout = onTaskDispatched(
     async (req) => {
         const payload = req.data;
         const diveId = payload.diveId;
-        const db = getFirestore();
+        const db = getFirestore(database);
         
         const diveRef = db.collection("activeDives").doc(diveId);
         const diveSnap = await diveRef.get();
