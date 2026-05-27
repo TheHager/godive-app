@@ -12,7 +12,7 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, increme
 import { MARINE_LIFE_DATABASE, getSpeciesXP, getSpeciesRarity } from "../constants/marineLife";
 import { filterProfanity } from "../lib/profanity";
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY || '';
+const API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || (import.meta as any).env.VITE_GOOGLE_MAPS_PLATFORM_KEY || (globalThis as any).GOOGLE_MAPS_PLATFORM_KEY || '';
 if (!API_KEY && process.env.NODE_ENV === 'production') {
   console.warn("Google Maps API key is missing. Maps will not load correctly.");
 }
@@ -50,7 +50,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
     // Current time minus 24 hours
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const qS = query(
-      collection(db, "sightings"), 
+      collection(db, "sightings"),
       where("timestamp", ">=", Timestamp.fromDate(yesterday)),
       orderBy("timestamp", "desc")
     );
@@ -71,21 +71,21 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         id: doc.id,
         ...doc.data()
       }));
-      
+
       setSites(prev => {
         // Create a map to store unique sites, prioritizing fetched data
         const sitesMap = new window.Map();
-        
+
         // Add initial sites first
         INITIAL_DIVE_SITES.forEach(site => {
           sitesMap.set(site.id, site);
         });
-        
+
         // Overwrite with fetched sites (which may have more data like reviews/stats)
         sitesData.forEach(site => {
           sitesMap.set(site.id, site);
         });
-        
+
         return Array.from(sitesMap.values());
       });
     }, (error) => {
@@ -130,13 +130,13 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
 
   const [viewMode, setViewMode] = useState<'all' | 'sites' | 'sightings' | 'unverified' | 'events'>('all');
   const [selectionMode, setSelectionMode] = useState<'none' | 'site' | 'sighting'>('none');
-  const [pendingLocation, setPendingLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [pendingLocation, setPendingLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [isAddingSite, setIsAddingSite] = useState(false);
   const [isAddingSighting, setIsAddingSighting] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState({ lat: 17.3160, lng: -87.5351 });
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   const formatTimeAgo = (timestamp: number) => {
     const diff = Date.now() - timestamp;
@@ -156,7 +156,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
     ...events.map(e => ({ ...e, label: e.title, type: 'event' }))
   ];
 
-  const filteredMarkers = (search 
+  const filteredMarkers = (search
     ? allMarkers.filter(m => m.label.toLowerCase().includes(search.toLowerCase()))
     : allMarkers).filter(m => m.lat != null && m.lng != null && !isNaN(m.lat) && !isNaN(m.lng) && typeof m.lat === 'number' && typeof m.lng === 'number');
 
@@ -176,7 +176,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
       setPlacesSuggestions([]);
       return;
     }
-    
+
     const fetchSuggestions = async () => {
       try {
         // Use the new AutocompleteSuggestion API if available, fallback to legacy if not
@@ -205,10 +205,10 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
     if (!search) return [];
     const markerLabels = Array.from(new Set(allMarkers.map(m => m.label)));
     const combined = Array.from(new Set([...MARINE_LIFE_DATABASE, ...markerLabels]));
-    
+
     return combined
-        .filter(label => label.toLowerCase().includes(search.toLowerCase()) && label.toLowerCase() !== search.toLowerCase())
-        .slice(0, 4);
+      .filter(label => label.toLowerCase().includes(search.toLowerCase()) && label.toLowerCase() !== search.toLowerCase())
+      .slice(0, 4);
   }, [search, allMarkers]);
 
   const handlePlaceSelect = (placeId: string) => {
@@ -226,7 +226,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   const handleSuggestionSelect = (suggestion: string) => {
     setSearch(suggestion);
     setShowSearchSuggestions(false);
-    
+
     // Attempt to pan to logic
     const matchingMarker = allMarkers.find(m => m.label.toLowerCase() === suggestion.toLowerCase());
     if (matchingMarker) {
@@ -246,7 +246,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         const reviewDoc = await transaction.get(reviewRef);
 
         let currentSiteData: any = siteDoc.exists() ? siteDoc.data() : null;
-        
+
         // If site doesn't exist in DB yet (hardcoded site), we'll handle it
         if (!currentSiteData) {
           const hardcodedSite = INITIAL_DIVE_SITES.find(s => s.id === siteId);
@@ -263,7 +263,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             };
             transaction.set(siteRef, currentSiteData);
           } else {
-             throw new Error("Site not found");
+            throw new Error("Site not found");
           }
         }
 
@@ -315,7 +315,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
       const currentUpvotes = (site?.upvotes || 0);
 
       batch.set(voteRef, { vote: 'up', timestamp: serverTimestamp() });
-      
+
       const updateData: any = { upvotes: increment(1) };
       if (currentUpvotes + 1 >= 10) {
         updateData.status = 'verified';
@@ -356,7 +356,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
       const currentDownvotes = (site?.downvotes || 0);
 
       batch.set(voteRef, { vote: 'down', timestamp: serverTimestamp() });
-      
+
       batch.update(siteRef, { downvotes: increment(1) });
 
       await batch.commit();
@@ -380,20 +380,20 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
       finalStatus = 'verified';
     }
 
-    const siteData = { 
+    const siteData = {
       name: filterProfanity(site.name),
       lat: Number(site.lat),
       lng: Number(site.lng),
       type: site.type,
-      status: finalStatus, 
-      upvotes: 1, 
+      status: finalStatus,
+      upvotes: 1,
       downvotes: 0,
       userId: profile?.id || "anonymous",
       userDisplayName: profile?.displayName || "Explorer",
       photo: site.photo || null,
       timestamp: serverTimestamp()
     };
-    
+
     // Optimistic UI insert with temporary ID
     const tempSite = { ...siteData, id: site.id };
     setSites(prev => [...prev, tempSite]);
@@ -404,27 +404,27 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
     // Save to Firestore and award XP
     try {
       const docRef = await addDoc(collection(db, "dive_sites"), siteData);
-      
+
       // Update the local site with the final Firestore ID
       setSites(prev => prev.map(s => s.id === site.id ? { ...s, id: docRef.id } : s));
-      
+
       if (profile?.id) {
         let shouldAwardXP = true;
         // FREE tier restriction: XP for the first 5 suggested sites daily (shared limit or independent? We'll make it simple checking if they suggested >=5 today)
         if (profile?.subscriptionTier === 'free' || !profile?.subscriptionTier) {
-           const startOfDayMs = new Date().setHours(0,0,0,0);
-           const todaySitesQ = query(collection(db, "dive_sites"), where("userId", "==", profile.id), where("timestamp", ">=", new Date(startOfDayMs)));
-           const todaySitesSnap = await getDocs(todaySitesQ);
-           if (todaySitesSnap.size >= 5) { // 5 sites today limit reached for XP
-             shouldAwardXP = false;
-           }
+          const startOfDayMs = new Date().setHours(0, 0, 0, 0);
+          const todaySitesQ = query(collection(db, "dive_sites"), where("userId", "==", profile.id), where("timestamp", ">=", new Date(startOfDayMs)));
+          const todaySitesSnap = await getDocs(todaySitesQ);
+          if (todaySitesSnap.size >= 5) { // 5 sites today limit reached for XP
+            shouldAwardXP = false;
+          }
         }
 
         if (shouldAwardXP) {
           const userRef = doc(db, "users", profile.id);
           let xpAward = 150;
           if (profile?.subscriptionTier === 'vip') xpAward = Math.floor(xpAward * 1.5);
-          
+
           await updateDoc(userRef, {
             points: increment(xpAward)
           });
@@ -445,7 +445,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         lat: Number(updatedData.lat),
         lng: Number(updatedData.lng),
       };
-      
+
       await updateDoc(siteRef, {
         ...newData,
         timestamp: serverTimestamp(),
@@ -495,7 +495,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
     // Save to Firestore
     try {
       await addDoc(collection(db, "sightings"), sightingData);
-      
+
       if (profile?.id) {
         const userRef = doc(db, "users", profile.id);
         await updateDoc(userRef, {
@@ -533,7 +533,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         <div className="max-w-md text-center rounded-3xl premium-glass p-8 shadow-2xl border ">
           <h2 className="mb-4 text-xl font-black uppercase text-secondary">Google Maps API Key Required</h2>
           <p className="mb-6 text-sm text-[#475569] text-left">
-            <strong>Step 1:</strong> <a href="https://console.cloud.google.com/google/maps-apis/start" target="_blank" rel="noopener" className="text-secondary hover:underline">Get an API Key</a><br/><br/>
+            <strong>Step 1:</strong> <a href="https://console.cloud.google.com/google/maps-apis/start" target="_blank" rel="noopener" className="text-secondary hover:underline">Get an API Key</a><br /><br />
             <strong>Step 2:</strong> Add your key as a secret in AI Studio:
           </p>
           <ul className="mb-6 text-sm text-left text-[#475569] list-disc pl-5 space-y-2">
@@ -550,94 +550,94 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
 
   return (
     <div className="relative flex-1 w-full overflow-hidden premium-glass">
-        <Map
-          center={mapCenter}
-          onCenterChanged={e => {
-            const newCenter = e.detail.center;
-            if (typeof newCenter.lat === 'number' && typeof newCenter.lng === 'number' && !isNaN(newCenter.lat) && !isNaN(newCenter.lng)) {
-              setMapCenter(newCenter);
-            }
-          }}
-          defaultZoom={12}
-          mapId="DEMO_MAP_ID"
-          internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
-          style={{width: '100%', height: '100%', cursor: selectionMode !== 'none' ? 'crosshair' : undefined}}
-          disableDefaultUI={true}
-          onClick={(e: MapMouseEvent) => {
-            if (selectionMode !== 'none' && e.detail.latLng) {
-              setPendingLocation(e.detail.latLng);
-              if (selectionMode === 'site') setIsAddingSite(true);
-              if (selectionMode === 'sighting') setIsAddingSighting(true);
-              setSelectionMode('none');
-            }
-          }}
-        >
-          {(viewMode === 'all' || viewMode === 'sites' || viewMode === 'sightings' || viewMode === 'unverified' || viewMode === 'events') && markerLib && filteredMarkers
-            .filter(m => {
-              if (viewMode === 'unverified') return m.type === 'unverified';
-              if (viewMode === 'events') return m.type === 'event';
-              if (viewMode !== 'all' && (m.type === 'unverified' || m.type === 'event')) return false;
-              if (viewMode === 'sites') return m.type === 'site';
-              if (viewMode === 'sightings') return m.type !== 'site';
-              return true;
-            })
-            .map((marker, mIdx) => (
-             <MapErrorBoundary key={`marker-${marker.type}-${marker.id || mIdx}`}>
-               <AdvancedMarker 
-                  position={{lat: marker.lat, lng: marker.lng}} 
-                  title={marker.label}
-                  onClick={() => {
-                    if (marker.type === 'site' || marker.type === 'unverified') {
-                      setSelectedSite(marker as any);
-                    } else if (marker.type === 'fish' || marker.type === 'rare') {
-                      setSelectedSighting(marker);
-                    } else if (marker.type === 'event' && onNavigateToEvent) {
-                      onNavigateToEvent(marker.id);
-                    }
-                  }}
-               >
-                  <div className="flex flex-col items-center group">
-                    <div 
-                      className={cn(
-                         "p-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 cursor-pointer  border",
-                         marker.type === 'fish' ? "premium-glass border-secondary/30 text-secondary" : 
-                         marker.type === 'site' ? "premium-glass border-[#0055ff]/30 text-[#0055ff]" : 
-                         marker.type === 'unverified' ? "premium-glass border-orange-500/30 text-orange-500" :
-                         marker.type === 'event' ? "premium-glass border-purple-500/30 text-purple-500" :
-                         "premium-glass border-tertiary/30 text-tertiary"
-                      )}
-                    >
-                      {marker.type === 'fish' ? <Fish size={20} /> : 
-                       marker.type === 'site' ? <MapPin size={20} /> :
-                       marker.type === 'unverified' ? <MapPin size={20} /> :
-                       marker.type === 'event' ? <Calendar size={20} /> :
-                       <Star size={20} />}
-                    </div>
-                    <div className="mt-2 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-xl premium-glass px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#0b2240]  border  pointer-events-none">
-                      <span>{marker.label}</span>
-                      {marker.createdAt && (
-                        <span className="text-[8px] text-[#475569] font-medium normal-case tracking-normal mt-0.5">
-                          {formatDate(marker.createdAt)}
-                        </span>
-                      )}
-                    </div>
+      <Map
+        center={mapCenter}
+        onCenterChanged={e => {
+          const newCenter = e.detail.center;
+          if (typeof newCenter.lat === 'number' && typeof newCenter.lng === 'number' && !isNaN(newCenter.lat) && !isNaN(newCenter.lng)) {
+            setMapCenter(newCenter);
+          }
+        }}
+        defaultZoom={12}
+        mapId="DEMO_MAP_ID"
+        internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+        style={{ width: '100%', height: '100%', cursor: selectionMode !== 'none' ? 'crosshair' : undefined }}
+        disableDefaultUI={true}
+        onClick={(e: MapMouseEvent) => {
+          if (selectionMode !== 'none' && e.detail.latLng) {
+            setPendingLocation(e.detail.latLng);
+            if (selectionMode === 'site') setIsAddingSite(true);
+            if (selectionMode === 'sighting') setIsAddingSighting(true);
+            setSelectionMode('none');
+          }
+        }}
+      >
+        {(viewMode === 'all' || viewMode === 'sites' || viewMode === 'sightings' || viewMode === 'unverified' || viewMode === 'events') && markerLib && filteredMarkers
+          .filter(m => {
+            if (viewMode === 'unverified') return m.type === 'unverified';
+            if (viewMode === 'events') return m.type === 'event';
+            if (viewMode !== 'all' && (m.type === 'unverified' || m.type === 'event')) return false;
+            if (viewMode === 'sites') return m.type === 'site';
+            if (viewMode === 'sightings') return m.type !== 'site';
+            return true;
+          })
+          .map((marker, mIdx) => (
+            <MapErrorBoundary key={`marker-${marker.type}-${marker.id || mIdx}`}>
+              <AdvancedMarker
+                position={{ lat: marker.lat, lng: marker.lng }}
+                title={marker.label}
+                onClick={() => {
+                  if (marker.type === 'site' || marker.type === 'unverified') {
+                    setSelectedSite(marker as any);
+                  } else if (marker.type === 'fish' || marker.type === 'rare') {
+                    setSelectedSighting(marker);
+                  } else if (marker.type === 'event' && onNavigateToEvent) {
+                    onNavigateToEvent(marker.id);
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center group">
+                  <div
+                    className={cn(
+                      "p-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 cursor-pointer  border",
+                      marker.type === 'fish' ? "premium-glass border-secondary/30 text-secondary" :
+                        marker.type === 'site' ? "premium-glass border-[#0055ff]/30 text-[#0055ff]" :
+                          marker.type === 'unverified' ? "premium-glass border-orange-500/30 text-orange-500" :
+                            marker.type === 'event' ? "premium-glass border-purple-500/30 text-purple-500" :
+                              "premium-glass border-tertiary/30 text-tertiary"
+                    )}
+                  >
+                    {marker.type === 'fish' ? <Fish size={20} /> :
+                      marker.type === 'site' ? <MapPin size={20} /> :
+                        marker.type === 'unverified' ? <MapPin size={20} /> :
+                          marker.type === 'event' ? <Calendar size={20} /> :
+                            <Star size={20} />}
                   </div>
-               </AdvancedMarker>
-             </MapErrorBoundary>
+                  <div className="mt-2 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-xl premium-glass px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#0b2240]  border  pointer-events-none">
+                    <span>{marker.label}</span>
+                    {marker.createdAt && (
+                      <span className="text-[8px] text-[#475569] font-medium normal-case tracking-normal mt-0.5">
+                        {formatDate(marker.createdAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </AdvancedMarker>
+            </MapErrorBoundary>
           ))}
-          {markerLib && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number' && !isNaN(userLocation.lat) && !isNaN(userLocation.lng) && (
-             <MapErrorBoundary>
-               <AdvancedMarker position={userLocation} title="You are here">
-                 <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
-               </AdvancedMarker>
-             </MapErrorBoundary>
-          )}
-        </Map>
+        {markerLib && userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number' && !isNaN(userLocation.lat) && !isNaN(userLocation.lng) && (
+          <MapErrorBoundary>
+            <AdvancedMarker position={userLocation} title="You are here">
+              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
+            </AdvancedMarker>
+          </MapErrorBoundary>
+        )}
+      </Map>
 
       {/* Floating UI */}
       <AnimatePresence>
         {selectedSite && selectedSite.type !== 'unverified' && (
-          <SiteReviewModal 
+          <SiteReviewModal
             key="review-modal"
             site={selectedSite}
             onClose={() => setSelectedSite(null)}
@@ -645,7 +645,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           />
         )}
         {selectedSite && selectedSite.type === 'unverified' && (
-          <UnverifiedSiteModal 
+          <UnverifiedSiteModal
             key="unverified-modal"
             site={selectedSite}
             onClose={() => setSelectedSite(null)}
@@ -694,18 +694,18 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         )}
 
         {isAddingSite && (
-          <AddSiteModal 
+          <AddSiteModal
             key="add-site-modal"
             location={pendingLocation}
-            onClose={() => {setIsAddingSite(false); setPendingLocation(null);}}
+            onClose={() => { setIsAddingSite(false); setPendingLocation(null); }}
             onAdd={handleAddSite}
           />
         )}
         {isAddingSighting && (
-          <AddSightingModal 
+          <AddSightingModal
             key="add-sighting-modal"
             location={pendingLocation}
-            onClose={() => {setIsAddingSighting(false); setPendingLocation(null);}}
+            onClose={() => { setIsAddingSighting(false); setPendingLocation(null); }}
             onAdd={handleAddSighting}
           />
         )}
@@ -728,112 +728,112 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
           <div className="pointer-events-auto w-full max-w-md relative flex-1">
             <div className="flex gap-2 rounded-full premium-glass p-1.5  shadow-lg border  focus-within:border-[#0055ff]/50 transition-colors">
-            <div className="flex flex-1 items-center gap-3 px-4">
-              <Search size={18} className="text-[#475569]" />
-              <input
-                type="text"
-                placeholder="Search marine life, sites..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setShowSearchSuggestions(true);
-                }}
-                onFocus={() => setShowSearchSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                className="premium-input w-full bg-transparent -none p-0 text-sm font-medium text-[#0b2240] placeholder:text-[#083344] -0 "
-              />
-            </div>
-            <button 
-              onClick={handleFindNearMe}
-              className="rounded-full p-2 text-[#0055ff] hover:bg-[#0055ff]/10 transition-colors"
-               title="Find near me"
-             >
-              <MapPin size={18} />
-            </button>
-          </div>
-          
-          <AnimatePresence>
-            {showSearchSuggestions && (searchSuggestions.length > 0 || placesSuggestions.length > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-2 rounded-2xl border  premium-glass-highest shadow-2xl z-20 py-2 max-h-[60vh] overflow-y-auto no-scrollbar"
+              <div className="flex flex-1 items-center gap-3 px-4">
+                <Search size={18} className="text-[#475569]" />
+                <input
+                  type="text"
+                  placeholder="Search marine life, sites..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowSearchSuggestions(true);
+                  }}
+                  onFocus={() => setShowSearchSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
+                  className="premium-input w-full bg-transparent -none p-0 text-sm font-medium text-[#0b2240] placeholder:text-[#083344] -0 "
+                />
+              </div>
+              <button
+                onClick={handleFindNearMe}
+                className="rounded-full p-2 text-[#0055ff] hover:bg-[#0055ff]/10 transition-colors"
+                title="Find near me"
               >
-                {searchSuggestions.length > 0 && (
-                  <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-widest text-[#083344]">
-                    Dive Sites & Marine Life
-                  </div>
-                )}
-                {searchSuggestions.map((suggestion, i) => (
-                  <div
-                    key={`sug-${suggestion}-${i}`}
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                    className="cursor-pointer px-4 py-2.5 text-sm font-medium text-[#0b2240] hover:premium-glass transition-colors flex items-center gap-2"
-                  >
-                    <Search size={14} className="text-[#475569]" />
-                    {suggestion}
-                  </div>
-                ))}
+                <MapPin size={18} />
+              </button>
+            </div>
 
-                {placesSuggestions.length > 0 && (
-                  <div className="px-4 pb-1 pt-3 text-[10px] font-black uppercase tracking-widest text-[#083344]">
-                    Locations
-                  </div>
-                )}
-                {placesSuggestions.map((suggestion) => {
-                  const isPrediction = 'place_id' in suggestion;
-                  const id = isPrediction ? suggestion.place_id : suggestion.placePrediction?.placeId;
-                  const text = isPrediction ? suggestion.description : suggestion.placePrediction?.text.text;
-                  
-                  return (
+            <AnimatePresence>
+              {showSearchSuggestions && (searchSuggestions.length > 0 || placesSuggestions.length > 0) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-2 rounded-2xl border  premium-glass-highest shadow-2xl z-20 py-2 max-h-[60vh] overflow-y-auto no-scrollbar"
+                >
+                  {searchSuggestions.length > 0 && (
+                    <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-widest text-[#083344]">
+                      Dive Sites & Marine Life
+                    </div>
+                  )}
+                  {searchSuggestions.map((suggestion, i) => (
                     <div
-                      key={`place-${id}`}
-                      onClick={() => handlePlaceSelect(id)}
+                      key={`sug-${suggestion}-${i}`}
+                      onClick={() => handleSuggestionSelect(suggestion)}
                       className="cursor-pointer px-4 py-2.5 text-sm font-medium text-[#0b2240] hover:premium-glass transition-colors flex items-center gap-2"
                     >
-                      <MapPin size={14} className="text-[#475569]" />
-                      {text}
+                      <Search size={14} className="text-[#475569]" />
+                      {suggestion}
                     </div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        <div className="pointer-events-auto relative shrink-0">
-          <div className="rounded-full premium-glass shadow-lg border  p-1.5 flex items-center justify-center">
-            <ActionMenu 
-              triggerIcon={<Settings size={20} className="text-[#475569]" />}
-              buttonClassName="hover:premium-glass rounded-full w-[34px] h-[34px] flex items-center justify-center p-0 m-0 transition-colors"
-              items={[
-                { label: "View Mode", isHeader: true },
-                { label: "All", icon: <Filter size={16} />, onClick: () => setViewMode("all"), active: viewMode === "all" },
-                { label: "Sites", icon: <MapPin size={16} />, onClick: () => setViewMode("sites"), active: viewMode === "sites" },
-                { label: "Sightings", icon: <Fish size={16} />, onClick: () => setViewMode("sightings"), active: viewMode === "sightings" },
-                { label: "Events", icon: <Calendar size={16} />, onClick: () => setViewMode("events"), active: viewMode === "events" },
-                { label: "Unverified", icon: <MapPin size={16} />, onClick: () => setViewMode("unverified"), active: viewMode === "unverified" },
-              ]}
-            />
+                  ))}
+
+                  {placesSuggestions.length > 0 && (
+                    <div className="px-4 pb-1 pt-3 text-[10px] font-black uppercase tracking-widest text-[#083344]">
+                      Locations
+                    </div>
+                  )}
+                  {placesSuggestions.map((suggestion) => {
+                    const isPrediction = 'place_id' in suggestion;
+                    const id = isPrediction ? suggestion.place_id : suggestion.placePrediction?.placeId;
+                    const text = isPrediction ? suggestion.description : suggestion.placePrediction?.text.text;
+
+                    return (
+                      <div
+                        key={`place-${id}`}
+                        onClick={() => handlePlaceSelect(id)}
+                        className="cursor-pointer px-4 py-2.5 text-sm font-medium text-[#0b2240] hover:premium-glass transition-colors flex items-center gap-2"
+                      >
+                        <MapPin size={14} className="text-[#475569]" />
+                        {text}
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          <div className="pointer-events-auto relative shrink-0">
+            <div className="rounded-full premium-glass shadow-lg border  p-1.5 flex items-center justify-center">
+              <ActionMenu
+                triggerIcon={<Settings size={20} className="text-[#475569]" />}
+                buttonClassName="hover:premium-glass rounded-full w-[34px] h-[34px] flex items-center justify-center p-0 m-0 transition-colors"
+                items={[
+                  { label: "View Mode", isHeader: true },
+                  { label: "All", icon: <Filter size={16} />, onClick: () => setViewMode("all"), active: viewMode === "all" },
+                  { label: "Sites", icon: <MapPin size={16} />, onClick: () => setViewMode("sites"), active: viewMode === "sites" },
+                  { label: "Sightings", icon: <Fish size={16} />, onClick: () => setViewMode("sightings"), active: viewMode === "sightings" },
+                  { label: "Events", icon: <Calendar size={16} />, onClick: () => setViewMode("events"), active: viewMode === "events" },
+                  { label: "Unverified", icon: <MapPin size={16} />, onClick: () => setViewMode("unverified"), active: viewMode === "unverified" },
+                ]}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex-1" />
-
-      <div className="pointer-events-auto flex w-full items-end justify-between gap-2 sm:gap-4 pb-4">
         <div className="flex-1" />
-        
-        <div className="relative shrink-0">
+
+        <div className="pointer-events-auto flex w-full items-end justify-between gap-2 sm:gap-4 pb-4">
+          <div className="flex-1" />
+
+          <div className="relative shrink-0">
             <AnimatePresence>
               {showAddMenu && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className="absolute bottom-16 right-0 mb-2 flex flex-col gap-2 min-w-[200px]"
                 >
-                  <button 
+                  <button
                     onClick={() => { setSelectionMode('site'); setShowAddMenu(false); }}
                     className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
                   >
@@ -842,7 +842,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                     </div>
                     Suggest Dive Site
                   </button>
-                  <button 
+                  <button
                     onClick={() => { setSelectionMode('sighting'); setShowAddMenu(false); }}
                     className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
                   >
@@ -854,7 +854,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                 </motion.div>
               )}
             </AnimatePresence>
-            <button 
+            <button
               onClick={() => setShowAddMenu(!showAddMenu)}
               className={cn(
                 "flex h-14 w-14 items-center justify-center rounded-[1.25rem] transition-all active:scale-95 border  hover:scale-110",
@@ -866,7 +866,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           </div>
         </div>
       </div>
-      
+
       <AnimatePresence>
         {selectionMode !== 'none' && (
           <motion.div
@@ -875,11 +875,11 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             exit={{ opacity: 0, y: 50 }}
             className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full premium-glass-highest p-3 pr-6 shadow-2xl border border-secondary/30"
           >
-            <button 
+            <button
               onClick={() => setSelectionMode('none')}
               className="rounded-full premium-glass p-2 text-[#475569] hover:text-[#0b2240] transition-colors"
             >
-               <X size={16} />
+              <X size={16} />
             </button>
             <span className="text-sm font-bold text-[#0b2240]">Tap map to select {selectionMode === 'site' ? 'suggested dive site' : 'sighting'} location</span>
           </motion.div>
@@ -899,18 +899,18 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
 
   useEffect(() => {
     if (!site?.id) return;
-    
+
     setIsLoading(true);
     const reviewsRef = collection(db, "dive_sites", site.id, "reviews");
     const q = query(reviewsRef, orderBy("timestamp", "desc"), limit(50));
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const reviews = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as any[];
       setSiteReviews(reviews);
-      
+
       // Check if current user already has a review
       if (profile?.id) {
         const myReview = reviews.find(r => r.userId === profile.id);
@@ -920,7 +920,7 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
           setIsUpdating(true);
         }
       }
-      
+
       setIsLoading(false);
     }, (err) => {
       setIsLoading(false);
@@ -941,9 +941,9 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
     setNewRating(0);
   };
 
-  const avgRating = site.avgRating 
+  const avgRating = site.avgRating
     ? site.avgRating.toFixed(1)
-    : siteReviews.length > 0 
+    : siteReviews.length > 0
       ? (siteReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / siteReviews.length).toFixed(1)
       : "No ratings";
 
@@ -952,7 +952,7 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      <motion.div 
+      <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
@@ -976,7 +976,7 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
             <X size={20} />
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -1083,7 +1083,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        
+
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
         setPhoto(compressedDataUrl);
       };
@@ -1110,7 +1110,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -1122,7 +1122,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
             <X size={20} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="group">
             <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Site Name</label>
@@ -1159,12 +1159,12 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
 
           <div className="group">
             <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Attach Photo</label>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handlePhotoUpload} 
-              className="premium-input hidden" 
-              accept="image/*" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              className="premium-input hidden"
+              accept="image/*"
             />
             {photo ? (
               <div className="relative aspect-video rounded-2xl premium-glass overflow-hidden border  group-hover: transition-all">
@@ -1212,7 +1212,7 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
   const [lat, setLat] = useState(initialLat);
   const [lng, setLng] = useState(initialLng);
 
-  const filteredFish = MARINE_LIFE_DATABASE.filter(f => 
+  const filteredFish = MARINE_LIFE_DATABASE.filter(f =>
     f.toLowerCase().includes(fishSearch.toLowerCase())
   );
 
@@ -1234,7 +1234,7 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -1247,7 +1247,7 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
             <X size={20} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="relative group">
             <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors">Species</label>
@@ -1279,14 +1279,14 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
                   {filteredFish.length === 0 ? (
                     <div className="text-center p-6">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#083344] mb-4">Species Not Found</p>
-                      <motion.button 
+                      <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="button"
                         onClick={() => {
                           setFishSearch(fishSearch);
                           setShowSearchDropdown(false);
-                        }} 
+                        }}
                         className="w-full bg-secondary/10 hover:bg-secondary/20 text-secondary py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-secondary/20">
                         Select "{fishSearch}" anyway
                       </motion.button>
@@ -1383,7 +1383,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -1407,151 +1407,151 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
             </div>
             <div className="flex items-center gap-1">
               {profile?.id === site.userId && !isEditing && (
-                <ActionMenu 
+                <ActionMenu
                   items={[
                     { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) }
                   ]}
                 />
               )}
               <button onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors">
-                 <X size={20} />
+                <X size={20} />
               </button>
             </div>
           </div>
 
-        {isEditing ? (
-          <form className="mt-4" onSubmit={(e) => {
-            e.preventDefault();
-            if (onUpdate) {
-              onUpdate({ name: editName, lat: editLat, lng: editLng });
-              setIsEditing(false);
-            }
-          }}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Site Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          {isEditing ? (
+            <form className="mt-4" onSubmit={(e) => {
+              e.preventDefault();
+              if (onUpdate) {
+                onUpdate({ name: editName, lat: editLat, lng: editLng });
+                setIsEditing(false);
+              }
+            }}>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lat</label>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Site Name</label>
                   <input
-                    type="number"
-                    step="any"
-                    value={editLat}
-                    onChange={(e) => setEditLat(e.target.value)}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
                     className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lng</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={editLng}
-                    onChange={(e) => setEditLng(e.target.value)}
-                    className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button 
-                type="button" 
-                onClick={() => setIsEditing(false)}
-                className="flex-1 py-3 rounded-2xl border  text-[11px] font-black uppercase tracking-widest text-[#083344] hover:premium-glass"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="flex-1 py-3 rounded-2xl bg-[#0055ff] text-[11px] font-black uppercase tracking-widest text-black shadow-[0_0_15px_rgba(76,145,251,0.3)]"
-              >
-                Save
-              </button>
-            </div>
-            
-            <div className="mt-4 pt-4 border-t ">
-              {!isDeleting ? (
-                <button 
-                  type="button"
-                  onClick={() => setIsDeleting(true)}
-                  className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-error/60 hover:text-error transition-colors"
-                >
-                  Delete Site
-                </button>
-              ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Are you sure?</span>
-                  <div className="flex gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => setIsDeleting(false)}
-                      className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#475569] hover:text-[#0b2240]"
-                    >
-                      No
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={onDelete}
-                      className="px-3 py-1 bg-error/20 text-error rounded-lg text-[10px] font-black uppercase tracking-widest border border-error/30"
-                    >
-                      Yes, Delete
-                    </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lat</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editLat}
+                      onChange={(e) => setEditLat(e.target.value)}
+                      className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lng</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editLng}
+                      onChange={(e) => setEditLng(e.target.value)}
+                      className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
+                      required
+                    />
                   </div>
                 </div>
-              )}
-            </div>
-          </form>
-        ) : (
-          <>
-            <p className="text-sm text-[#475569] leading-relaxed mb-6">
-              {hasVoted 
-                ? "You have already submitted your verification for this dive site. Thank you for contributing to the community!"
-                : isCreator
-                ? "You created this site suggestion. Other community members will need to verify its location."
-                : "This dive site was suggested by the community but has not yet been verified. Does this dive site exist?"}
-            </p>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 py-3 rounded-2xl border  text-[11px] font-black uppercase tracking-widest text-[#083344] hover:premium-glass"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-2xl bg-[#0055ff] text-[11px] font-black uppercase tracking-widest text-black shadow-[0_0_15px_rgba(76,145,251,0.3)]"
+                >
+                  Save
+                </button>
+              </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <button 
-                onClick={onUpvote}
-                disabled={hasVoted || checkingVote || isCreator}
-                className={cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
-                  hasVoted || checkingVote || isCreator
-                    ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
-                    : "bg-[#0055ff]/10 border-[#0055ff]/30 text-[#0055ff] hover:bg-[#0055ff]/20 cursor-pointer"
+              <div className="mt-4 pt-4 border-t ">
+                {!isDeleting ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleting(true)}
+                    className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-error/60 hover:text-error transition-colors"
+                  >
+                    Delete Site
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Are you sure?</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsDeleting(false)}
+                        className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#475569] hover:text-[#0b2240]"
+                      >
+                        No
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onDelete}
+                        className="px-3 py-1 bg-error/20 text-error rounded-lg text-[10px] font-black uppercase tracking-widest border border-error/30"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>
+                  </div>
                 )}
-              >
-                <span className="text-lg font-black">{site.upvotes || 0} / 10</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Verify Site</span>
-              </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <p className="text-sm text-[#475569] leading-relaxed mb-6">
+                {hasVoted
+                  ? "You have already submitted your verification for this dive site. Thank you for contributing to the community!"
+                  : isCreator
+                    ? "You created this site suggestion. Other community members will need to verify its location."
+                    : "This dive site was suggested by the community but has not yet been verified. Does this dive site exist?"}
+              </p>
 
-              <button 
-                 onClick={onDownvote}
-                 disabled={hasVoted || checkingVote || isCreator}
-                 className={cn(
-                   "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
-                   hasVoted || checkingVote || isCreator
-                     ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
-                     : "bg-error/10 border-error/30 text-error hover:bg-error/20 cursor-pointer"
-                 )}
-              >
-                 <span className="text-lg font-black">{site.downvotes || 0} / 10</span>
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Fake / Incorrect</span>
-              </button>
-            </div>
-          </>
-        )}
+              <div className="flex items-center justify-between gap-4">
+                <button
+                  onClick={onUpvote}
+                  disabled={hasVoted || checkingVote || isCreator}
+                  className={cn(
+                    "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
+                    hasVoted || checkingVote || isCreator
+                      ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
+                      : "bg-[#0055ff]/10 border-[#0055ff]/30 text-[#0055ff] hover:bg-[#0055ff]/20 cursor-pointer"
+                  )}
+                >
+                  <span className="text-lg font-black">{site.upvotes || 0} / 10</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Verify Site</span>
+                </button>
+
+                <button
+                  onClick={onDownvote}
+                  disabled={hasVoted || checkingVote || isCreator}
+                  className={cn(
+                    "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
+                    hasVoted || checkingVote || isCreator
+                      ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
+                      : "bg-error/10 border-error/30 text-error hover:bg-error/20 cursor-pointer"
+                  )}
+                >
+                  <span className="text-lg font-black">{site.downvotes || 0} / 10</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Fake / Incorrect</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

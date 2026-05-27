@@ -32,7 +32,7 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
         const postsData = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
 
         const likesPerUser: Record<string, number> = {};
-        
+
         const commentPromises = postsData.map(async (post) => {
           if (!likesPerUser[post.userId]) likesPerUser[post.userId] = 0;
           likesPerUser[post.userId] += (post.likesCount || 0);
@@ -45,23 +45,23 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
         await Promise.all(commentPromises);
 
         const calculatedRankings = usersData.map(u => {
-           const xp = u.points || 0;
-           const likes = likesPerUser[u.id] || 0;
-           const rankingPoints = u.rankingPoints || 0;
-           const totalPoints = xp + likes + rankingPoints;
-           
-           const level = calculateLevel(totalPoints);
-           const rankInfo = getRankInfo(level);
-           
-           return {
-             userId: u.id,
-             name: u.displayName || "Explorer",
-             points: totalPoints,
-             badge: rankInfo.title,
-             photo: u.photoURL || null,
-             hasPinnedBadge: false,
-             userDocument: u
-           };
+          const xp = u.points || 0;
+          const likes = likesPerUser[u.id] || 0;
+          const rankingPoints = u.rankingPoints || 0;
+          const totalPoints = xp + likes + rankingPoints;
+
+          const level = calculateLevel(totalPoints);
+          const rankInfo = getRankInfo(level);
+
+          return {
+            userId: u.id,
+            name: u.displayName || "Explorer",
+            points: totalPoints,
+            badge: rankInfo.title,
+            photo: u.photoURL || null,
+            hasPinnedBadge: false,
+            userDocument: u
+          };
         });
 
         calculatedRankings.sort((a, b) => b.points - a.points);
@@ -83,13 +83,13 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
             <p className="text-xs font-medium text-[#475569] uppercase tracking-widest mt-1">Top Deep Divers</p>
           </div>
           <div className="flex gap-1 rounded-full premium-glass p-1 border   self-stretch sm:self-auto">
-            <button 
+            <button
               onClick={() => setViewMode("friends")}
               className={cn("flex-1 sm:flex-none rounded-full px-5 py-2 text-xs font-bold transition-colors", viewMode === "friends" ? "bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 shadow-lg" : "text-[#475569] hover:text-[#0b2240] hover:premium-glass")}
             >
               Friends
             </button>
-            <button 
+            <button
               onClick={() => setViewMode("global")}
               className={cn("flex-1 sm:flex-none rounded-full px-6 py-2 text-xs font-black shadow-lg", viewMode === "global" ? "bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30" : "text-[#475569] hover:text-[#0b2240] hover:premium-glass border border-transparent")}
             >
@@ -105,88 +105,89 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
               {(viewMode === "global" ? rankings : rankings.filter(r => r.userId === profile?.id || profile?.friends?.includes(r.userId))).map((rank, index) => {
                 const rankPos = index + 1;
                 return (
-                <motion.div 
-                  key={rank.userId}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setSelectedUser(rank)}
-                  className={cn(
-                    "group flex items-center gap-2 sm:gap-6 rounded-3xl p-2 sm:p-4 transition-all border shadow-lg  cursor-pointer overflow-hidden",
-                    rankPos === 1 ? "bg-tertiary/10 border-tertiary/30 hover:border-tertiary/50" : 
-                    rankPos === 2 ? "premium-glass  hover:" :
-                    rankPos === 3 ? "premium-glass  hover:" :
-                    "premium-glass-low/30 border-transparent hover:premium-glass hover:"
-                  )}
-                >
-                  <div className={cn(
-                    "flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-2xl font-black italic text-lg sm:text-xl shadow-inner shrink-0",
-                    rankPos === 1 ? "bg-tertiary text-on-tertiary shadow-[inset_0_0_20px_rgba(255,255,255,0.5)]" : 
-                    rankPos === 2 ? "premium-glass text-[#0b2240] shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]" :
-                    rankPos === 3 ? "premium-glass-highest text-[#475569]" :
-                    "text-[#083344]"
-                  )}>
-                    {rankPos}
-                  </div>
-                  <div className="relative shrink-0">
-                    {rank.photo ? (
-                      <img src={rank.photo} alt={rank.name} className={cn(
-                        "h-10 w-10 sm:h-16 sm:w-16 rounded-full object-cover shadow-xl",
-                        rankPos === 1 ? "border-4 border-tertiary shadow-tertiary/20" : "border-2 "
-                      )} />
-                    ) : (
-                      <div className={cn(
-                        "h-10 w-10 sm:h-16 sm:w-16 rounded-full flex items-center justify-center premium-glass shadow-xl overflow-hidden",
-                        rankPos === 1 ? "border-4 border-tertiary shadow-tertiary/20" : "border-2 "
-                      )}>
-                        <UserIcon size={32} className="text-secondary" />
-                      </div>
+                  <motion.div
+                    key={rank.userId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => setSelectedUser(rank)}
+                    className={cn(
+                      "group flex items-center gap-2 sm:gap-6 rounded-3xl p-2 sm:p-4 transition-all border shadow-lg  cursor-pointer overflow-hidden",
+                      rankPos === 1 ? "bg-tertiary/10 border-tertiary/30 hover:border-tertiary/50" :
+                        rankPos === 2 ? "premium-glass  hover:" :
+                          rankPos === 3 ? "premium-glass  hover:" :
+                            "premium-glass-low/30 border-transparent hover:premium-glass hover:"
                     )}
-                    {rankPos === 1 && (
-                      <div className="absolute -bottom-2 -right-2 rounded-full bg-tertiary p-1.5 shadow-lg border-2 border-background">
-                        <Trophy size={14} className="text-on-tertiary" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col min-w-0">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <span className="font-black tracking-tight text-[#0b2240] text-base sm:text-lg group-hover:text-[#0055ff] transition-colors truncate">{rank.name}</span>
-                      {rank.hasPinnedBadge && pinnedBadge && (
-                        <div 
-                          className={cn("flex items-center justify-center p-1 rounded-full", `bg-${pinnedBadge.color}/20 text-${pinnedBadge.color}`)} 
-                          title={`Pinned Badge: ${pinnedBadge.label}`}
-                        >
-                          <pinnedBadge.icon size={12} className="text-[#0055ff]" />
+                  >
+                    <div className={cn(
+                      "flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-2xl font-black italic text-lg sm:text-xl shadow-inner shrink-0",
+                      rankPos === 1 ? "bg-tertiary text-on-tertiary shadow-[inset_0_0_20px_rgba(255,255,255,0.5)]" :
+                        rankPos === 2 ? "premium-glass text-[#0b2240] shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]" :
+                          rankPos === 3 ? "premium-glass-highest text-[#475569]" :
+                            "text-[#083344]"
+                    )}>
+                      {rankPos}
+                    </div>
+                    <div className="relative shrink-0">
+                      {rank.photo ? (
+                        <img src={rank.photo} alt={rank.name} className={cn(
+                          "h-10 w-10 sm:h-16 sm:w-16 rounded-full object-cover shadow-xl",
+                          rankPos === 1 ? "border-4 border-tertiary shadow-tertiary/20" : "border-2 "
+                        )} />
+                      ) : (
+                        <div className={cn(
+                          "h-10 w-10 sm:h-16 sm:w-16 rounded-full flex items-center justify-center premium-glass shadow-xl overflow-hidden",
+                          rankPos === 1 ? "border-4 border-tertiary shadow-tertiary/20" : "border-2 "
+                        )}>
+                          <UserIcon size={32} className="text-secondary" />
+                        </div>
+                      )}
+                      {rankPos === 1 && (
+                        <div className="absolute -bottom-2 -right-2 rounded-full bg-tertiary p-1.5 shadow-lg border-2 border-background">
+                          <Trophy size={14} className="text-on-tertiary" />
                         </div>
                       )}
                     </div>
-                    <span className={cn(
-                      "mt-1 w-fit rounded-lg px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest border",
-                      rankPos === 1 ? "bg-tertiary border-tertiary text-on-tertiary shadow-lg shadow-tertiary/20" : " premium-glass text-[#475569]"
-                    )}>
-                      {rank.badge}
-                    </span>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className={cn(
-                      "block text-lg sm:text-2xl font-black italic leading-none drop-shadow-md",
-                      rankPos === 1 ? "text-tertiary" : "text-[#0055ff]"
-                    )}>
-                      {rank.points.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase text-[#475569] tracking-widest">points</span>
-                  </div>
-                </motion.div>
-              )})}
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="font-black tracking-tight text-[#0b2240] text-base sm:text-lg group-hover:text-[#0055ff] transition-colors truncate">{rank.name}</span>
+                        {rank.hasPinnedBadge && pinnedBadge && (
+                          <div
+                            className={cn("flex items-center justify-center p-1 rounded-full", `bg-${pinnedBadge.color}/20 text-${pinnedBadge.color}`)}
+                            title={`Pinned Badge: ${pinnedBadge.label}`}
+                          >
+                            <pinnedBadge.icon size={12} className="text-[#0055ff]" />
+                          </div>
+                        )}
+                      </div>
+                      <span className={cn(
+                        "mt-1 w-fit rounded-lg px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest border",
+                        rankPos === 1 ? "bg-tertiary border-tertiary text-on-tertiary shadow-lg shadow-tertiary/20" : " premium-glass text-[#475569]"
+                      )}>
+                        {rank.badge}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={cn(
+                        "block text-lg sm:text-2xl font-black italic leading-none drop-shadow-md",
+                        rankPos === 1 ? "text-tertiary" : "text-[#0055ff]"
+                      )}>
+                        {rank.points.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase text-[#475569] tracking-widest">points</span>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
-          
+
           <div className="my-2 flex justify-center opacity-20">
             <Star size={12} className="fill-current" />
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -224,10 +225,10 @@ export const LeaderboardView = ({ onParticipate }: LeaderboardViewProps) => {
         </div>
       </section>
 
-      <PublicProfileModal 
-        isOpen={!!selectedUser} 
-        onClose={() => setSelectedUser(null)} 
-        user={selectedUser?.userDocument} 
+      <PublicProfileModal
+        isOpen={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        user={selectedUser?.userDocument}
       />
 
     </div>
@@ -239,14 +240,14 @@ const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClos
     <AnimatePresence>
       {isOpen && user && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-background/80 "
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -272,39 +273,39 @@ const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClos
                   <div className="flex flex-col gap-1 min-w-0">
                     <h3 className="text-2xl font-black tracking-tight text-[#0b2240] truncate">{user.displayName || "Unknown Explorer"}</h3>
                     <div className="text-xs font-bold uppercase tracking-widest text-[#0055ff] flex items-center gap-2">
-                       {user.rank || "Apprentice Diver"}
+                      {user.rank || "Apprentice Diver"}
                     </div>
                     {((user.pinnedBadgeId && user.badgeStats) && (() => {
-                        const b = computeBadgesWithStats(user.badgeStats!).find((bx: any) => bx.id === user.pinnedBadgeId);
-                        if (b && b.earned) {
-                          const BIcon = b.icon;
-                          return (
-                            <div className="mt-2 text-[#0055ff] flex items-center gap-2">
-                              <BIcon size={14} className="text-secondary" />
-                              <span className="text-[10px] font-black uppercase tracking-wider">{b.label}</span>
-                            </div>
-                          );
-                        }
-                        return null;
+                      const b = computeBadgesWithStats(user.badgeStats!).find((bx: any) => bx.id === user.pinnedBadgeId);
+                      if (b && b.earned) {
+                        const BIcon = b.icon;
+                        return (
+                          <div className="mt-2 text-[#0055ff] flex items-center gap-2">
+                            <BIcon size={14} className="text-secondary" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">{b.label}</span>
+                          </div>
+                        );
+                      }
+                      return null;
                     })())}
                   </div>
                 </div>
-                
+
                 {user.bio && (
                   <div className="premium-glass rounded-2xl p-4 border  shadow-sm">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#475569] mb-2 flex items-center gap-2"><UserIcon size={12}/> Biography</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#475569] mb-2 flex items-center gap-2"><UserIcon size={12} /> Biography</h4>
                     <p className="text-sm font-medium text-[#0b2240] whitespace-pre-wrap">{user.bio}</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center shadow-sm">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Total Dives</div>
-                     <div className="text-xl font-black text-[#0b2240] italic">{user.divesCount || 0}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Total Dives</div>
+                    <div className="text-xl font-black text-[#0b2240] italic">{user.divesCount || 0}</div>
                   </div>
                   <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center shadow-sm">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Exp. Points</div>
-                     <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Exp. Points</div>
+                    <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
                   </div>
                 </div>
 
@@ -351,13 +352,13 @@ const PublicProfileModal = ({ isOpen, onClose, user }: { isOpen: boolean, onClos
                 })()}
 
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
-                   <UserIcon size={12} />
-                   Bio
+                  <UserIcon size={12} />
+                  Bio
                 </div>
                 <div>
-                   <p className="text-sm font-medium leading-relaxed text-[#475569] premium-glass rounded-2xl p-5 border  shadow-inner min-h-[80px]">
-                     {user.bio || "This explorer is a person of few words, letting their dives speak for themselves."}
-                   </p>
+                  <p className="text-sm font-medium leading-relaxed text-[#475569] premium-glass rounded-2xl p-5 border  shadow-inner min-h-[80px]">
+                    {user.bio || "This explorer is a person of few words, letting their dives speak for themselves."}
+                  </p>
                 </div>
               </div>
             </div>
