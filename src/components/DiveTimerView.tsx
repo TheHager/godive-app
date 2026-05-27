@@ -3,7 +3,6 @@ import { DiveStateMachine } from '../lib/DiveStateMachine';
 import { DiveState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../contexts/UserContext';
-import { X } from 'lucide-react';
 
 // --- Custom Long Press Hook for Stress-Resistant UI ---
 function useLongPress(onLongPress: () => void, ms = 2000) {
@@ -53,7 +52,7 @@ function useLongPress(onLongPress: () => void, ms = 2000) {
   };
 }
 
-export function DiveTimerView({ onClose }: { onClose?: () => void }) {
+export function DiveTimerView() {
   const { user } = useAuth();
   const stateMachine = DiveStateMachine.getInstance();
   
@@ -132,32 +131,21 @@ export function DiveTimerView({ onClose }: { onClose?: () => void }) {
 
   // Colors based on state
   const bgColors = {
-    [DiveState.INACTIVE]: 'bg-transparent text-[#0b2240]',
-    [DiveState.DIVING]: 'bg-[#0055ff]/10 text-[#083344]',
-    [DiveState.WARNING_LEVEL_1]: 'bg-orange-500/20 animate-pulse text-[#083344]',
-    [DiveState.WARNING_LEVEL_2]: 'bg-red-500/30 animate-pulse text-[#083344]',
-    [DiveState.ALARM_TRIGGERED]: 'bg-red-600/40 text-[#083344]',
+    [DiveState.INACTIVE]: 'bg-background text-[#0b2240]',
+    [DiveState.DIVING]: 'bg-[#0f2027] text-white',
+    [DiveState.WARNING_LEVEL_1]: 'bg-orange-600 animate-pulse text-white',
+    [DiveState.WARNING_LEVEL_2]: 'bg-red-600 animate-pulse text-white',
+    [DiveState.ALARM_TRIGGERED]: 'bg-red-900 text-white',
   };
 
   return (
-    <div className={`fixed inset-0 z-[60] flex flex-col h-[100dvh] w-full px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] transition-colors duration-500 bg-white/70 backdrop-blur-2xl ${bgColors[currentState]}`}>
+    <div className={`flex flex-col h-full w-full px-6 pt-3 pb-4 transition-colors duration-500 ${bgColors[currentState]}`}>
       
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold tracking-wider">DEAD MAN'S SWITCH</h2>
-        <div className="flex items-center gap-3">
-          <div className={`text-xs md:text-sm font-mono px-3 py-1 rounded-full border ${currentState === DiveState.INACTIVE ? 'premium-glass text-[#475569] ' : 'bg-[#0055ff]/20 text-[#0055ff] font-bold border-[#0055ff]/30 '}`}>
-            {currentState.replace(/_/g, ' ')}
-          </div>
-          {currentState === DiveState.INACTIVE && onClose && (
-            <button 
-              onClick={onClose}
-              className="p-2 rounded-full premium-glass text-[#0b2240] hover:bg-slate-200/50 transition-colors"
-              aria-label="Close"
-            >
-              <X size={24} />
-            </button>
-          )}
+        <div className={`text-xs md:text-sm font-mono px-3 py-1 rounded-full border ${currentState === DiveState.INACTIVE ? 'premium-glass text-[#475569] ' : 'bg-black/30 text-white '}`}>
+          {currentState.replace(/_/g, ' ')}
         </div>
       </div>
 
@@ -173,12 +161,9 @@ export function DiveTimerView({ onClose }: { onClose?: () => void }) {
                 onClick={() => setPlannedMinutes(Math.max(1, plannedMinutes - 5))}
                 className="w-14 h-14 rounded-full premium-glass active:premium-glass flex items-center justify-center text-[#0b2240] border  transition-transform active:scale-95 shadow-sm text-2xl"
               >-</button>
-              <input 
-                type="number" 
-                value={plannedMinutes} 
-                onChange={(e) => setPlannedMinutes(parseInt(e.target.value) || 0)}
+              <input className="premium-input premium-input" type="number" value={plannedMinutes} onChange={(e) => setPlannedMinutes(parseInt(e.target.value) || 0)}
                 onBlur={(e) => setPlannedMinutes(Math.max(1, parseInt(e.target.value) || 1))}
-                className="premium-input w-32 text-center bg-transparent border-b-2 border-[#0055ff] focus:border-secondary font-mono font-bold text-6xl p-2 text-[#0b2240] outline-none"
+                className="w-32 text-center bg-transparent -b-2 -[#0055ff] focus: focus:-secondary font-mono font-bold text-6xl p-2 text-[#0b2240]"
               />
               <button 
                 onClick={() => setPlannedMinutes(plannedMinutes + 5)}
@@ -245,7 +230,7 @@ export function DiveTimerView({ onClose }: { onClose?: () => void }) {
         <div className="flex-1 flex flex-col justify-between items-center py-8">
           
           <div className="text-center">
-            <p className="text-xl text-[#475569] mb-2 tracking-widest uppercase">
+            <p className="text-xl text-white/70 mb-2 tracking-widest uppercase">
               {currentState === DiveState.DIVING ? 'Time Remaining' : 'OVERDUE'}
             </p>
             <div className="text-7xl font-mono font-bold tabular-nums drop-shadow-lg">
@@ -254,23 +239,23 @@ export function DiveTimerView({ onClose }: { onClose?: () => void }) {
           </div>
 
           {(currentState === DiveState.WARNING_LEVEL_1) && (
-            <div className="text-center bg-orange-500/10 p-4 rounded-xl border border-orange-500/20 mb-8 ">
+            <div className="text-center bg-orange-900/40 p-4 rounded-xl border border-orange-500/20 mb-8 ">
               <p className="font-bold text-xl mb-2 text-orange-400">LOCAL WARNING</p>
-              <p className="text-sm text-[#083344]">Your dive is overdue. Please extend or end your dive.<br/><span className="font-bold text-orange-600">Distress signal is NOT active yet.</span></p>
+              <p className="text-sm text-white/80">Your dive is overdue. Please extend or end your dive.<br/><span className="font-bold text-orange-200">Distress signal is NOT active yet.</span></p>
             </div>
           )}
 
           {(currentState === DiveState.WARNING_LEVEL_2) && (
-            <div className="text-center bg-red-500/10 p-4 rounded-xl border border-red-500/20 mb-8 ">
+            <div className="text-center bg-red-900/40 p-4 rounded-xl border border-red-500/20 mb-8 ">
               <p className="font-bold text-xl mb-2 text-red-400">CRITICAL ALERT</p>
-              <p className="text-sm text-[#083344]">Final local warning before distress broadcast.</p>
+              <p className="text-sm text-white/80">Final local warning before distress broadcast.</p>
             </div>
           )}
 
           {(currentState === DiveState.ALARM_TRIGGERED) && (
-            <div className="text-center bg-red-500/20 p-4 rounded-xl border border-red-500 mb-8  animate-pulse">
+            <div className="text-center bg-black/40 p-4 rounded-xl border border-red-500 mb-8  animate-pulse">
               <p className="font-bold text-xl mb-2 text-red-500">DISTRESS BROADCASTING</p>
-              <p className="text-sm text-[#083344]">Local BLE mesh network and cloud alerts are fully active.</p>
+              <p className="text-sm text-white/80">Local BLE mesh network and cloud alerts are fully active.</p>
             </div>
           )}
 
@@ -280,7 +265,7 @@ export function DiveTimerView({ onClose }: { onClose?: () => void }) {
                 label="HOLD TO EXTEND 5 MIN" 
                 controls={extendDiveControls} 
                 progress={extendDiveControls.progress}
-                colorClass="bg-[#0055ff]"
+                colorClass="bg-blue-600"
               />
             )}
             

@@ -16,11 +16,13 @@ import {
   ArrowLeft,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
   Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock, ArrowUpRight, MessageSquare,
-  Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon, AlertTriangle
+  Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon, AlertTriangle, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDate } from "../lib/utils";
 import { ActionMenu } from "./ActionMenu";
+import { NotificationCenter } from "./NotificationCenter";
+import { NotificationService } from "../lib/NotificationService";
 import { computeBadgesWithStats } from "../constants/badges";
 import { RANKS, calculateLevel, getRankInfo, type Rank } from "../constants/ranks";
 import { useUser } from "../contexts/UserContext";
@@ -45,10 +47,10 @@ interface SpeciesAppearance {
   location?: string;
   date?: string;
   timestamp?: any;
-  [key: string]: any; // Allow other properties from original items
+  [key: string]: any;
 }
 
-export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavigateToProfile }: { onNavigateToDiveTimer?: () => void, onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void }) => {
+export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNavigateToDiveTimer }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void, onNavigateToDiveTimer?: () => void }) => {
   const { profile } = useAuth();
   const { badgeStats: contextBadgeStats, updateBadgeStats } = useUser();
   const [activeHistory, setActiveHistory] = useState<'dives' | 'sightings' | null>(null);
@@ -56,6 +58,18 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
   const [showRanks, setShowRanks] = useState(false);
   const [isLoggingDive, setIsLoggingDive] = useState(false);
   const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
+  const [showChallengeDetail, setShowChallengeDetail] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    const notifService = NotificationService.getInstance();
+    const handleNotifUpdate = () => {
+      setUnreadNotifications(notifService.getUnreadCount());
+    };
+    notifService.addListener(handleNotifUpdate);
+    return () => notifService.removeListener(handleNotifUpdate);
+  }, []);
 
   const [allDives, setAllDives] = useState<any[]>([]);
   const [allSightings, setAllSightings] = useState<any[]>([]);
@@ -247,7 +261,7 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
           if (e.participants?.includes(profile?.id)) {
             const eventTime = new Date(`${e.date}T${e.time || "00:00"}`).getTime();
             if (eventTime < now) {
-              eventsXp += 150; // 150 XP per completed event
+              eventsXp += 150;
             }
           }
         });
@@ -271,12 +285,6 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
 
   const rankInfo = getRankInfo(level);
 
-  useEffect(() => {
-    // Note: The 'rank' field is protected in firestore.rules and should be updated by a secure backend function
-    // triggered by point changes. Updating it from the client will fail for non-admin users.
-    // if (profile?.id && rankInfo.title && profile.rank !== rankInfo.title) { ... }
-  }, [profile?.id, rankInfo.title, profile?.rank]);
-
   const allBadges = computeBadgesWithStats(badgeStats);
   const earnedBadges = allBadges.filter(b => b.earned);
 
@@ -290,255 +298,245 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
     return false;
   });
 
-  const upcomingEvents = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return myEvents.filter((e) => {
-      if (!e.date) return false;
-      // We parse the event date. e.date is assumed to be a valid date string (e.g. YYYY-MM-DD).
-      const eventDate = new Date(e.date);
-      // Ensure we compare based on local midnight to handle timezone safely
-      eventDate.setHours(0, 0, 0, 0);
-      return eventDate.getTime() >= today.getTime();
-    });
-  }, [myEvents]);
-
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-secondary/30">
-      {/* Immersive Background */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#0ea5e925_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,#0c4a6e20_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,#07598515_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] mix-blend-overlay" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-1 md:px-8 md:pt-4">
-        <header className="mb-2 flex items-center justify-between md:mb-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-[#083344] sm:text-5xl md:text-7xl">
-              GO<span className="text-secondary">DIVE</span>
-            </h1>
-          </motion.div>
-          
-          <motion.button 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => onNavigateToProfile?.()}
-            className="h-14 w-14 md:h-16 md:w-16 rounded-full overflow-hidden border-2  hover:border-secondary transition-colors shrink-0"
-          >
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full premium-glass flex items-center justify-center">
-                <UserIcon size={28} className="text-[#475569]" />
-              </div>
-            )}
-          </motion.button>
+    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-background text-on-background selection:bg-primary/30">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-4 md:px-8 md:pt-6">
+        {/* TopAppBar (Mobile Only) */}
+        <header className="mb-6 flex items-center justify-between md:hidden">
+          <div className="flex items-center gap-2">
+            <span className="font-sans text-3xl text-primary tracking-tighter font-extrabold">GoDive</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="relative p-3 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant cursor-pointer border border-outline-variant/20"
+            >
+              <span className="material-symbols-outlined text-[24px]">notifications</span>
+              {unreadNotifications > 0 && (
+                <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-background animate-pulse" />
+              )}
+            </button>
+            <div
+              onClick={() => onNavigateToProfile?.()}
+              className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20 shadow-md cursor-pointer transition-transform active:scale-95"
+            >
+              {profile?.photoURL ? (
+                <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-surface-container flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[32px] text-on-surface-variant">account_circle</span>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <section 
-          onClick={() => setShowRanks(true)}
-          className="mb-6 rounded-[2rem] premium-glass  border  shadow-2xl overflow-hidden relative group md:mb-8 md:rounded-[2.5rem] cursor-pointer hover:premium-glass transition-colors"
-        >
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-secondary/5 blur-[100px] group-hover:bg-secondary/10 transition-colors" />
-          
-          <div className="p-6 md:p-8 relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-6">
-              <div className="flex items-center gap-4">
+        {/* Hero Section */}
+        <section className="relative w-full h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-sm group mb-6">
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" 
+            style={{ backgroundImage: `url("https://images.unsplash.com/photo-1544552866-d3ed42536cfd?auto=format&fit=crop&q=80&w=1600")` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 flex flex-col justify-end">
+            <p className="font-sans text-xs font-bold tracking-widest text-primary uppercase mb-1 opacity-90">Welcome back</p>
+            <h2 className="font-sans text-2xl md:text-4xl font-extrabold text-on-surface mb-6">
+              Your next adventure awaits, {profile?.displayName || "Diver"}.
+            </h2>
+            
+            <div
+              onClick={() => setShowRanks(true)}
+              className="glass-pane rounded-2xl p-5 max-w-md w-full backdrop-blur-xl cursor-pointer hover:bg-white/80 transition-colors"
+            >
+              <div className="flex justify-between items-end mb-2">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#083344] md:text-xs">Current Rank</p>
-                  <h3 className="text-2xl font-black text-secondary leading-tight italic md:text-4xl whitespace-nowrap">{rankInfo.title}</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-bold text-[#083344] uppercase tracking-widest md:text-sm">LVL {level}</span>
-                    <span className="h-1 w-1 rounded-full premium-glass" />
-                    <span className="text-[10px] font-bold text-secondary uppercase tracking-widest md:text-sm">{rankInfo.status}</span>
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Current Status</p>
+                  <div className="flex items-center gap-1.5 mb-0.5 text-primary">
+                    <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                    <p className="text-[10px] font-bold uppercase tracking-wider">{rankInfo.title}</p>
                   </div>
+                  <p className="text-sm font-extrabold text-on-surface">Level {level}</p>
                 </div>
+                <p className="text-xs font-bold text-primary">
+                  {nextLevelXp - validTotalXp} XP to Lvl {level + 1}
+                </p>
               </div>
-
-              <div className="flex flex-col items-start md:items-end w-full md:w-auto">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-[#083344] tracking-tighter md:text-4xl">{validTotalXp.toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-[#083344] uppercase tracking-widest md:text-sm">XP / {nextLevelXp.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Level Bar (Video Game Style) */}
-            <div className="relative h-3 w-full rounded-full premium-glass border  p-[2px] shadow-[0_0_10px_rgba(0,0,0,0.5)_inset]">
-              <div className="relative h-full w-full rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${xpProgress}%` }}
-                  transition={{ duration: 1.5, ease: "backOut" }}
-                  className="h-full bg-gradient-to-r from-secondary to-primary relative shadow-[0_0_15px_rgba(76,214,251,0.3)]"
-                >
-                  {/* Sheen/Highlight */}
-                  <div className="absolute inset-x-0 top-0 h-[40%] premium-glass" />
-                </motion.div>
+              <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" 
+                  style={{ width: `${xpProgress}%` }}
+                />
               </div>
             </div>
           </div>
         </section>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8 md:mb-12 flex flex-col gap-4"
-        >
-          <motion.button 
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <button 
             onClick={() => setIsLoggingDive(true)}
-            className="w-full flex h-16 items-center justify-center gap-4 rounded-[2rem] bg-secondary font-black uppercase tracking-[0.25em] text-on-secondary shadow-[0_20px_50px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container md:h-24 md:text-xl group"
+            className="bg-primary text-on-primary font-sans text-xs font-bold uppercase tracking-wider py-4 px-6 rounded-2xl flex justify-center items-center gap-2 hover:bg-primary-container transition-all shadow-sm active:scale-[0.98] cursor-pointer"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full premium-glass group-hover:rotate-12 transition-transform md:h-12 md:w-12">
-              <Navigation size={24} className="animate-pulse" />
-            </div>
+            <span className="material-symbols-outlined text-[20px]">add_circle</span>
             Log New Dive
-          </motion.button>
-
-          <motion.button 
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onNavigateToDiveTimer?.()}
-            className="w-full flex h-16 items-center justify-center gap-4 rounded-[2rem] bg-red-500/20 backdrop-blur-md border border-red-500/40 text-red-600 font-bold uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(239,68,68,0.2)] transition-all hover:bg-red-500/30 md:h-20 md:text-lg group"
+          </button>
+          <button 
+            onClick={() => onNavigateToEvent?.('explorer')}
+            className="bg-surface-container-lowest text-on-surface border border-outline-variant/30 font-sans text-xs font-bold uppercase tracking-wider py-4 px-6 rounded-2xl flex justify-center items-center gap-2 hover:bg-surface-container transition-all shadow-sm active:scale-[0.98] cursor-pointer"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 group-hover:scale-110 transition-transform md:h-12 md:w-12">
-              <AlertTriangle size={20} className="animate-pulse text-red-600" />
-            </div>
-            Launch Dive Safety Timer
-          </motion.button>
-        </motion.div>
-
-        <div className="grid grid-cols-2 gap-4 mb-8 md:gap-6 md:mb-12">
-          <StatsCard 
-            title="Dives" 
-            value={dives} 
-            unit="LOGS" 
-            icon={Waves} 
-            color="primary" 
-            onClick={() => setActiveHistory('dives')}
-          />
-          <StatsCard 
-            title="Marine Life" 
-            value={fish} 
-            unit="SPECIES" 
-            icon={Fish} 
-            color="secondary" 
-            onClick={() => setActiveHistory('sightings')}
-          />
+            <span className="material-symbols-outlined text-[20px]">explore</span>
+            Explore Sites
+          </button>
         </div>
 
-        {upcomingEvents.length > 0 && (
-          <section className="w-full min-w-0 pb-10">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-2xl font-bold tracking-tight text-[#0b2240]">Your Events</h3>
-            </div>
-            <div className="no-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scroll-pl-4 md:-mx-8 md:px-8 md:scroll-pl-8 snap-x snap-mandatory after:content-[''] after:shrink-0 after:w-px border-transparent">
-              {upcomingEvents.map((e) => {
-                const isHost = e.hostId === profile?.id;
-                return (
-                  <div 
-                    key={e.id} 
-                    onClick={() => onNavigateToEvent?.(e.id)}
-                    className="snap-start shrink-0 w-64 p-5 rounded-3xl premium-glass border  shadow-lg relative overflow-hidden group cursor-pointer hover:premium-glass transition-colors"
-                  >
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Calendar size={64} />
-                    </div>
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
-                          {isHost ? 'Hosting' : 'Joined'}
-                        </span>
-                        <span className="text-xs font-bold text-[#083344]">{e.date}</span>
-                      </div>
-                      <h4 className="font-black italic text-lg text-[#0b2240] mb-1 truncate">{e.title}</h4>
-                      <div className="flex items-center text-xs font-medium text-[#475569] mb-4 truncate">
-                        <MapPin size={12} className="mr-1 inline text-[#0055ff]"/>{e.location}
-                      </div>
+        <button 
+          onClick={() => onNavigateToDiveTimer?.()}
+          className="w-full bg-error text-white font-sans text-xs font-bold uppercase tracking-wider py-4 px-6 rounded-2xl flex justify-center items-center gap-2 hover:bg-red-600 transition-all shadow-sm active:scale-[0.98] cursor-pointer mb-6"
+        >
+          <span className="material-symbols-outlined text-[20px]">warning</span>
+          Launch Dive Safety Timer
+        </button>
 
-                      <div className="flex -space-x-2">
-                        {e.participants?.slice(0, 5).map((p: string, i: number) => (
-                           <div key={i} className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface-container bg-surface/50 text-secondary pointer-events-none overflow-hidden">
-                             <UserIcon size={12} />
-                           </div>
-                        ))}
-                        {(e.participants?.length || 0) > 5 && (
-                          <div className="h-6 w-6 rounded-full border-2 border-surface-container bg-surface flex items-center justify-center pointer-events-none">
-                            <span className="text-[8px] font-bold text-[#0b2240]">+{e.participants.length - 5}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Bento Grid Stats */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div 
+            onClick={() => setActiveHistory('dives')}
+            className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex flex-col justify-between aspect-square md:aspect-auto md:h-36 cursor-pointer hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-outline text-2xl mb-4">history</span>
+            <div>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1">Total Dives</p>
+              <p className="text-3xl font-extrabold text-on-surface">{dives}</p>
             </div>
-          </section>
-        )}
-
-        <section className="w-full min-w-0 pb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-2xl font-bold tracking-tight text-[#0b2240]">Weekly Challenge</h3>
           </div>
           <div 
-            onClick={() => alert("You've joined the Weekly Challenge! Track your progress as you dive.")}
-            className="group relative min-h-[340px] overflow-hidden rounded-[2rem] border  shadow-2xl transition-all hover:scale-[1.01] cursor-pointer"
+            onClick={() => setActiveHistory('sightings')}
+            className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex flex-col justify-between aspect-square md:aspect-auto md:h-36 cursor-pointer hover:bg-surface-container transition-colors"
           >
-            <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
-              <span className="rounded-full bg-background/80 border border-secondary/30 px-3 py-1.5 text-xs font-bold text-secondary  shadow-lg">Ends in 6d 12h</span>
+            <span className="material-symbols-outlined text-outline text-2xl mb-4">set_meal</span>
+            <div>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1">Species Spotted</p>
+              <p className="text-3xl font-extrabold text-on-surface">{fish}</p>
             </div>
-            <img 
-              src={WEEKLY_CHALLENGES[0].image} 
-              alt="" 
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60 mix-blend-overlay"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/20 pointer-events-none" />
-            <div className="absolute inset-0 bg-blue-900/10 pointer-events-none mix-blend-multiply" />
-            
-            <div className="relative z-10 flex h-full flex-col justify-end p-6 pt-16 mt-12 gap-3">
-              <h3 className="text-3xl lg:text-4xl font-black italic tracking-tighter text-[#083344] drop-shadow-xl">{WEEKLY_CHALLENGES[0].title}</h3>
-              <p className="max-w-xl text-sm lg:text-base font-medium text-[#475569] leading-relaxed drop-shadow-md">
-                {WEEKLY_CHALLENGES[0].description}
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mt-2">
-                <div className="flex premium-glass rounded-xl px-4 py-2 gap-2 text-secondary items-center border border-secondary/20 shadow-lg">
-                  <Trophy size={16} />
-                  <span className="text-xs lg:text-sm font-black uppercase tracking-widest">Rewards: {WEEKLY_CHALLENGES[0].badge} + {WEEKLY_CHALLENGES[0].points} XP</span>
-                </div>
+          </div>
+        </div>
+
+        {/* Weekly Challenges */}
+        <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-[2rem] overflow-hidden shadow-sm mb-6">
+          <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 p-6 border-b border-outline-variant/20">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-sans text-xl text-on-surface font-black uppercase tracking-tight">Weekly Challenge</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Limited Time Event</p>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full border border-primary/20">Active Now</span>
               </div>
             </div>
           </div>
-        </section>
 
-        <section className="w-full min-w-0 pb-10">
-          {serviceDueEquipment.length > 0 && (
-          <div className="mb-8 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 flex items-start gap-4 cursor-pointer hover:bg-amber-500/20 transition-colors" onClick={() => onNavigateToEvent ? onNavigateToEvent('equipment') : null}>
-            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
-            <div>
-              <h4 className="text-amber-500 font-bold text-sm tracking-tight mb-1">Equipment Service Reminder</h4>
-              <p className="text-amber-500/80 text-xs font-medium leading-relaxed">
-                You have {serviceDueEquipment.length} piece(s) of equipment that may require service soon. Please check your Equipment Log.
-              </p>
+          {(() => {
+            const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+            const today = new Date();
+            const diff = today.getTime() - startOfYear.getTime();
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            const weekIndex = Math.floor(diff / oneWeek) % WEEKLY_CHALLENGES.length;
+            const challenge = WEEKLY_CHALLENGES[weekIndex];
+
+            return (
+              <div
+                onClick={() => setShowChallengeDetail(true)}
+                className="p-6 relative group cursor-pointer hover:bg-surface-container-low transition-colors"
+              >
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg shadow-primary/20 shrink-0">
+                      <span className="material-symbols-outlined text-3xl">
+                        {challenge.icon || "military_tech"}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-black text-on-surface leading-tight mb-1">{challenge.title}</h4>
+                      <p className="text-sm text-on-surface-variant font-medium leading-relaxed italic opacity-80 line-clamp-2">
+                        {challenge.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    <div className="bg-surface-container rounded-2xl p-3 border border-outline-variant/20 flex flex-col items-center justify-center gap-1">
+                      <div className="flex items-center gap-1.5 text-primary">
+                        <span className="material-symbols-outlined text-[18px]">military_tech</span>
+                        <span className="text-sm font-black">{challenge.points}</span>
+                      </div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/60">XP Bonus</p>
+                    </div>
+                    <div className="bg-surface-container rounded-2xl p-3 border border-outline-variant/20 flex flex-col items-center justify-center gap-1">
+                      <div className="flex items-center gap-1.5 text-secondary">
+                        <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+                        <span className="text-sm font-black">{(challenge as any).rewardTitle || challenge.badge}</span>
+                      </div>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/60">{(challenge as any).rewardTitle ? 'Unlock Title' : 'Unlock Badge'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-center">
+                  <button className="w-full py-3.5 rounded-xl bg-on-surface text-surface font-black uppercase tracking-[0.2em] text-[10px] shadow-sm hover:scale-[1.02] active:scale-95 transition-all">
+                    Participate Now
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Joined Events */}
+        {myEvents.length > 0 && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4 px-1">
+              <h3 className="font-sans text-on-surface text-lg font-black uppercase tracking-tight italic">Events You've Joined</h3>
+              <button 
+                onClick={() => onNavigateToEvent?.('list')}
+                className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline cursor-pointer"
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="no-scrollbar flex gap-4 overflow-x-auto -mx-4 px-4 pb-2 snap-x snap-mandatory">
+              {myEvents.map((e) => (
+                <div 
+                  key={e.id}
+                  onClick={() => onNavigateToEvent?.(e.id)}
+                  className="snap-start shrink-0 flex flex-col items-center gap-2 group cursor-pointer w-24"
+                >
+                  <div className="w-20 h-20 rounded-full bg-surface-container-lowest border-2 border-primary/20 shadow-md flex items-center justify-center text-primary group-hover:scale-105 group-hover:border-primary transition-all overflow-hidden relative">
+                    {e.image ? (
+                      <img src={e.image} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[32px]">calendar_today</span>
+                    )}
+                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors" />
+                  </div>
+                  <p className="text-[10px] font-extrabold text-on-surface text-center leading-tight line-clamp-2 uppercase tracking-tighter">
+                    {e.title}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-2xl font-bold tracking-tight text-[#0b2240]">Dive Badges</h3>
+        {/* Dive Badges */}
+        <section className="w-full min-w-0 pb-10">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-2xl font-bold tracking-tight text-on-surface">Dive Badges</h3>
             <button 
               onClick={() => setShowBadges(true)}
-              className="flex items-center gap-1 text-sm font-bold text-secondary transition-colors hover:text-[#0055ff]"
+              className="flex items-center gap-1 text-sm font-bold text-primary transition-colors hover:text-primary-container cursor-pointer"
             >
-              All Badges <ChevronRight size={16} />
+              All Badges <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
           
@@ -553,13 +551,13 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
           ) : (
             <div 
               onClick={() => setShowBadges(true)}
-              className="flex flex-col items-center justify-center py-10 px-6 rounded-[2rem] premium-glass border border-dashed  cursor-pointer hover:premium-glass transition-colors group"
+              className="flex flex-col items-center justify-center py-10 px-6 rounded-[2rem] bg-surface-container-lowest border border-dashed border-outline-variant/30 cursor-pointer hover:bg-surface-container transition-colors group"
             >
-              <div className="h-12 w-12 rounded-full premium-glass flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                < Award size={24} className="text-[#083344]/20" />
+              <div className="h-12 w-12 rounded-full bg-surface-container flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl text-on-surface-variant">workspace_premium</span>
               </div>
-              <p className="text-sm font-medium text-[#083344]">No badges earned yet</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mt-1">Tap to see all available</p>
+              <p className="text-sm font-medium text-on-surface-variant">No badges earned yet</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary mt-1">Tap to see all available</p>
             </div>
           )}
         </section>
@@ -573,6 +571,7 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
             allDives={allDives}
             allSightings={allSightings}
             discoveredSpecies={discoveredSpecies}
+            onNavigateToProfile={onNavigateToProfile}
           />
         )}
         {showRanks && (
@@ -605,8 +604,147 @@ export const DashboardView = ({ onNavigateToDiveTimer, onNavigateToEvent, onNavi
             }}
           />
         )}
+        {showChallengeDetail && (
+          <ChallengeDetailModal
+            onClose={() => setShowChallengeDetail(false)}
+          />
+        )}
+        {showNotifications && (
+          <NotificationCenter 
+            onClose={() => setShowNotifications(false)} 
+            onNavigateToDiveTimer={onNavigateToDiveTimer}
+          />
+        )}
       </AnimatePresence>
     </div>
+  );
+};
+
+const ChallengeDetailModal = ({ onClose }: { onClose: () => void }) => {
+  const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+  const today = new Date();
+  const diff = today.getTime() - startOfYear.getTime();
+  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+  const weekIndex = Math.floor(diff / oneWeek) % WEEKLY_CHALLENGES.length;
+  const challenge = WEEKLY_CHALLENGES[weekIndex];
+
+  const participants = [
+    { name: "Tobias", status: "In Progress", progress: 65, avatar: null },
+    { name: "MarineExplorer", status: "Completed", progress: 100, avatar: null },
+    { name: "DeepDiver99", status: "In Progress", progress: 30, avatar: null },
+    { name: "AquaLuna", status: "In Progress", progress: 10, avatar: null },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 50, scale: 0.95, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={{ y: 30, scale: 0.95, opacity: 0 }}
+        className="relative w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] rounded-[3rem] bg-surface-container-lowest border border-outline-variant/30 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative h-48 w-full overflow-hidden shrink-0">
+          <img src={challenge.image} className="w-full h-full object-cover" alt={challenge.title} />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/40 to-transparent" />
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 p-2 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <div className="absolute bottom-6 left-8">
+            <span className="bg-primary text-on-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-2 inline-block">
+              Weekly Event
+            </span>
+            <h2 className="text-2xl font-black text-on-surface uppercase italic tracking-tight">{challenge.title}</h2>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">assignment</span>
+              Mission Requirements
+            </h3>
+            <div className="bg-surface-container-low rounded-3xl p-6 border border-outline-variant/20">
+              <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
+                {challenge.description}
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-full border border-outline-variant/10">
+                  <span className="material-symbols-outlined text-primary text-[18px]">military_tech</span>
+                  <span className="text-xs font-bold text-on-surface">{challenge.points} XP</span>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-full border border-outline-variant/10">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">workspace_premium</span>
+                  <span className="text-xs font-bold text-on-surface">{(challenge as any).rewardTitle || challenge.badge}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-secondary flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">groups</span>
+                Live Participants
+              </h3>
+              <span className="text-[10px] font-bold text-on-surface-variant opacity-50">1,248 Explorers Joined</span>
+            </div>
+
+            <div className="space-y-3">
+              {participants.map((p, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant/10">
+                      <UserIcon size={18} className="text-on-surface-variant/40" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-on-surface">{p.name}</p>
+                      <p className={cn(
+                        "text-[10px] font-black uppercase tracking-widest",
+                        p.status === 'Completed' ? "text-green-500" : "text-primary/60"
+                      )}>
+                        {p.status}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 min-w-[80px]">
+                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${p.progress}%` }}
+                        className={cn(
+                          "h-full rounded-full",
+                          p.status === 'Completed' ? "bg-green-500" : "bg-primary"
+                        )}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-on-surface-variant">{p.progress}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <div className="p-8 border-t border-outline-variant/20 bg-surface-container-low/50 backdrop-blur-md">
+          <button
+            onClick={onClose}
+            className="w-full py-4 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            I'm taking the challenge!
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -616,22 +754,22 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm "
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
       onClick={onClose}
     >
       <motion.div 
         initial={{ y: 50, scale: 0.95, opacity: 0 }}
         animate={{ y: 0, scale: 1, opacity: 1 }}
         exit={{ y: 30, scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] rounded-[2.5rem] premium-glass border  shadow-2xl"
+        className="relative w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] rounded-[2.5rem] bg-surface-container-high border border-white/10 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b  premium-glass md:p-8">
+        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-surface-container-high/50 backdrop-blur-md md:p-8">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter text-[#083344] uppercase italic md:text-3xl">
+            <h3 className="text-2xl font-black tracking-tighter text-white uppercase italic md:text-3xl">
               Explorer Rankings
             </h3>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#083344] mt-1 md:text-xs">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40 mt-1 md:text-xs">
               Ascend through the echelons of the deep
             </p>
           </div>
@@ -639,7 +777,7 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="p-2 rounded-full premium-glass text-[#475569] hover:text-[#083344] transition-colors border  md:p-3"
+            className="p-2 rounded-full bg-white/5 text-on-surface-variant hover:text-white transition-colors border border-white/5 md:p-3"
           >
             <X size={20} className="md:size-6" />
           </motion.button>
@@ -659,21 +797,21 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
                     isCurrent 
                       ? "bg-secondary/10 border-secondary/30 ring-1 ring-secondary/20 shadow-[0_0_40px_-12px_rgba(76,214,251,0.2)]" 
                       : isUnlocked 
-                        ? "premium-glass  opacity-70" 
-                        : "  opacity-40 grayscale"
+                        ? "bg-white/5 border-white/10 opacity-70" 
+                        : "bg-black/20 border-white/5 opacity-40 grayscale"
                   )}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 transform transition-transform group-hover:scale-110",
-                        isUnlocked ? "border-secondary/50 bg-secondary/5 text-secondary shadow-lg shadow-secondary/10" : " premium-glass text-[#083344]"
+                        isUnlocked ? "border-secondary/50 bg-secondary/5 text-secondary shadow-lg shadow-secondary/10" : "border-white/5 bg-white/5 text-on-surface-variant/20"
                       )}>
                         <Trophy size={28} className={!isUnlocked ? "opacity-20" : ""} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className={cn("text-xl font-black italic tracking-tight", isUnlocked ? "text-[#083344]" : "text-[#083344]")}>
+                          <h4 className={cn("text-xl font-black italic tracking-tight", isUnlocked ? "text-white" : "text-white/40")}>
                             {rank.title}
                           </h4>
                           {isCurrent && (
@@ -682,22 +820,22 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#083344]">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary/60">
                           {rank.status} • LVL {rank.min}+
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex flex-col sm:items-end">
-                      <span className={cn("text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border", isUnlocked ? "premium-glass  text-[#475569]" : "  text-[#083344]")}>
+                      <span className={cn("text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border", isUnlocked ? "bg-white/5 border-white/10 text-on-surface-variant" : "bg-black/20 border-white/5 text-on-surface-variant/20")}>
                         {rank.cert}
                       </span>
                     </div>
                   </div>
                   
                   {isUnlocked && (
-                    <div className="mt-4 pt-4 border-t ">
-                      <p className="text-xs text-[#083344] leading-relaxed font-medium italic">
+                    <div className="mt-4 pt-4 border-t border-white/5">
+                      <p className="text-xs text-on-surface-variant/60 leading-relaxed font-medium italic">
                         "{rank.desc}"
                       </p>
                     </div>
@@ -705,7 +843,7 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
                   
                   {!isUnlocked && (
                     <div className="absolute top-4 right-4 group-hover:scale-110 transition-transform">
-                      <Lock size={16} className="text-[#083344]" />
+                      <Lock size={16} className="text-on-surface-variant/20" />
                     </div>
                   )}
                 </div>
@@ -713,11 +851,417 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
             })}
           </div>
         </div>
-
-
       </motion.div>
     </motion.div>
   );
+};
+
+import { MARINE_SPECIES_DATA } from "../constants/marineLifeData";
+
+const HistoryModal = ({ 
+  type, 
+  onClose,
+  allDives,
+  allSightings,
+  discoveredSpecies,
+  onNavigateToProfile
+}: { 
+  type: 'dives' | 'sightings', 
+  onClose: () => void,
+  allDives: any[],
+  allSightings: any[],
+  discoveredSpecies: Set<string>,
+  onNavigateToProfile?: () => void
+}) => {
+  const { profile } = useAuth();
+  const isDives = type === 'dives';
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<'all' | 'spotted' | 'not-seen' | 'rare'>('all');
+  const [selectedSpecies, setSelectedSpecies] = useState<any>(null);
+
+  const speciesLogMap = React.useMemo(() => {
+    const map = new window.Map<string, { count: number, lastSeen?: any }>();
+    
+    const record = (species: string, timestamp: any) => {
+      if (!species) return;
+      const key = species.trim();
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, { count: 1, lastSeen: timestamp });
+      } else {
+        existing.count += 1;
+        if (timestamp?.seconds > (existing.lastSeen?.seconds || 0)) {
+          existing.lastSeen = timestamp;
+        }
+      }
+    };
+
+    allSightings.forEach(s => record(s.species || s.label, s.timestamp));
+    allDives.forEach(d => {
+      if (d.fishSpotted) d.fishSpotted.forEach((s: string) => record(s, d.timestamp));
+    });
+
+    return map;
+  }, [allSightings, allDives]);
+
+  const filteredSpecies = React.useMemo(() => {
+    let list = MARINE_SPECIES_DATA.map(s => {
+      const stats = speciesLogMap.get(s.name);
+      return {
+        ...s,
+        spottedCount: stats?.count || 0,
+        lastSeen: stats?.lastSeen
+      };
+    });
+
+    if (searchQuery) {
+      list = list.filter(s =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.scientificName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (filter === 'spotted') list = list.filter(s => s.spottedCount > 0);
+    if (filter === 'not-seen') list = list.filter(s => s.spottedCount === 0);
+    if (filter === 'rare') list = list.filter(s => s.rarity === 'rare');
+
+    return list;
+  }, [speciesLogMap, searchQuery, filter]);
+
+  if (isDives) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ y: 50, scale: 0.95, opacity: 0 }}
+          animate={{ y: 0, scale: 1, opacity: 1 }}
+          exit={{ y: 30, scale: 0.95, opacity: 0 }}
+          className="relative w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] rounded-[3rem] bg-surface-container-high border border-white/10 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6 border-b border-white/5 bg-surface-container-high/50 backdrop-blur-md md:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-black tracking-tighter text-white uppercase italic">Dive Journal</h3>
+              <button onClick={onClose} className="p-2 rounded-full bg-white/5 text-on-surface-variant hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40" size={16} />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-black/40 border border-white/5 rounded-full py-3 pl-11 pr-4 text-xs font-bold text-white w-full"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+            <div className="flex flex-col gap-4">
+              {allDives.filter(i => (i.location || "").toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
+                <div key={item.id} className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <span className="material-symbols-outlined">history</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-lg font-black text-primary truncate leading-none mb-1">
+                        {item.location}
+                      </h4>
+                      <span className="text-[10px] font-black uppercase text-on-surface-variant/40 shrink-0 ml-2">
+                        {formatDate(item.date)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant/60 font-bold truncate italic">
+                      {item.diveType || 'Diving'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col bg-background"
+    >
+      {/* TopAppBar (Matched with Main Header) */}
+      <header className="px-4 pt-4 pb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="font-sans text-3xl text-primary tracking-tighter font-extrabold">GoDive</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div
+            onClick={() => {
+              onClose();
+              onNavigateToProfile?.();
+            }}
+            className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20 shadow-md cursor-pointer transition-transform active:scale-95"
+          >
+            {profile?.photoURL ? (
+              <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full bg-surface-container flex items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-on-surface-variant">account_circle</span>
+              </div>
+            )}
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full bg-surface-container/50 text-on-surface-variant hover:text-primary transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+      </header>
+
+      {/* Search Bar */}
+      <div className="px-6 mb-6">
+        <div className="relative">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search marine species..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-14 pr-6 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="px-6 mb-8 flex gap-3 overflow-x-auto no-scrollbar">
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'spotted', label: 'Spotted' },
+          { id: 'not-seen', label: 'Not Seen' },
+          { id: 'rare', label: 'Rare' }
+        ].map(f => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id as any)}
+            className={cn(
+              "shrink-0 px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all",
+              filter === f.id ? "bg-[#005f82] text-white shadow-md" : "bg-[#eff6ff] text-[#005f82] border border-[#005f82]/10"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-6 pb-10 no-scrollbar">
+        <div className="grid grid-cols-2 gap-4">
+          {filteredSpecies.map((species, idx) => {
+            const isFeatured = idx === 0 && filter === 'all' && !searchQuery;
+            return (
+              <motion.div
+                key={species.id}
+                onClick={() => setSelectedSpecies(species)}
+                className={cn(
+                  "relative rounded-[2.5rem] bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all",
+                  isFeatured && "col-span-2 aspect-[16/9]"
+                )}
+              >
+                <div className={cn("relative w-full overflow-hidden", isFeatured ? "flex-1" : "aspect-square")}>
+                  <img src={species.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={species.name} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {isFeatured && (
+                    <div className="absolute bottom-6 left-8 right-6 flex items-end justify-between">
+                      <div>
+                        <h2 className="text-3xl font-black text-white italic tracking-tighter leading-none mb-1">{species.name}</h2>
+                        <p className="text-sm font-bold text-white/70 italic">{species.scientificName}</p>
+                      </div>
+                      <div className="bg-[#005f82] px-4 py-2 rounded-full shadow-lg border border-white/10">
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                          {species.spottedCount > 0 ? "SPOTTED" : "NOT SEEN"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isFeatured && (
+                    <div className="absolute top-4 right-4">
+                      <button className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
+                        <HeartPulse size={20} className={species.spottedCount > 0 ? "fill-white" : ""} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {!isFeatured && (
+                  <div className="p-5 flex flex-col items-center text-center">
+                    <h3 className="text-base font-black text-[#1e293b] leading-tight mb-0.5">{species.name}</h3>
+                    <p className="text-[11px] font-bold text-slate-400 italic mb-4">{species.scientificName}</p>
+
+                    <div className="w-full pt-4 border-t border-slate-50">
+                      {species.rarity === 'rare' ? (
+                        <div className="flex items-center justify-center gap-1.5 text-error">
+                          <AlertTriangle size={14} className="fill-error/10" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Rare Species</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center">
+                           <span className={cn(
+                             "text-[9px] font-black uppercase tracking-widest",
+                             species.spottedCount > 0 ? "text-[#0089b7]" : "text-slate-300"
+                           )}>
+                             {species.spottedCount > 0 ? `Spotted ${species.spottedCount}x` : "Not Seen"}
+                           </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom Padding for Navbar */}
+      <div className="h-24 shrink-0" />
+    </motion.div>
+  );
+};
+
+const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
+  const earned = badges.filter(b => b.earned);
+  const { pinnedBadgeId, setPinnedBadgeId } = useUser();
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div 
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={{ y: 50, opacity: 0 }}
+        className="relative w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh] rounded-[32px] bg-surface-container-high border border-white/10 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-center p-6 border-b border-white/5 relative">
+          <h3 className="text-2xl font-black italic tracking-tight text-on-surface">All Badges</h3>
+          <button onClick={onClose} className="absolute right-6 p-2 rounded-full text-on-surface-variant hover:bg-white/5"><X size={24} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 no-scrollbar flex flex-col gap-10">
+          <div>
+            <h4 className="text-xl font-black italic text-on-surface mb-6 flex items-center gap-2"><Award className="text-secondary" /> Earned ({earned.length})</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {earned.map(b => (
+                <div key={b.id} className="relative flex flex-col items-center gap-2 p-4 rounded-3xl bg-surface-container/50 border border-white/5 group cursor-pointer" onClick={() => onBadgeClick(b.id)}>
+                   <div className={cn("flex h-14 w-14 items-center justify-center rounded-full border-2 p-3", getTierColor(b.tier))}>
+                    <b.icon size={24} />
+                  </div>
+                  <span className="text-[11px] font-bold text-on-surface text-center uppercase">{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const BadgeDetailModal = ({ badgeId, onClose, onAction }: { badgeId: string, onClose: () => void, onAction: () => void }) => {
+  const { badgeStats } = useUser();
+  const allBadges = computeBadgesWithStats(badgeStats);
+  const badge = allBadges.find(b => b.id === badgeId);
+
+  if (!badge) return null;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+      onClick={onClose}
+    >
+      <motion.div 
+        initial={{ scale: 0.9, y: 30, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[3rem] bg-surface-container-high border border-white/10"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-10 flex flex-col items-center text-center">
+          <div className={cn("flex h-24 w-24 items-center justify-center rounded-full border-4 p-5 mb-6", getTierColor(badge.tier))}>
+            <badge.icon size={48} />
+          </div>
+          <h3 className="text-3xl font-black uppercase text-white italic mb-2">{badge.label}</h3>
+          <p className="text-xs text-on-surface-variant/60 mb-8">{badge.desc}</p>
+          <button onClick={onClose} className="w-full py-4 rounded-2xl bg-primary text-on-primary font-black uppercase tracking-widest">Close</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: StatsCardProps) => (
+  <motion.div
+    whileHover={{ y: -5 }}
+    onClick={onClick}
+    className={cn("relative overflow-hidden rounded-[1.75rem] p-5 backdrop-blur-2xl border border-white/10 shadow-2xl cursor-pointer", color === "primary" ? "bg-primary/5" : "bg-secondary/5")}
+  >
+    <Icon className="absolute -right-4 -top-4 opacity-5 text-white" size={140} />
+    <div className="relative z-10">
+      <p className="text-[10px] font-black uppercase text-on-surface-variant/40">{title}</p>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-3xl font-black text-white">{value}</span>
+        <span className="text-[10px] font-black text-on-surface-variant/30 uppercase">{unit}</span>
+      </div>
+    </div>
+  </motion.div>
+);
+
+const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, unit }: any) => (
+  <div className="flex min-w-[140px] flex-col items-center gap-4 rounded-3xl bg-surface-container-high/40 p-6 backdrop-blur-xl border border-white/5">
+    <div className={cn("flex h-16 w-14 items-center justify-center rounded-full border-2 p-3", getTierColor(tier))}>
+      <Icon size={24} />
+    </div>
+    <span className="text-xs font-bold text-on-surface text-center uppercase">{label}</span>
+  </div>
+);
+
+const getTierColor = (tier: string) => {
+  switch (tier?.toLowerCase()) {
+    case 'bronze': return 'bg-amber-700/20 text-amber-600 border-amber-700/30';
+    case 'silver': return 'bg-slate-400/20 text-slate-300 border-slate-400/30';
+    case 'gold': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
+    case 'platinum': return 'bg-cyan-300/20 text-cyan-200 border-cyan-300/30';
+    case 'diamond': return 'bg-purple-400/20 text-purple-300 border-purple-400/30';
+    default: return 'bg-white/5 text-white/20 border-white/10';
+  }
+};
+
+const getTierSolidColor = (tier: string) => {
+  switch (tier?.toLowerCase()) {
+    case 'bronze': return 'bg-amber-600';
+    case 'silver': return 'bg-slate-300';
+    case 'gold': return 'bg-yellow-500';
+    case 'platinum': return 'bg-cyan-300';
+    case 'diamond': return 'bg-purple-400';
+    default: return 'bg-white/20';
+  }
 };
 
 interface StatsCardProps {
@@ -729,877 +1273,12 @@ interface StatsCardProps {
   onClick: () => void;
 }
 
-const StatsCard = ({ title, value, unit, icon: Icon, color, onClick }: StatsCardProps) => {
-  return (
-    <motion.div 
-      whileHover={{ y: -5, scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={cn(
-        "relative overflow-hidden rounded-[1.75rem] p-5  border  shadow-2xl group cursor-pointer transition-all duration-500 md:rounded-[2.5rem] md:p-8",
-        color === "primary" ? "bg-[#0055ff]/5 hover:bg-[#0055ff]/10" : "bg-secondary/5 hover:bg-secondary/10"
-      )}
-    >
-      <div className={cn(
-        "absolute -right-4 -top-4 opacity-5 transition-all duration-700 group-hover:scale-150 group-hover:rotate-12 group-hover:opacity-10 md:-right-6 md:-top-6", 
-        color === "primary" ? "text-[#0055ff]" : "text-secondary"
-      )}>
-        <Icon size={140} strokeWidth={1.5} className="md:size-[180px]" />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl premium-glass border  group-hover: transition-colors md:mb-4 md:h-12 md:w-12 md:rounded-2xl">
-          <Icon size={20} className={cn(color === "primary" ? "text-[#0055ff]" : "text-secondary", "md:size-6")} />
-        </div>
-        <p className="mb-0.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#083344] md:mb-1 md:text-xs">{title}</p>
-        <div className="flex items-baseline gap-1.5 md:gap-2">
-          <span className="text-3xl font-black tracking-tighter text-[#083344] tabular-nums md:text-5xl">{value}</span>
-          <span className="text-[10px] font-black text-[#083344] uppercase tracking-widest md:text-sm">{unit}</span>
-        </div>
-      </div>
-
-      <div className={cn(
-        "absolute bottom-0 left-0 h-1 w-0 transition-all duration-700 ease-out group-hover:w-full",
-        color === "primary" ? "bg-[#0055ff]" : "bg-secondary"
-      )} />
-    </motion.div>
-  );
-};
-
-
-const DiveDetailModal = ({
-  dive,
+const MapSelectionModal = ({
   onClose,
-  onSpeciesClick
+  onSelect
 }: {
-  dive: any,
   onClose: () => void,
-  onSpeciesClick: (species: string) => void
-}) => {
-  const heroImage = dive.mediaUrls && dive.mediaUrls.length > 0 ? dive.mediaUrls[0] : null;
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm " onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-2xl premium-glass rounded-[2rem] overflow-hidden border  shadow-2xl flex flex-col max-h-[90vh]"
-      >
-        {heroImage && (
-          <div className="w-full h-48 sm:h-64 relative shrink-0">
-            <img src={heroImage} alt="Dive location" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent" />
-          </div>
-        )}
-
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
-          <button onClick={onClose} className="p-2 premium-glass  rounded-full text-[#083344] hover:premium-glass transition-colors border ">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className={cn("p-6 md:p-8 flex-1 overflow-y-auto no-scrollbar", !heroImage && "pt-12")}>
-          <div className="flex flex-col gap-2 mb-8">
-            <div className="flex items-center justify-between">
-              <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-[10px] font-black uppercase tracking-widest">
-                {dive.diveType || "Standard Dive"}
-              </span>
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#083344]">
-                <Calendar size={12} className="text-secondary" />
-                {formatDate(dive.date || (dive.timestamp?.seconds ? dive.timestamp.seconds * 1000 : dive.timestamp))}
-              </span>
-            </div>
-            <h2 className="text-3xl font-black italic text-[#083344] tracking-tighter mt-2">{dive.location}</h2>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
-            <div className="premium-glass border  p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2">
-              <ArrowDown size={20} className="text-secondary" />
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-[#083344]">Depth</span>
-                <span className="text-lg font-black text-[#083344]">{dive.depth}m</span>
-              </div>
-            </div>
-            <div className="premium-glass border  p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2">
-              <Waves size={20} className="text-tertiary" />
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-[#083344]">Duration</span>
-                <span className="text-lg font-black text-[#083344]">{dive.duration}m</span>
-              </div>
-            </div>
-            {dive.equipmentIds && dive.equipmentIds.length > 0 && (
-              <div className="premium-glass border  p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2 col-span-2 sm:col-span-1">
-                <Box size={20} className="text-[#0055ff]" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#083344]">Gear</span>
-                  <span className="text-lg font-black text-[#083344]">{dive.equipmentIds.length} Items</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {dive.fishSpotted && dive.fishSpotted.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#083344] mb-4 flex items-center gap-2">
-                <Fish size={14} className="text-secondary" /> Observations
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {dive.fishSpotted.map((species: string, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => onSpeciesClick(species)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl premium-glass border  hover:bg-secondary/20 hover:border-secondary/30 hover:text-secondary transition-all group"
-                  >
-                    <span className="text-sm font-bold text-[#0b2240] group-hover:text-secondary transition-colors">{species}</span>
-                    <ArrowUpRight size={14} className="text-[#083344] group-hover:text-secondary transition-colors" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {dive.notes && (
-            <div className="mb-8">
-              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#083344] mb-4 flex items-center gap-2">
-                <MessageSquare size={14} className="text-tertiary" /> Notes
-              </h3>
-              <div className="p-4 rounded-2xl premium-glass border ">
-                <p className="text-sm text-[#083344] italic leading-relaxed">"{dive.notes}"</p>
-              </div>
-            </div>
-          )}
-
-          {dive.mediaUrls && dive.mediaUrls.length > 1 && (
-            <div>
-              <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#083344] mb-4 flex items-center gap-2">
-                <ImageIcon size={14} className="text-[#0055ff]" /> Gallery
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {dive.mediaUrls.slice(1).map((url: string, idx: number) => (
-                  <div key={idx} className="aspect-square rounded-xl overflow-hidden border ">
-                    <img src={url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-const HistoryModal = ({ 
-  type, 
-  onClose,
-  allDives,
-  allSightings,
-  discoveredSpecies 
-}: { 
-  type: 'dives' | 'sightings', 
-  onClose: () => void,
-  allDives: any[],
-  allSightings: any[],
-  discoveredSpecies: Set<string>
-}) => {
-  const isDives = type === 'dives';
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'log' | 'collection'>(isDives ? 'log' : 'collection');
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'spotted' | 'unspotted'>('all');
-  const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
-  const [selectedDiveDetails, setSelectedDiveDetails] = useState<any | null>(null);
-
-  const speciesLogMap = React.useMemo(() => {
-    const map = new window.Map<string, { count: number, appearances: SpeciesAppearance[] }>();
-    
-    const addSighting = (species: string, item: any, source: 'dive' | 'sighting') => {
-      const sp = species.trim();
-      if (!sp) return;
-      const key = MARINE_LIFE_LOWER_MAP.get(sp.toLowerCase()) || sp;
-      if (!map.has(key)) map.set(key, { count: 0, appearances: [] });
-      const entry = map.get(key)!;
-      entry.count += 1;
-      entry.appearances.push({...item, source});
-    };
-
-    allSightings.forEach(item => {
-      const s = item.species || item.label;
-      if (s) addSighting(s, item, 'sighting');
-    });
-    
-    allDives.forEach(item => {
-      if (item.fishSpotted && Array.isArray(item.fishSpotted)) {
-        item.fishSpotted.forEach((f: string) => addSighting(f, item, 'dive'));
-      }
-    });
-
-    map.forEach(value => {
-      value.appearances.sort((a, b) => {
-        const timeA = a.timestamp?.seconds || 0;
-        const timeB = b.timestamp?.seconds || 0;
-        if (timeA !== timeB) return timeB - timeA;
-        
-        const dateA = a.date || "";
-        const dateB = b.date || "";
-        return dateB.localeCompare(dateA);
-      });
-    });
-    
-    return map;
-  }, [allSightings, allDives]);
-
-  const items = isDives ? allDives : allSightings;
-  const loading = false; // Data is already loaded by parent
-  
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm "
-      onClick={onClose}
-    >
-      <motion.div 
-        initial={{ y: 50, scale: 0.95, opacity: 0 }}
-        animate={{ y: 0, scale: 1, opacity: 1 }}
-        exit={{ y: 30, scale: 0.95, opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] rounded-[3rem] premium-glass border  shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6 border-b  premium-glass md:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-2xl font-black tracking-tighter text-[#083344] uppercase italic md:text-3xl">
-                {isDives ? "Dive Journal" : "Sighting Log"}
-              </h3>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="relative group hidden md:block">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors" size={16} />
-                <input 
-                  type="text"
-                  placeholder="Search species..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="premium-input   -white/5 rounded-full py-2 pl-11 pr-4 text-xs font-bold text-[#083344] focus: -2  w-48 transition-all focus:w-64"
-                />
-              </div>
-              <motion.button 
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="p-2 rounded-full premium-glass text-[#475569] hover:text-[#083344] transition-colors border  md:p-3"
-              >
-                <X size={20} className="md:size-6" />
-              </motion.button>
-            </div>
-          </div>
-
-          <div className="md:hidden mb-4">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors" size={16} />
-              <input 
-                type="text"
-                placeholder="Search species..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="premium-input   -white/5 rounded-full py-3 pl-11 pr-4 text-xs font-bold text-[#083344] focus: -2  w-full transition-all"
-              />
-            </div>
-          </div>
-
-          {!isDives && (
-            <div className="space-y-4">
-              <div className="flex gap-2 p-1 premium-glass rounded-xl border ">
-                {(['all', 'spotted', 'unspotted'] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setStatusFilter(filter)}
-                    className={cn(
-                      "flex-1 py-1.5 px-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all",
-                      statusFilter === filter 
-                        ? "premium-glass text-[#083344] border " 
-                        : "text-[#083344]/20 hover:text-[#083344] hover:premium-glass"
-                    )}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar bg-gradient-to-b from-transparent to-black/20">
-          {selectedSpecies ? (
-            <div className="flex flex-col h-full w-full">
-              <div className="flex items-center gap-3 mb-6">
-                <button 
-                  onClick={() => setSelectedSpecies(null)}
-                  className="p-2 rounded-full premium-glass hover:premium-glass text-[#083344] transition-colors"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <h4 className="text-xl font-black italic uppercase tracking-tighter text-[#083344]">
-                  {selectedSpecies} Sightings
-                </h4>
-              </div>
-              <div className="flex flex-col gap-4 pb-8">
-                {speciesLogMap.get(selectedSpecies)?.appearances.map((item: SpeciesAppearance, i: number) => {
-                  const isDive = item.source === 'dive';
-                  return (
-                  <motion.div 
-                    key={`${selectedSpecies}-${i}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className={cn("group relative overflow-hidden p-6 rounded-[2rem] premium-glass border  hover: hover:premium-glass transition-all duration-300", isDives && "cursor-pointer")}
-                    onClick={() => isDives ? setSelectedDiveDetails(item) : null}
-                  >
-                    <div className="flex justify-between items-center gap-4">
-                      <h4 className={cn("text-lg font-black tracking-tight leading-tight md:text-xl", isDive ? "text-[#0055ff]" : "text-secondary")}>
-                        {item.location || "Unknown Location"}
-                      </h4>
-                      <span className="flex shrink-0 items-center gap-1 text-[9px] font-black uppercase tracking-widest text-[#083344] px-2 py-1 rounded-lg premium-glass border  whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
-                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
-                      </span>
-                    </div>
-                  </motion.div>
-                )})}
-              </div>
-            </div>
-          ) : activeTab === 'collection' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-8">
-              {MARINE_LIFE_DATABASE
-                .filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
-                .filter(s => {
-                  if (statusFilter === 'all') return true;
-                  const isDiscovered = discoveredSpecies.has(s);
-                  return statusFilter === 'spotted' ? isDiscovered : !isDiscovered;
-                })
-                .map(species => {
-                const isDiscovered = discoveredSpecies.has(species);
-                const rarity = getSpeciesRarity(species);
-                const details = speciesLogMap.get(species);
-                const count = details?.count || 0;
-                
-                return (
-                  <div 
-                    key={species}
-                    onClick={() => {
-                      if (isDiscovered) {
-                        setSelectedSpecies(species);
-                      }
-                    }}
-                    className={cn(
-                      "p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center text-center gap-2",
-                      isDiscovered 
-                        ? "bg-secondary/10 border-secondary/30 shadow-lg shadow-secondary/5 cursor-pointer hover:bg-secondary/20" 
-                        : "premium-glass  grayscale opacity-40 hover:opacity-100 transition-opacity"
-                    )}
-                  >
-                    <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center border",
-                      isDiscovered ? "bg-secondary/20 border-secondary/20 text-secondary" : "premium-glass  text-[#083344]/20"
-                    )}>
-                      <Fish size={20} />
-                    </div>
-                    <span className={cn(
-                      "text-[9px] font-black uppercase tracking-tight leading-tight",
-                      isDiscovered ? "text-[#083344]" : "text-[#083344]/20"
-                    )}>
-                      {species}
-                    </span>
-                    {isDiscovered && (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className={cn(
-                          "text-[7px] font-black uppercase px-2 py-0.5 rounded-full",
-                          rarity === 'rare' ? "bg-amber-500/20 text-amber-500" : 
-                          rarity === 'uncommon' ? "bg-secondary/20 text-secondary" : 
-                          "premium-glass text-[#083344]"
-                        )}>
-                          {rarity}
-                        </span>
-                        {count > 0 && (
-                          <span className="text-[10px] font-black uppercase text-[#083344] tracking-widest mt-0.5">
-                            {count} {count === 1 ? 'Sighting' : 'Sightings'}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center p-20 gap-4">
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-secondary border-t-transparent" />
-                  <p className="text-xs font-black uppercase tracking-widest text-[#083344] animate-pulse">Retrieving Logs...</p>
-                </div>
-              ) : items.filter(item => {
-                  const name = (item.species || item.label || item.location || "").toLowerCase();
-                  return name.includes(searchQuery.toLowerCase());
-                }).length === 0 ? (
-                <div className="text-center p-20 flex flex-col items-center gap-4">
-                  <div className="h-20 w-20 rounded-full premium-glass flex items-center justify-center text-[#083344]">
-                    <Search size={40} />
-                  </div>
-                  <div>
-                    <p className="text-xl font-black text-[#083344] italic tracking-tight">No Results Found</p>
-                    <p className="text-sm font-medium text-[#083344] mt-1">Try adjusting your search query.</p>
-                  </div>
-                </div>
-              ) : (
-                items
-                  .filter(item => {
-                    const name = (item.species || item.label || item.location || "").toLowerCase();
-                    return name.includes(searchQuery.toLowerCase());
-                  })
-                  .map((item, index) => (
-                  <motion.div 
-                    key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={cn("group relative overflow-hidden p-6 rounded-[2rem] premium-glass border  hover: hover:premium-glass transition-all duration-300", isDives && "cursor-pointer")}
-                    onClick={() => isDives ? setSelectedDiveDetails(item) : null}
-                  >
-                    <div className="flex justify-between items-start mb-3 md:mb-4">
-                      <div className="flex flex-col gap-1">
-                        <h4 className={cn("text-lg font-black tracking-tight transition-colors leading-tight md:text-xl", isDives ? "text-[#0055ff] group-hover:text-secondary" : "text-secondary group-hover:text-[#0055ff]")}>
-                          {isDives ? item.location : (item.species || item.label)}
-                        </h4>
-                        {isDives && item.diveType && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-secondary bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20 md:text-[10px] md:px-2.5 md:py-1">
-                              {item.diveType}
-                            </span>
-                          </div>
-                        )}
-                        {!isDives && (
-                           <div className="flex items-center gap-2">
-                             <span className={cn(
-                               "text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-lg border",
-                               getSpeciesRarity(item.species || item.label) === 'rare' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                               getSpeciesRarity(item.species || item.label) === 'uncommon' ? "bg-secondary/10 text-secondary border-secondary/20" :
-                               "premium-glass text-[#083344] "
-                             )}>
-                               {getSpeciesRarity(item.species || item.label)}
-                             </span>
-                           </div>
-                        )}
-                      </div>
-                      <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-[#083344] px-2 py-1 rounded-lg premium-glass border  whitespace-nowrap md:gap-1.5 md:text-[10px] md:px-3 md:py-1.5">
-                        <Calendar size={10} className="text-secondary md:size-3" /> {formatDate(item.date || (item.timestamp?.seconds ? item.timestamp.seconds * 1000 : item.timestamp)) || "Observed"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs font-bold text-[#083344] mb-3 premium-glass p-2.5 rounded-xl border  md:gap-6 md:text-sm md:mb-4 md:p-3 md:rounded-2xl">
-                      {isDives ? (
-                        <>
-                          <div className="flex flex-col">
-                            <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Depth</span>
-                            <span className="flex items-center gap-1 text-[#083344]">
-                              <ArrowDown size={12} className="text-secondary md:size-14" /> {item.depth}m
-                            </span>
-                          </div>
-                          <div className="h-5 w-px premium-glass md:h-6" />
-                          <div className="flex flex-col">
-                            <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Duration</span>
-                            <span className="flex items-center gap-1 text-[#083344]">
-                              <Waves size={12} className="text-tertiary md:size-14" /> {item.duration}m
-                            </span>
-                          </div>
-                          {item.equipmentIds && item.equipmentIds.length > 0 && (
-                            <>
-                              <div className="h-5 w-px premium-glass md:h-6" />
-                              <div className="flex flex-col">
-                                <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Gear</span>
-                                <span className="flex items-center gap-1 text-[#083344]">
-                                  <Box size={12} className="text-[#0055ff] md:size-14" /> {item.equipmentIds.length} items
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex flex-col">
-                          <span className="text-[7px] uppercase tracking-widest opacity-30 mb-0.5 md:text-[8px]">Location</span>
-                          <span className="flex items-center gap-2 text-[#083344]">
-                            <MapPin size={12} className="text-secondary md:size-14" /> {item.location || "Ocean Deep"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {isDives && item.fishSpotted && item.fishSpotted.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#083344] mb-2.5 flex items-center gap-2">
-                          <Fish size={10} className="text-secondary" /> Marine Life Spotted
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {item.fishSpotted.map((fish: string, fIdx: number) => (
-                            <span key={`history-fish-${item.id}-${fIdx}`} className="text-[10px] font-bold px-3 py-1.5 rounded-xl premium-glass text-[#0b2240] hover:bg-secondary/20 hover:text-secondary transition-colors border  group-hover:border-secondary/20">
-                              {fish}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {isDives && item.notes && (
-                      <div className="mb-4 p-4 rounded-2xl premium-glass border  relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-2 opacity-5">
-                          <ImageIcon size={40} />
-                        </div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#083344] mb-2">Observations</p>
-                        <p className="text-xs text-[#083344] italic leading-relaxed font-medium">"{item.notes}"</p>
-                      </div>
-                    )}
-
-                    {item.photos && item.photos.length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#083344] mb-3">Expedition Media</p>
-                        <div className="grid grid-cols-4 gap-3">
-                          {item.photos.map((p: string, pIdx: number) => (
-                            <motion.div 
-                              key={`history-photo-${item.id}-${pIdx}`} 
-                              whileHover={{ scale: 1.05, y: -2 }}
-                              onClick={() => setSelectedImage(p)}
-                              className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-secondary transition-all shadow-xl"
-                            >
-                              <img src={p} className="h-full w-full object-cover" alt="" />
-                              <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-      </motion.div>      {/* Full Image Box */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm "
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedImage(null);
-            }}
-          >
-            <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-              <TransformWrapper
-                initialScale={1}
-                minScale={0.5}
-                maxScale={4}
-                centerOnInit={true}
-              >
-                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
-                  <img 
-                    src={selectedImage} 
-                    className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain border  cursor-grab active:cursor-grabbing" 
-                    alt="Dive Preview"
-                  />
-                </TransformComponent>
-              </TransformWrapper>
-              <button 
-                onClick={() => setSelectedImage(null)}
-                className="absolute top-6 right-6 p-3 rounded-full premium-glass-highest text-[#0b2240] border  shadow-xl z-10"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-const getTierColor = (tier: string) => {
-  switch (tier.toLowerCase()) {
-    case 'bronze': return 'bg-amber-700/20 text-amber-600 border-amber-700/30';
-    case 'silver': return 'bg-slate-400/20 text-slate-300 /30';
-    case 'gold': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
-    case 'platinum': return 'bg-cyan-300/20 text-cyan-200 border-cyan-300/30';
-    case 'diamond': return 'bg-purple-400/20 text-purple-300 border-purple-400/30';
-    default: return 'bg-surface-variant/30 text-[#475569] border-outline/20';
-  }
-};
-
-const getTierSolidColor = (tier: string) => {
-  switch (tier.toLowerCase()) {
-    case 'bronze': return 'bg-amber-600';
-    case 'silver': return 'bg-slate-300';
-    case 'gold': return 'bg-yellow-500';
-    case 'platinum': return 'bg-cyan-300';
-    case 'diamond': return 'bg-purple-400';
-    default: return 'bg-outline';
-  }
-};
-
-const BadgesModal = ({ badges, onClose, onBadgeClick }: { badges: any[], onClose: () => void, onBadgeClick: (id: string) => void }) => {
-  const earned = badges.filter(b => b.earned);
-  const locked = badges.filter(b => !b.earned && !b.isChallenge);
-  const { pinnedBadgeId, setPinnedBadgeId } = useUser();
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 "
-      onClick={onClose}
-    >
-      <motion.div 
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 50, opacity: 0 }}
-        className="relative w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh] rounded-[32px] premium-glass border  shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-center p-6 border-b  relative">
-          <h3 className="text-2xl font-black italic tracking-tight text-[#0b2240]">
-            All Badges
-          </h3>
-          <button 
-            onClick={onClose}
-            className="absolute right-6 p-2 rounded-full text-[#475569] hover:premium-glass transition-colors"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 no-scrollbar flex flex-col gap-10">
-          <div>
-            <h4 className="text-xl font-black italic text-[#0b2240] mb-6 flex justify-center items-center gap-2">
-              <Award className="text-secondary" /> Earned ({earned.length})
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {earned.map(b => (
-                <div key={b.id} className="relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl premium-glass border  hover:premium-glass transition-colors group cursor-pointer" onClick={() => onBadgeClick(b.id)}>
-                  <span className="absolute top-2 right-3 text-[9px] font-black uppercase tracking-widest text-[#083344]">{b.tier}</span>
-                  
-                  <button 
-                    onClick={() => setPinnedBadgeId(pinnedBadgeId === b.id ? null : b.id)}
-                    className={cn(
-                      "absolute top-2 left-3 p-1.5 rounded-full transition-all border",
-                      pinnedBadgeId === b.id ? "bg-[#0055ff]/20 text-[#0055ff] border-[#0055ff]/30" : "premium-glass text-[#475569] opacity-0 group-hover:opacity-100 hover:text-[#0055ff] hover:bg-[#0055ff]/10 border-transparent hover:border-[#0055ff]/20"
-                    )}
-                    title={pinnedBadgeId === b.id ? "Unpin Badge" : "Pin to Profile"}
-                  >
-                    <Pin size={12} className={cn({ "fill-current": pinnedBadgeId === b.id })} />
-                  </button>
-
-                  <div className={cn("flex h-14 w-14 items-center justify-center rounded-full border-2 p-3 mt-4", getTierColor(b.tier))}>
-                    <b.icon size={24} />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#0b2240] text-center leading-tight uppercase tracking-wider">{b.label}</span>
-                  <p className="text-[10px] font-medium text-[#475569] text-center px-1 line-clamp-2">{b.desc}</p>
-                  
-                  <div className="w-full mt-2">
-                    <div className="flex justify-center items-end mb-1">
-                      <span className="text-[8px] font-bold text-[#475569] uppercase tracking-widest">{b.currentValue}/{b.nextTierRequirement} {b.unit}</span>
-                    </div>
-                    <div className="h-1 w-full rounded-full bg-surface-variant/30 overflow-hidden">
-                      <div style={{ width: `${b.progressRatio * 100}%` }} className={cn("h-full", getTierSolidColor(b.tier))} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-xl font-black italic text-[#083344] mb-6 flex justify-center items-center gap-2">
-              <Lock size={20} /> Locked ({locked.length})
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-              {locked.map(b => (
-                <div key={b.id} className="relative flex flex-col items-center justify-center gap-2 p-4 rounded-3xl premium-glass border border-transparent cursor-pointer" onClick={() => onBadgeClick(b.id)}>
-                  <span className="absolute top-2 right-3 text-[9px] font-black uppercase tracking-widest text-[#083344]">{b.tier}</span>
-                  <div className={cn("flex h-14 w-14 items-center justify-center rounded-full border-2 p-3 bg-surface-variant/30 text-[#083344] border-outline/20 mt-4", getTierColor(b.tier))}>
-                    <b.icon size={24} />
-                  </div>
-                  <span className="text-[11px] font-bold text-[#475569] text-center leading-tight uppercase tracking-wider">{b.label}</span>
-                  <p className="text-[10px] font-medium text-[#083344] text-center px-1 line-clamp-2">{b.desc}</p>
-                  
-                  <div className="w-full mt-2 opacity-50">
-                    <div className="flex justify-center items-end mb-1">
-                      <span className="text-[8px] font-bold text-[#475569] uppercase tracking-widest">{b.currentValue}/{b.nextTierRequirement} {b.unit}</span>
-                    </div>
-                    <div className="h-1 w-full rounded-full bg-surface-variant/30 overflow-hidden">
-                      <div style={{ width: `${b.progressRatio * 100}%` }} className="h-full bg-outline/50" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const BadgeCard = ({ id, label, icon: Icon, color, tier, progressRatio, currentValue, nextTierRequirement, isMaxed, unit }: any) => {
-  const { pinnedBadgeId, setPinnedBadgeId } = useUser();
-
-  const colors: any = {
-    primary: "bg-[#0055ff]/20 text-[#0055ff] border-[#0055ff]/20 ring-[#0055ff]/10",
-    secondary: "bg-secondary/20 text-secondary border-secondary/20 ring-secondary/10",
-    tertiary: "bg-tertiary/20 text-tertiary border-tertiary/20 ring-tertiary/10"
-  };
-  
-  return (
-    <div className="group relative flex h-64 w-40 shrink-0 flex-col items-center pt-10 pb-5 px-4 rounded-3xl premium-glass border transition-all hover:">
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          setPinnedBadgeId(pinnedBadgeId === id ? null : id);
-        }}
-        className={cn(
-          "absolute top-3 right-3 p-1.5 rounded-full transition-all border",
-          pinnedBadgeId === id ? "bg-[#0055ff]/20 text-[#0055ff] border-[#0055ff]/30" : "premium-glass text-[#475569] opacity-0 hover:opacity-100 group-hover:opacity-100 hover:text-[#0055ff] hover:bg-[#0055ff]/10 border-transparent hover:border-[#0055ff]/20",
-          tier === 'Locked' && "hidden"
-        )}
-        title={pinnedBadgeId === id ? "Unpin Badge" : "Pin to Profile"}
-      >
-        <Pin size={12} className={cn({ "fill-current": pinnedBadgeId === id })} />
-      </button>
-
-      {tier !== 'Locked' && <span className="absolute top-3 left-4 text-[9px] font-black uppercase tracking-widest text-[#083344]">{tier}</span>}
-      <div className={cn("flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 p-4 transition-transform group-hover:scale-110 mt-1", tier !== 'Locked' ? getTierColor(tier) : 'bg-surface-variant/30 text-[#083344] border-outline/20')}>
-        <Icon size={32} />
-      </div>
-      <span className="w-full text-sm font-bold tracking-tight text-[#0b2240] text-center leading-tight whitespace-normal break-words mt-3">{label}</span>
-      <div className={cn("absolute inset-0 -z-10 rounded-3xl blur-xl transition-opacity opacity-0 group-hover:opacity-30", tier !== 'Locked' ? getTierColor(tier) : colors[color])} />
-      
-      <div className="w-full mt-auto">
-        <div className="flex justify-center items-end mb-1">
-          <span className="text-[10px] font-bold text-[#475569] uppercase tracking-widest">{currentValue} / {nextTierRequirement} {unit}</span>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-surface-variant/30 overflow-hidden border ">
-          <div style={{ width: `${progressRatio * 100}%` }} className={cn("h-full", tier !== 'Locked' ? getTierSolidColor(tier) : 'bg-outline/50')} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// The local definition is no longer needed since we import it from constants/marineLife.ts
-// Removing it to keep the file clean.
-
-
-const BadgeDetailModal = ({ badgeId, onClose, onAction }: { badgeId: string, onClose: () => void, onAction: () => void }) => {
-  const { badgeStats } = useUser();
-  const allBadges = computeBadgesWithStats(badgeStats);
-  const badge = allBadges.find(b => b.id === badgeId);
-  const { pinnedBadgeId, setPinnedBadgeId } = useUser();
-
-  if (!badge) return null;
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm "
-      onClick={onClose}
-    >
-      <motion.div 
-        initial={{ scale: 0.9, y: 30, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[3rem] premium-glass shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)] border "
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="absolute top-6 right-6 z-10 flex gap-3">
-          <motion.button 
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose} 
-            className="rounded-full  p-2.5 text-[#475569] transition-colors hover:premium-glass hover:text-[#083344] border  shadow-lg"
-          >
-            <X size={18} />
-          </motion.button>
-        </div>
-
-        <div className="flex flex-col items-center p-6 text-center pt-12 bg-gradient-to-b from-surface-container-high to-black/40 md:p-10 md:pt-16">
-          <div className="relative group mb-6 md:mb-8">
-            <div className={cn("absolute inset-0 blur-3xl opacity-20 rounded-full transition-opacity group-hover:opacity-40 animate-pulse", getTierSolidColor(badge.tier))} />
-            <div className={cn("relative flex h-24 w-24 md:h-32 md:w-32 items-center justify-center rounded-full border-4 p-5 md:p-7 shadow-2xl transition-transform duration-500 group-hover:scale-110", badge.tier !== 'Locked' ? getTierColor(badge.tier) : 'bg-surface-variant/30 text-[#083344] border-outline/20')}>
-              <badge.icon size={48} className={cn("md:size-[64px]", badge.tier === 'Locked' ? 'opacity-30 p-2' : '')} />
-            </div>
-          </div>
-          
-          <div className="flex flex-col items-center gap-2 mb-6 md:gap-3 md:mb-8">
-            {badge.tier !== 'Locked' && (
-              <span className={cn("rounded-full border px-3 py-1 text-[8px] font-black uppercase tracking-[0.25em] shadow-sm md:px-4 md:py-1.5 md:text-[10px]", getTierColor(badge.tier))}>
-                {badge.tier}
-              </span>
-            )}
-            <h3 className="text-3xl font-black uppercase tracking-tighter text-[#083344] italic md:text-4xl">{badge.label}</h3>
-            <p className="text-xs font-medium text-[#083344] leading-relaxed max-w-[200px] md:text-sm md:max-w-[240px]">{badge.desc}</p>
-          </div>
-          
-          <div className="w-full rounded-[1.5rem] premium-glass p-6 mb-6 border  relative overflow-hidden group/card md:rounded-[2rem] md:p-8 md:mb-8">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-secondary/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
-            <div className="flex justify-between items-end mb-2 md:mb-3">
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[#083344] md:text-[10px]">Mastery Progress</span>
-              <span className="text-lg font-black text-[#083344] tabular-nums md:text-xl">
-                {badge.currentValue} 
-                <span className="text-[9px] text-[#083344] font-black uppercase tracking-widest ml-1 md:text-[10px]">/ {badge.nextTierRequirement} {badge.unit}</span>
-              </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full premium-glass p-[1px] border  md:h-2.5">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${badge.progressRatio * 100}%` }}
-                transition={{ duration: 1.2, ease: "circOut" }}
-                className={cn("h-full rounded-full relative", badge.tier !== 'Locked' ? getTierSolidColor(badge.tier) : 'premium-glass')} 
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              </motion.div>
-            </div>
-            
-            {!badge.isMaxed && (
-              <p className="mt-4 text-[10px] font-bold text-[#083344] tracking-tight flex items-center justify-center gap-1.5 md:mt-5 md:text-[11px]">
-                Next: <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest md:text-[9px]", getTierColor(badge.nextTierName))}>{badge.nextTierName}</span>
-              </p>
-            )}
-            {badge.isMaxed && (
-              <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-secondary flex items-center justify-center gap-2 md:mt-5 md:text-[11px]">
-                <CheckCircle2 size={12} /> Legend Achieved
-              </p>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const MapSelectionModal = ({ 
-  onClose, 
-  onSelect 
-}: { 
-  onClose: () => void, 
-  onSelect: (location: string, coords?: {lat: number, lng: number}) => void 
+  onSelect: (location: string, coords?: {lat: number, lng: number}) => void
 }) => {
   const [selectedPos, setSelectedPos] = useState<{lat: number, lng: number} | null>(null);
   const markerLib = useMapsLibrary('marker');
@@ -1607,11 +1286,11 @@ const MapSelectionModal = ({
   if (!hasValidKey) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-        <div className="relative w-full max-w-md rounded-3xl premium-glass p-8 shadow-2xl border  text-center">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
+        <div className="relative w-full max-w-md rounded-3xl bg-surface-container p-8 shadow-2xl border border-white/10 text-center">
           <h2 className="mb-4 text-xl font-black uppercase text-secondary">Google Maps Key Required</h2>
-          <p className="mb-6 text-sm text-[#475569]">Please configure your Google Maps API key in secrets to use the map selection feature.</p>
-          <button onClick={onClose} className="w-full rounded-full premium-glass py-3 font-bold text-[#0b2240]">Close</button>
+          <p className="mb-6 text-sm text-on-surface-variant">Please configure your Google Maps API key in secrets to use the map selection feature.</p>
+          <button onClick={onClose} className="w-full rounded-full bg-surface-container-high py-3 font-bold text-on-surface">Close</button>
         </div>
       </div>
     );
@@ -1619,17 +1298,17 @@ const MapSelectionModal = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      
-      <motion.div 
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onClose} />
+
+      <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-2xl h-[70vh] flex flex-col overflow-hidden rounded-[2.5rem] premium-glass shadow-2xl border "
+        className="relative w-full max-w-2xl h-[70vh] flex flex-col overflow-hidden rounded-[2.5rem] bg-surface-container shadow-2xl border border-white/10"
       >
-        <div className="p-6 flex items-center justify-between border-b ">
-          <h2 className="text-xl font-black text-[#0b2240] tracking-tight">Select Dive Location</h2>
-          <button onClick={onClose} className="p-2 text-[#475569] hover:text-[#0b2240] transition-colors">
+        <div className="p-6 flex items-center justify-between border-b border-white/5">
+          <h2 className="text-xl font-black text-on-surface tracking-tight">Select Dive Location</h2>
+          <button onClick={onClose} className="p-2 text-on-surface-variant hover:text-on-surface transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -1661,8 +1340,8 @@ const MapSelectionModal = ({
             </Map>
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xs px-6 pointer-events-none">
-            <div className="premium-glass rounded-2xl p-4 shadow-xl border  text-center flex flex-col gap-3 pointer-events-auto">
-              <p className="text-xs font-bold text-[#475569] uppercase tracking-widest">
+            <div className="bg-surface-container-high/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/10 text-center flex flex-col gap-3 pointer-events-auto">
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
                 {selectedPos ? `Selected: ${selectedPos.lat.toFixed(4)}, ${selectedPos.lng.toFixed(4)}` : "Tap map to pick a site"}
               </p>
               <button
@@ -1685,743 +1364,6 @@ const MapSelectionModal = ({
   );
 };
 
-const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
-  const { updateBadgeStats } = useUser();
-  const { profile } = useAuth();
-  const [gpsLoading, setGpsLoading] = useState(true);
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [showDiveTypePicker, setShowDiveTypePicker] = useState(false);
-  
-  const [diveData, setDiveData] = useState({
-    location: "Getting GPS location...",
-    date: new Date().toISOString().split('T')[0],
-    diveType: "Drift Dive",
-    depth: "",
-    duration: "",
-    fishSpotted: [] as string[],
-    photos: [] as string[],
-    notes: "",
-    shareToFeed: true,
-    feedDescription: "",
-    useStandardSetup: true,
-    selectedEquipmentIds: [] as string[],
-  });
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    let maxPhotos = 3;
-    if (profile?.subscriptionTier === 'premium') maxPhotos = 10;
-    if (profile?.subscriptionTier === 'vip') maxPhotos = 30;
-
-    const remainingSlots = maxPhotos - diveData.photos.length;
-    if (remainingSlots <= 0) {
-      alert(`Maximum ${maxPhotos} photos per dive log on your current plan.`);
-      return;
-    }
-
-    Array.from(files).slice(0, remainingSlots).forEach((file: File) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          // Compress using canvas
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX_DIM = 800; // Resize to max 800px
-
-          if (width > height) {
-            if (width > MAX_DIM) {
-              height *= MAX_DIM / width;
-              width = MAX_DIM;
-            }
-          } else {
-            if (height > MAX_DIM) {
-              width *= MAX_DIM / height;
-              height = MAX_DIM;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Use JPEG compression at 0.7 quality
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          
-          setDiveData(prev => ({
-            ...prev,
-            photos: [...prev.photos, compressedDataUrl]
-          }));
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const [fishSearch, setFishSearch] = useState("");
-  const [showFishDropdown, setShowFishDropdown] = useState(false);
-  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
-  const [showEquipmentDropdown, setShowEquipmentDropdown] = useState(false);
-
-  React.useEffect(() => {
-    if (!profile?.id) return;
-    const q = query(collection(db, "equipment"), where("userId", "==", profile.id));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const equip: Equipment[] = [];
-      snapshot.forEach((docSnap) => {
-        equip.push({ id: docSnap.id, ...docSnap.data() } as Equipment);
-      });
-      setEquipmentList(equip);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "equipment");
-    });
-    return () => unsubscribe();
-  }, [profile?.id]);
-
-  const filteredFish = MARINE_LIFE_DATABASE.filter(f => 
-    f.toLowerCase().includes(fishSearch.toLowerCase()) && 
-    !diveData.fishSpotted.includes(f)
-  );
-
-  const handleAddFish = (fish: string) => {
-    setDiveData(prev => ({ ...prev, fishSpotted: [...prev.fishSpotted, fish] }));
-    setFishSearch("");
-    setShowFishDropdown(false);
-  };
-
-  const handleRemoveFish = (fish: string) => {
-    setDiveData(prev => ({ ...prev, fishSpotted: prev.fishSpotted.filter(f => f !== fish) }));
-  };
-
-  const handleToggleEquipment = (equipId: string) => {
-    setDiveData(prev => {
-      const isSelected = prev.selectedEquipmentIds.includes(equipId);
-      return {
-        ...prev,
-        selectedEquipmentIds: isSelected 
-          ? prev.selectedEquipmentIds.filter(id => id !== equipId)
-          : [...prev.selectedEquipmentIds, equipId]
-      };
-    });
-  };
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDiveData(prev => ({ ...prev, location: "Great Blue Hole, Belize (GPS)" }));
-      setGpsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setDiveData(prev => ({ ...prev, [name]: value }));
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-    >
-      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
-      
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2rem] premium-glass p-6 sm:p-8 shadow-2xl border  no-scrollbar"
-      >
-        <button 
-          onClick={onClose}
-          className="sticky float-right top-0 right-0 text-[#475569] hover:text-[#0b2240] transition-colors z-20"
-        >
-          <X size={24} />
-        </button>
-
-        <div className="mb-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-[1.25rem] bg-secondary/10 text-secondary border border-secondary/20 shadow-[0_0_20px_rgba(76,214,251,0.1)]">
-              <Navigation size={32} />
-            </div>
-            <div>
-              <h2 className="text-4xl font-black text-[#083344] italic tracking-tighter uppercase leading-none">
-                Dive Log
-              </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#083344]">New entry in progress</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div className="space-y-6">
-            <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors italic">Expedition Location</label>
-              <div className="relative">
-                <motion.button 
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  type="button"
-                  onClick={() => setShowMapPicker(true)}
-                  className="absolute left-1.5 top-1.5 h-[48px] w-[48px] flex items-center justify-center text-secondary hover:text-[#083344] transition-all z-10 bg-secondary/5 hover:bg-secondary/15 rounded-2xl border border-secondary/10"
-                  title="Pick on map"
-                >
-                  <MapPin size={22} className="fill-secondary/5" />
-                </motion.button>
-                <input type="text" 
-                  name="location"
-                  placeholder="Enter location or pick on map..."
-                  value={diveData.location}
-                  onChange={handleChange}
-                  className={cn("premium-input", 
-                    "w-full rounded-[1.75rem]  py-5 pl-16 pr-12 text-base font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/10 hover:",
-                    gpsLoading && "animate-pulse text-[#083344]"
-                  )}
-                />
-                {gpsLoading && (
-                  <Crosshair className="absolute right-5 top-1/2 -translate-y-1/2 text-secondary animate-spin" size={20} />
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors">Date</label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    name="date"
-                    value={diveData.date}
-                    onChange={handleChange}
-                    onClick={(e) => {
-                      if ('showPicker' in e.currentTarget) {
-                        try {
-                          e.currentTarget.showPicker();
-                        } catch (err) {}
-                      }
-                    }}
-                    className="premium-input w-full rounded-2xl  py-4 px-6 text-sm font-bold text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover: [color-scheme:dark] cursor-pointer"
-                  />
-                </div>
-              </div>
-              <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#0055ff] transition-colors italic">Expedition Type</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-[#0055ff] transition-colors pointer-events-none z-10">
-                    <Compass size={20} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowDiveTypePicker(true)}
-                    className="w-full text-left rounded-2xl premium-glass py-4 pl-12 pr-10 text-sm font-bold text-[#083344] focus:outline-none focus:ring-2 focus:ring-[#0055ff]/40 border  transition-all hover: hover:premium-glass cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis"
-                  >
-                    {diveData.diveType}
-                  </button>
-                  <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#083344] rotate-90" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors text-left">Max Depth (m)</label>
-                <div className="relative">
-                  <ArrowDown className="absolute left-5 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors transition-all" size={20} />
-                  <input 
-                    type="number" 
-                    name="depth"
-                    placeholder="Depth"
-                    value={diveData.depth}
-                    onChange={handleChange}
-                    className="premium-input w-full rounded-2xl  py-4 pl-12 pr-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
-                  />
-                </div>
-              </div>
-              <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-tertiary transition-colors text-left">Duration (min)</label>
-                <div className="relative">
-                  <Waves className="absolute left-5 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-tertiary transition-colors transition-all" size={20} />
-                  <input 
-                    type="number" 
-                    name="duration"
-                    placeholder="Time"
-                    value={diveData.duration}
-                    onChange={handleChange}
-                    className="premium-input w-full rounded-2xl  py-4 pl-12 pr-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors">Ecosystem Observations</label>
-              <div className="relative mb-4" onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setShowFishDropdown(false);
-                }
-              }}>
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#083344] z-10">
-                  <Fish size={22} />
-                </div>
-                <input 
-                  type="text"
-                  placeholder="Search species..."
-                  value={fishSearch}
-                  onChange={(e) => {
-                    setFishSearch(e.target.value);
-                    setShowFishDropdown(true);
-                  }}
-                  onFocus={() => setShowFishDropdown(true)}
-                  className="premium-input w-full rounded-2xl  py-4 pl-12 pr-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
-                />
-                
-                <AnimatePresence>
-                  {showFishDropdown && (fishSearch || filteredFish.length > 0) && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      className="absolute top-full left-0 right-0 mt-3 max-h-56 overflow-y-auto rounded-3xl border  premium-glass-highest shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)] z-50 no-scrollbar py-3 "
-                    >
-                      {filteredFish.length === 0 && fishSearch ? (
-                        <div className="text-center p-6">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[#083344] mb-3 ml-1 uppercase mb-4">Species Not Found</p>
-                          <motion.button 
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => handleAddFish(fishSearch)} 
-                            className="w-full bg-secondary/10 hover:bg-secondary/20 text-secondary py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-secondary/20">
-                            Force Add "{fishSearch}"
-                          </motion.button>
-                        </div>
-                      ) : (
-                        filteredFish.map((fish, idx) => (
-                          <button
-                            key={`${fish}-${idx}`}
-                            type="button"
-                            onClick={() => handleAddFish(fish)}
-                            className="w-full text-left px-5 py-3 text-sm font-bold text-[#083344] hover:text-[#083344] hover:premium-glass transition-all flex items-center gap-3 group/item border-b  last:border-0"
-                          >
-                            <div className="w-2 h-2 rounded-full bg-secondary/30 group-hover/item:bg-secondary transition-colors" />
-                            {fish}
-                          </button>
-                        ))
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {diveData.fishSpotted.length > 0 && (
-                <div className="flex flex-wrap gap-2.5 mb-2">
-                  <AnimatePresence>
-                    {diveData.fishSpotted.map((fish, fIdx) => (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        key={`new-dive-fish-${fish}-${fIdx}`} 
-                        className="flex items-center gap-2.5 rounded-xl bg-secondary/5 border border-secondary/20 py-2 pl-4 pr-2 group/tag hover:bg-secondary/10 transition-colors"
-                      >
-                        <span className="text-[11px] font-black uppercase tracking-wider text-[#083344] group-hover/tag:text-secondary">{fish}</span>
-                        <motion.button 
-                          whileHover={{ scale: 1.2 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleRemoveFish(fish)}
-                          className="rounded-lg p-1 text-[#083344] hover:text-secondary hover:bg-secondary/20 transition-colors"
-                        >
-                          <X size={14} />
-                        </motion.button>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-
-            <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Visual Evidence</label>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handlePhotoUpload} 
-                className="premium-input hidden" 
-                multiple 
-                accept="image/*" 
-              />
-              <motion.div 
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed  hover:  hover:premium-glass transition-all hover:shadow-[0_0_50px_-10px_rgba(76,214,251,0.05)] group/upload"
-              >
-                <div className="p-4 rounded-full premium-glass mb-3 group-hover/upload:bg-secondary/10 group-hover/upload:text-secondary transition-all">
-                  <Camera className="text-[#083344]/20 group-hover/upload:text-secondary" size={32} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#083344] group-hover/upload:text-[#083344]">Capture your discoveries</span>
-              </motion.div>
-              
-              {diveData.photos.length > 0 && (
-                <div className="mt-6 grid grid-cols-4 gap-3">
-                  <AnimatePresence>
-                    {diveData.photos.map((photo, i) => (
-                      <motion.div 
-                        key={`new-dive-photo-${photo}-${i}`}
-                        initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.5 }}
-                        className="relative aspect-square overflow-hidden rounded-2xl border "
-                      >
-                        <img src={photo} alt="" className="h-full w-full object-cover transition-transform duration-700 hover:scale-110" />
-                        <div className="absolute top-2 right-2 z-10 premium-glass  rounded-full">
-                          <ActionMenu 
-                            items={[
-                              { 
-                                label: "Remove Photo", 
-                                icon: <Trash2 size={16} />, 
-                                onClick: () => setDiveData(prev => ({ ...prev, photos: prev.photos.filter((_, idx) => idx !== i) })),
-                                destructive: true
-                              }
-                            ]}
-                          />
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-
-            <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 transition-colors">Equipment Used</label>
-              <div className="border  rounded-2xl premium-glass p-4">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <div className={cn("w-5 h-5 rounded border flex items-center justify-center transition-colors", diveData.useStandardSetup ? "bg-secondary border-secondary" : "premium-glass ")}>
-                    {diveData.useStandardSetup && <CheckCircle2 size={14} className="text-background" />}
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={diveData.useStandardSetup} 
-                    onChange={e => setDiveData(prev => ({ ...prev, useStandardSetup: e.target.checked }))} 
-                    className="premium-input hidden" 
-                  />
-                  <div>
-                    <span className="block text-sm font-bold text-[#083344]">Use Standard Setup</span>
-                    <span className="block text-xs text-[#083344]">Automatically select equipment marked as "Standard Setup" in your gear log.</span>
-                  </div>
-                </label>
-                
-                <AnimatePresence>
-                  {!diveData.useStandardSetup && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="pt-4 mt-4 border-t ">
-                        {equipmentList.length === 0 ? (
-                          <div className="text-center py-4 text-[#083344] text-sm">
-                            No equipment found. <br />Add gear in the Equipment tab.
-                          </div>
-                        ) : (
-                          <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar pr-2">
-                            {equipmentList.map(item => {
-                              const isSelected = diveData.selectedEquipmentIds.includes(item.id);
-                              return (
-                                <button
-                                  key={item.id}
-                                  type="button"
-                                  onClick={() => handleToggleEquipment(item.id)}
-                                  className={cn("w-full flex items-center justify-between p-3 rounded-xl border transition-colors", 
-                                    isSelected ? "bg-secondary/10 border-secondary/30" : "premium-glass  hover:"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", 
-                                      isSelected ? "border-secondary bg-secondary" : ""
-                                    )}>
-                                      {isSelected && <CheckCircle2 size={12} className="text-background" />}
-                                    </div>
-                                    <div className="text-left">
-                                      <div className={cn("text-sm font-bold", isSelected ? "text-secondary" : "text-[#083344]")}>{item.name}</div>
-                                      <div className="text-xs text-[#083344]">{item.type}</div>
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-6 rounded-[2.5rem] premium-glass p-8 border ">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-secondary/10 text-secondary border border-secondary/10">
-                    <Share2 size={24} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#083344] uppercase tracking-tight italic">Share to Feed</h4>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Inspire the community</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setDiveData(prev => ({ ...prev, shareToFeed: !prev.shareToFeed }))}
-                  className={cn(
-                    "relative h-7 w-12 rounded-full transition-all duration-500 flex items-center px-1",
-                    diveData.shareToFeed ? "bg-secondary" : "premium-glass"
-                  )}
-                >
-                  <motion.span 
-                    animate={{ x: diveData.shareToFeed ? 20 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="h-5 w-5 rounded-full premium-glass shadow-lg"
-                  />
-                </button>
-              </div>
-
-              <AnimatePresence>
-                {diveData.shareToFeed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-4 pt-4 border-t ">
-                      <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-1 ml-1 italic">Dive Narrative</label>
-                      <textarea 
-                        name="feedDescription"
-                        placeholder="Tell the community about your discovery..."
-                        value={diveData.feedDescription}
-                        onChange={handleChange}
-                        rows={3}
-                        className="premium-input w-full rounded-2xl  py-5 px-6 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover: resize-none no-scrollbar font-medium italic"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          <motion.button 
-            whileHover={{ 
-              scale: 1.02, 
-              boxShadow: "0 20px 40px -12px rgba(76,214,251,0.5)"
-            }}
-            whileTap={{ scale: 0.98 }}
-            onClick={async (e) => {
-              if (!profile) return;
-              const btn = e.currentTarget;
-              const originalContent = btn.innerHTML;
-              btn.innerHTML = `<span class="flex items-center gap-2 italic"><div class="h-4 w-4 animate-spin rounded-full border-2 border-on-secondary/30 border-t-white"></div> Analyzing Badges...</span>`;
-              btn.disabled = true;
-
-              try {
-                const finalEquipmentIds = diveData.useStandardSetup 
-                  ? equipmentList.filter(eq => eq.isStandardSetup).map(eq => eq.id)
-                  : diveData.selectedEquipmentIds;
-
-                // 1. Save to dives collection
-                await addDoc(collection(db, "dives"), {
-                  userId: profile.id,
-                  userDisplayName: profile.displayName,
-                  userPhotoURL: profile.photoURL,
-                  location: filterProfanity(diveData.location),
-                  date: diveData.date,
-                  diveType: diveData.diveType,
-                  depth: parseFloat(diveData.depth) || 0,
-                  duration: parseInt(diveData.duration) || 0,
-                  fishSpotted: diveData.fishSpotted.map(f => filterProfanity(f)),
-                  photos: diveData.photos,
-                  notes: filterProfanity(diveData.notes),
-                  equipmentIds: finalEquipmentIds,
-                  timestamp: serverTimestamp()
-                });
-
-                // 2. Increment use count for equipment
-                if (finalEquipmentIds.length > 0) {
-                  const equipmentPromises = finalEquipmentIds.map(equipId => 
-                    updateDoc(doc(db, "equipment", equipId), {
-                      useCount: increment(1),
-                      timestamp: serverTimestamp()
-                    })
-                  );
-                  await Promise.all(equipmentPromises).catch(err => console.error("Error updating equipment uses", err));
-                }
-
-                // 3. Share to feed if enabled
-                if (diveData.shareToFeed) {
-                  await addDoc(collection(db, "posts"), {
-                    userId: profile.id,
-                    userDisplayName: profile.displayName || "Unknown Diver",
-                    userPhotoURL: profile.photoURL || "",
-                    location: filterProfanity(diveData.location),
-                    content: filterProfanity(diveData.feedDescription || `Logged a ${diveData.diveType} dive at ${diveData.location}!`),
-                    image: diveData.photos[0] || "",
-                    likesCount: 0,
-                    commentsCount: 0,
-                    likedBy: [],
-                    reportsCount: 0,
-                    reportedBy: [],
-                    tags: [diveData.diveType, ...diveData.fishSpotted.slice(0, 2)].map(t => filterProfanity(t)),
-                    timestamp: serverTimestamp()
-                  });
-                }
-
-                // 3. Update User Profile
-                const userRef = doc(db, "users", profile.id);
-                
-                // Calculate XP
-                const baseXP = 100;
-                
-                let multiplier = 1.0;
-                if (profile?.subscriptionTier === 'vip') {
-                  multiplier = 1.5;
-                }
-                
-                let isFreeTierLimited = false;
-                if (profile?.subscriptionTier === 'free' || !profile?.subscriptionTier) {
-                  // check dives today
-                  const startOfDayMs = new Date().setHours(0,0,0,0);
-                  const todayDivesQ = query(collection(db, "dives"), where("userId", "==", profile.id), where("timestamp", ">=", new Date(startOfDayMs)));
-                  const todayDivesSnap = await getDocs(todayDivesQ);
-                  if (todayDivesSnap.size >= 5) {
-                    isFreeTierLimited = true;
-                  }
-                }
-
-                let finalXP = 0;
-                let earnedWeeklyBadge = false;
-
-                if (!isFreeTierLimited) {
-                  const depthValue = parseFloat(diveData.depth) || 0;
-                  const depthBonus = Math.floor(depthValue / 10) * 25; // 25 XP per 10m
-                  const photoBonus = diveData.photos.length * 50; // 50 XP per photo
-                  const shareBonus = diveData.shareToFeed ? 150 : 0; // 150 XP for community sharing
-                  
-                  // Calculate Species Discovery XP
-                  const fishBonus = diveData.fishSpotted.reduce((acc, species) => acc + getSpeciesXP(species), 0);
-                  
-                  // Weekly Challenge XP (Simulated AI Verification)
-                  let challengeXP = 0;
-                  
-                  if (diveData.photos.length > 0) {
-                    // Simulate parsing photo for Reef Guardian challenge
-                    const descriptionLower = diveData.feedDescription.toLowerCase();
-                    if (descriptionLower.includes('trash') || descriptionLower.includes('debris') || descriptionLower.includes('cleanup') || descriptionLower.includes('plastic') || descriptionLower.includes('coral') || descriptionLower.includes('restoration')) {
-                      challengeXP = 500;
-                      earnedWeeklyBadge = true;
-                    }
-                  }
-                  
-                  const calculatedXP = Math.floor((baseXP + depthBonus + photoBonus + shareBonus + fishBonus + challengeXP) * multiplier);
-                  finalXP = calculatedXP;
-                }
-
-                await updateDoc(userRef, {
-                  divesCount: increment(1)
-                  // Note: The 'points' field is protected in firestore.rules and should be updated by a secure backend function.
-                  // Updating it from the client will fail for non-admin users.
-                  // ...(finalXP > 0 ? { points: increment(finalXP) } : {})
-                });
-
-                // 4. Calculate badge updates
-                if (!isFreeTierLimited || profile?.subscriptionTier !== 'free') {
-                  const statsToUpdate: Partial<Record<string, number>> = {};
-                  
-                  if (earnedWeeklyBadge) {
-                    statsToUpdate['Reef Guardian'] = 1;
-                  }
-                  
-                  if (diveData.diveType) {
-                    statsToUpdate[diveData.diveType] = 1;
-                  }
-                  
-                  const depthValue = parseFloat(diveData.depth) || 0;
-                  if (!isNaN(depthValue) && depthValue > 30) {
-                    if (diveData.diveType !== 'Deep Dive') {
-                      statsToUpdate['Deep Dive'] = 1;
-                    }
-                  }
-
-                  if (Object.keys(statsToUpdate).length > 0) {
-                    updateBadgeStats(statsToUpdate);
-                  }
-                }
-
-                btn.innerHTML = `<span class="flex items-center gap-2"><div class="h-6 w-6 rounded-full premium-glass flex items-center justify-center"><svg size="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg></div> Expedition Saved!</span>`;
-                btn.classList.add("bg-secondary", "text-on-secondary");
-                
-                if (earnedWeeklyBadge) {
-                  setTimeout(() => {
-                    alert("🌊 Weekly Challenge Verified!\nYou earned the Reef Guardian badge and 500 bonus XP for your conservation efforts!");
-                  }, 400);
-                }
-                
-                setTimeout(() => {
-                  onClose();
-                }, 1200);
-              } catch (err) {
-                console.error("Failed to save dive:", err);
-                btn.innerHTML = `<span class="flex items-center gap-2">⚠️ Save Failed</span>`;
-                btn.classList.add("bg-error", "text-on-error");
-                btn.disabled = false;
-                setTimeout(() => {
-                  btn.innerHTML = originalContent;
-                  btn.classList.remove("bg-error", "text-on-error");
-                }, 2000);
-              }
-            }}
-            className="w-full flex justify-center items-center gap-3 rounded-[1.5rem] bg-secondary py-5 font-black uppercase tracking-[0.25em] text-on-secondary shadow-[0_12px_24px_-8px_rgba(76,214,251,0.4)] transition-all z-10"
-          >
-            Finalize Entry
-          </motion.button>
-        </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {showMapPicker && (
-          <MapSelectionModal 
-            onClose={() => setShowMapPicker(false)}
-            onSelect={(location) => {
-              setDiveData(prev => ({ ...prev, location }));
-            }}
-          />
-        )}
-        {showDiveTypePicker && (
-          <DiveTypePickerModal 
-            isOpen={showDiveTypePicker}
-            onClose={() => setShowDiveTypePicker(false)}
-            onSelect={(type) => {
-              setDiveData(prev => ({ ...prev, diveType: type }));
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
 const EXPEDITION_TYPES: Record<string, string[]> = {
   "Recreational Diving": ["Drift Dive", "Enriched Dive (nitrox)", "Deep Dive", "Night Dive", "Wreck Dive", "Ice Dive", "Altitude Dive"],
   "Technical Diving": ["Cave Dive", "Rebreather Diving", "Deep Sea/Trimix Diving"],
@@ -2440,42 +1382,44 @@ const DiveTypePickerModal = ({ isOpen, onClose, onSelect }: { isOpen: boolean, o
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/90 " onClick={onClose} />
-      <motion.div 
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[2rem] premium-glass border  shadow-2xl p-6 no-scrollbar"
+        className="relative w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[2rem] bg-white border border-slate-200 shadow-2xl p-6 no-scrollbar"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
             {selectedCategory && (
-              <button 
+              <button
                 onClick={() => setSelectedCategory(null)}
-                className="p-1.5 rounded-full premium-glass hover:premium-glass text-[#083344] transition-colors border "
+                className="p-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors border border-slate-200"
                 title="Go Back"
               >
                 <ArrowLeft size={16} />
               </button>
             )}
-            <h3 className="text-xl font-black italic tracking-tighter text-[#083344]">Select Expedition</h3>
+            <h3 className="text-xl font-black italic tracking-tighter text-slate-800 uppercase">
+              {selectedCategory || "Select Expedition"}
+            </h3>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full premium-glass text-[#475569] hover:text-[#083344] transition-colors border ">
-            <X size={18} />
+          <button onClick={onClose} className="p-2 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+            <X size={20} />
           </button>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {!selectedCategory ? (
             Object.keys(EXPEDITION_TYPES).map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className="flex items-center justify-between w-full p-4 rounded-xl premium-glass hover:premium-glass border  transition-all text-left"
+                className="flex items-center justify-between w-full p-5 rounded-full bg-white border border-slate-100 hover:bg-slate-50 hover:border-[#0089b7]/20 transition-all text-left shadow-sm group"
               >
-                <span className="text-sm font-bold text-[#083344]">{cat}</span>
-                <ChevronRight size={16} className="text-[#083344]" />
+                <span className="text-sm font-black text-slate-800 group-hover:text-[#0089b7]">{cat}</span>
+                <ChevronRight size={18} className="text-slate-300 group-hover:text-[#0089b7]/40" />
               </button>
             ))
           ) : (
@@ -2483,7 +1427,7 @@ const DiveTypePickerModal = ({ isOpen, onClose, onSelect }: { isOpen: boolean, o
               <button
                 key={type}
                 onClick={() => { onSelect(type); onClose(); }}
-                className="w-full p-4 rounded-xl bg-secondary/10 hover:bg-secondary/20 border border-secondary/20 text-secondary text-sm font-bold transition-all text-left"
+                className="w-full p-5 rounded-full bg-white hover:bg-[#0089b7] border border-slate-100 text-slate-800 hover:text-white text-sm font-black transition-all text-left shadow-sm"
               >
                 {type}
               </button>
@@ -2495,4 +1439,729 @@ const DiveTypePickerModal = ({ isOpen, onClose, onSelect }: { isOpen: boolean, o
   );
 };
 
+const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
+  const { updateBadgeStats } = useUser();
+  const { profile } = useAuth();
+  const [gpsLoading, setGpsLoading] = useState(true);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showDiveTypePicker, setShowDiveTypePicker] = useState(false);
+
+  const [diveData, setDiveData] = useState({
+    location: "Getting GPS location...",
+    date: new Date().toISOString().split('T')[0],
+    diveType: "Drift Dive",
+    depth: "",
+    duration: "",
+    fishSpotted: [] as string[],
+    photos: [] as string[],
+    notes: "",
+    shareToFeed: true,
+    feedDescription: "",
+    useStandardSetup: true,
+    selectedEquipmentIds: [] as string[],
+  });
+
+  // --- Ecosystem Observation State ---
+  const [aiDetectionStatus, setAiDetectionStatus] = useState<'idle' | 'detecting' | 'done'>('idle');
+  const [detectedSpecies, setDetectedSpecies] = useState<{name: string, confidence: number, accepted?: boolean, isManualEntry?: boolean}[]>([]);
+  const [speciesToView, setSpeciesToView] = useState<any>(null);
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const speciesSearchRef = React.useRef<HTMLInputElement>(null);
+
+  // Production-ready vision API pipeline
+  const identifySpecies = async (imageBase64: string) => {
+    setAiDetectionStatus('detecting');
+
+    try {
+      const response = await fetch('/api/vision/identify-species', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: imageBase64,
+          maxResults: 3,
+          confidenceThreshold: 0.5,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error(`Vision API error: ${response.status}`, errorData || 'Unknown error');
+        setAiDetectionStatus('done');
+        return;
+      }
+
+      const data = await response.json();
+
+      // Expected response shape:
+      // { matches: [{ name: string, confidence: number }] }
+      if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
+        // De-duplicate within the new batch and cap at 3 results
+        const seen = new Set<string>();
+        const newResults = data.matches
+          .filter((m: { name: string }) => {
+            if (seen.has(m.name)) return false;
+            seen.add(m.name);
+            return true;
+          })
+          .slice(0, 3)
+          .map((m: { name: string; confidence: number }) => ({
+            name: m.name,
+            confidence: Math.round(m.confidence * 100),
+            accepted: false,
+            isManualEntry: false,
+          }));
+
+        // Merge with existing state: keep old entries intact, only append new unique ones
+        setDetectedSpecies(prev => {
+          const merged = [...prev];
+          newResults.forEach((r: any) => {
+            if (!merged.find(p => p.name === r.name)) {
+              merged.push(r);
+            }
+          });
+          return merged;
+        });
+      }
+      // If no matches returned, detectedSpecies stays empty — no quiz, no guessing
+    } catch (err) {
+      console.error('Species identification failed:', err);
+      // Silent failure: suggestion area stays empty, manual input is the fallback
+    } finally {
+      setAiDetectionStatus('done');
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setAiDetectionStatus('idle');
+
+    let maxPhotos = 3;
+    if (profile?.subscriptionTier === 'premium') maxPhotos = 10;
+    if (profile?.subscriptionTier === 'vip') maxPhotos = 30;
+
+    const remainingSlots = maxPhotos - diveData.photos.length;
+    if (remainingSlots <= 0) {
+      alert(`Maximum ${maxPhotos} photos per dive log on your current plan.`);
+      return;
+    }
+
+    Array.from(files).slice(0, remainingSlots).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_DIM = 800;
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height *= MAX_DIM / width;
+              width = MAX_DIM;
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width *= MAX_DIM / height;
+              height = MAX_DIM;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setDiveData(prev => ({
+            ...prev,
+            photos: [...prev.photos, compressedDataUrl]
+          }));
+          identifySpecies(compressedDataUrl);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const [fishSearch, setFishSearch] = useState("");
+  const [showFishDropdown, setShowFishDropdown] = useState(false);
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+
+  React.useEffect(() => {
+    if (!profile?.id) return;
+    const q = query(collection(db, "equipment"), where("userId", "==", profile.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const equip: Equipment[] = [];
+      snapshot.forEach((docSnap) => {
+        equip.push({ id: docSnap.id, ...docSnap.data() } as Equipment);
+      });
+      setEquipmentList(equip);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, "equipment");
+    });
+    return () => unsubscribe();
+  }, [profile?.id]);
+
+  const filteredFish = MARINE_LIFE_DATABASE.filter(f =>
+    f.toLowerCase().includes(fishSearch.toLowerCase()) &&
+    !diveData.fishSpotted.includes(f)
+  );
+
+  const handleAddFish = (fish: string, isManual = false) => {
+    if (diveData.fishSpotted.includes(fish)) return; // prevent duplicate log entries
+    setDiveData(prev => ({ ...prev, fishSpotted: [...prev.fishSpotted, fish] }));
+    setFishSearch("");
+    setShowFishDropdown(false);
+    
+    // If accepting an existing AI suggestion, mark it accepted
+    // If manual entry, add a standalone entry — never pollute AI cards with manual flags
+    setDetectedSpecies(prev => {
+        const existingIdx = prev.findIndex(sp => sp.name === fish);
+        if (existingIdx !== -1) {
+            const updated = [...prev];
+            updated[existingIdx] = { ...updated[existingIdx], accepted: true };
+            return updated;
+        }
+        // Only append a manual entry card if this is a manual selection
+        if (isManual) {
+            return [...prev, { name: fish, confidence: -1, accepted: true, isManualEntry: true }];
+        }
+        return prev;
+    });
+  };
+
+  const handleRemoveFish = (fish: string) => {
+    setDiveData(prev => ({ ...prev, fishSpotted: prev.fishSpotted.filter(f => f !== fish) }));
+  };
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDiveData(prev => ({ ...prev, location: "Great Blue Hole, Belize (GPS)" }));
+      setGpsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setDiveData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[2.5rem] bg-[#f8fafc] p-6 sm:p-8 shadow-2xl border border-white no-scrollbar"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-[#0089b7] flex items-center justify-center text-white shadow-md">
+              <span className="text-xl font-bold">A</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-[#1e293b] italic tracking-tight uppercase leading-none">
+                Dive Log
+              </h2>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0089b7] mt-1.5 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#0089b7] animate-pulse" />
+                New entry in progress
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Location */}
+          <div className="group">
+            <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Expedition Location</label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0089b7] z-10 pointer-events-none">
+                <MapPin size={18} className="fill-[#0089b7]/10" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(true)}
+                className="w-full text-left rounded-xl bg-white py-4 pl-12 pr-4 text-sm font-bold text-slate-700 border border-slate-200 hover:border-[#0089b7]/30 transition-all shadow-sm"
+              >
+                {diveData.location}
+              </button>
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="group">
+            <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Date</label>
+            <div className="relative">
+              <input
+                type="date"
+                name="date"
+                value={diveData.date}
+                onChange={handleChange}
+                style={{ WebkitAppearance: 'none' }}
+                className="w-full rounded-xl bg-white py-4 px-4 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 focus:border-[#0089b7] transition-all shadow-sm pr-4 [&::-webkit-calendar-picker-indicator]:hidden"
+              />
+            </div>
+          </div>
+
+          {/* Type */}
+          <div className="group">
+            <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Expedition Type</label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0089b7] z-10 pointer-events-none">
+                <Compass size={18} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDiveTypePicker(true)}
+                className="w-full text-left rounded-xl bg-white py-4 pl-12 pr-12 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none transition-all shadow-sm hover:border-[#0089b7]/30"
+              >
+                {diveData.diveType}
+              </button>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center">
+                <ChevronRight size={16} className="rotate-90" />
+              </div>
+            </div>
+          </div>
+
+          {/* Depth & Duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="group">
+              <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Max Depth (m)</label>
+              <input
+                type="number"
+                name="depth"
+                placeholder="Depth"
+                value={diveData.depth}
+                onChange={handleChange}
+                className="w-full rounded-xl bg-white py-4 px-4 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 focus:border-[#0089b7] transition-all shadow-sm"
+              />
+            </div>
+            <div className="group">
+              <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Duration (min)</label>
+              <input
+                type="number"
+                name="duration"
+                placeholder="Time"
+                value={diveData.duration}
+                onChange={handleChange}
+                className="w-full rounded-xl bg-white py-4 px-4 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 focus:border-[#0089b7] transition-all shadow-sm"
+              />
+            </div>
+          </div>
+
+          {/* Observations — Manual Search + Logged Species Chips */}
+          <div className="group">
+            <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Ecosystem Observations</label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 z-10 pointer-events-none">
+                <Search size={18} />
+              </div>
+              <input
+                ref={speciesSearchRef}
+                id="species-search-input"
+                type="text"
+                placeholder="Search species or enter manually..."
+                value={fishSearch}
+                onChange={(e) => { setFishSearch(e.target.value); setShowFishDropdown(true); }}
+                onFocus={() => setShowFishDropdown(true)}
+                className="w-full rounded-xl bg-white py-4 pl-12 pr-4 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 focus:border-[#0089b7] transition-all shadow-sm"
+              />
+              <AnimatePresence>
+                {showFishDropdown && fishSearch && filteredFish.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 right-0 mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl z-50 py-2 no-scrollbar"
+                  >
+                    {filteredFish.map(f => (
+                      <button
+                        key={f}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleAddFish(f, true)}
+                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* Logged Species Chips — always visible regardless of photo attachment */}
+            {diveData.fishSpotted.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {diveData.fishSpotted.map((fish) => (
+                  <div key={fish} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0089b7]/10 border border-[#0089b7]/20 text-[#0089b7] text-xs font-bold shadow-sm">
+                    <Fish size={12} />
+                    {fish}
+                    <button onClick={() => handleRemoveFish(fish)} className="ml-0.5 text-[#0089b7]/50 hover:text-red-500 transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Photos & AI Detection */}
+          <div className="group">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Visual Evidence</label>
+            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" multiple accept="image/*" />
+            
+            {diveData.photos.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2">
+                    {diveData.photos.map((photo, idx) => (
+                        <div key={idx} className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                            <img src={photo} className="w-full h-full object-cover" alt="Upload" />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full aspect-[21/9] rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center gap-3 group/upload hover:border-[#0089b7]/30 hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover/upload:bg-[#0089b7]/10 group-hover/upload:text-[#0089b7] transition-all">
+                <Camera size={24} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Capture your discoveries</span>
+            </button>
+
+            {/* AI Detection UI */}
+            {aiDetectionStatus === 'detecting' && (
+               <div className="mt-4 p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
+                       <Search size={16} className="text-primary" />
+                   </div>
+                   <div>
+                       <p className="text-xs font-bold text-primary">Identifying Species...</p>
+                       <p className="text-[10px] text-primary/70">Analyzing image via computer vision</p>
+                   </div>
+                   <div className="ml-auto flex gap-1">
+                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:0ms]"></span>
+                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:150ms]"></span>
+                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]"></span>
+                   </div>
+               </div>
+            )}
+
+            {/* AI Suggestion Cards — only rendered when API returns matches */}
+            {aiDetectionStatus === 'done' && detectedSpecies.filter(sp => !sp.isManualEntry).length > 0 && (
+                <div className="mt-4 space-y-3">
+                    {detectedSpecies.filter(sp => !sp.isManualEntry).map((sp, idx) => (
+                        <div 
+                            key={`ai-${sp.name}-${idx}`}
+                            onClick={(e) => {
+                                const target = e.target as HTMLElement;
+                                if (!target.closest('button')) {
+                                    const fullSpecies = MARINE_SPECIES_DATA.find(s => s.name === sp.name);
+                                    if (fullSpecies) setSpeciesToView(fullSpecies);
+                                }
+                            }}
+                            className={cn("p-4 rounded-2xl border transition-all cursor-pointer hover:border-primary", sp.accepted ? "bg-green-50 border-green-200" : "bg-white border-slate-200 shadow-sm")}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-[20px]">set_meal</span>
+                                    <span className="text-sm font-black text-slate-800">{sp.name}</span>
+                                </div>
+                                <span className={cn("text-[10px] font-bold px-2 py-1 rounded-full", sp.confidence > 85 ? "bg-green-100 text-green-700" : sp.confidence > 65 ? "bg-yellow-100 text-yellow-700" : "bg-orange-100 text-orange-700")}>
+                                    {sp.confidence}% Match
+                                </span>
+                            </div>
+                            {!sp.accepted ? (
+                                <div className="flex gap-2 mt-3">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAddFish(sp.name, false);
+                                        }}
+                                        className="flex-1 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-colors"
+                                    >
+                                        Accept
+                                    </button>
+                                    <button 
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (!profile) return;
+                                            try {
+                                                await addDoc(collection(db, "posts"), {
+                                                    userId: profile.id,
+                                                    userDisplayName: profile.displayName || "Explorer",
+                                                    userPhotoURL: profile.photoURL,
+                                                    content: `I spotted something on my dive but the AI wasn't sure. It guessed ${sp.name} (${sp.confidence}%). What do you think this is?`,
+                                                    image: diveData.photos[0] || "",
+                                                    timestamp: serverTimestamp(),
+                                                    likesCount: 0,
+                                                    commentsCount: 0,
+                                                    type: 'identification_request',
+                                                    status: 'unresolved'
+                                                });
+                                                alert("Posted to community feed for identification!");
+                                                setDetectedSpecies(prev => prev.filter((_, i) => i !== idx));
+                                            } catch (err) {
+                                                console.error(err);
+                                            }
+                                        }}
+                                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                                    >
+                                        Ask Community
+                                    </button>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDetectedSpecies(prev => prev.filter((_, i) => i !== idx));
+                                            speciesSearchRef.current?.focus();
+                                        }}
+                                        className="flex-1 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                                    >
+                                        ENTER MANUALLY
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] font-bold text-green-600 mt-2 flex items-center gap-1">
+                                    <CheckCircle2 size={12} /> Added to your log
+                                </p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+          </div>
+
+          {/* Standard Setup Card */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+            <label className="flex items-start gap-4 cursor-pointer">
+              <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 mt-0.5", diveData.useStandardSetup ? "bg-[#0089b7] border-[#0089b7]" : "border-slate-300")}>
+                {diveData.useStandardSetup && <CheckCircle2 size={16} className="text-white" />}
+              </div>
+              <input type="checkbox" checked={diveData.useStandardSetup} onChange={e => setDiveData(prev => ({ ...prev, useStandardSetup: e.target.checked }))} className="hidden" />
+              <div>
+                <span className="block text-sm font-black text-slate-800 uppercase tracking-tight">Use Standard Setup</span>
+                <span className="block text-[10px] text-slate-500 font-medium leading-relaxed mt-1">Automatically select equipment marked as "Standard Setup" in your gear log.</span>
+              </div>
+            </label>
+          </div>
+
+          {/* Share to Feed Card */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-[#0089b7]/10 flex items-center justify-center text-[#0089b7]">
+                  <Share2 size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight italic leading-tight">Share to Feed</h4>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Inspire the community</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDiveData(prev => ({ ...prev, shareToFeed: !prev.shareToFeed }))}
+                className={cn("w-11 h-6 rounded-full relative transition-all duration-300", diveData.shareToFeed ? "bg-[#0089b7]" : "bg-slate-200")}
+              >
+                <div className={cn("w-4 h-4 bg-white rounded-full absolute top-1 transition-all", diveData.shareToFeed ? "right-1" : "left-1")} />
+              </button>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-50">
+              <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Dive Narrative</label>
+              <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4">
+                <textarea
+                  name="feedDescription"
+                  placeholder="Tell the community about your discovery..."
+                  value={diveData.feedDescription}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full bg-transparent text-sm font-medium text-slate-600 focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={async () => {
+              if (!profile) return;
+              try {
+                await addDoc(collection(db, "dives"), {
+                  ...diveData,
+                  userId: profile.id,
+                  timestamp: serverTimestamp()
+                });
+                updateBadgeStats({ [diveData.diveType]: 1 });
+                onClose();
+              } catch (err) {
+                console.error("Save error:", err);
+              }
+            }}
+            className="w-full py-5 rounded-full bg-[#7dd3fc] text-[#0369a1] font-black uppercase tracking-[0.3em] text-[11px] shadow-xl shadow-blue-200/50 hover:bg-[#bae6fd] active:scale-[0.98] transition-all"
+          >
+            Finalize Entry
+          </button>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {speciesToView && (
+            <SpeciesInfoModal species={speciesToView} onClose={() => setSpeciesToView(null)} currentUserId={profile?.id} />
+        )}
+        {showMapPicker && (
+          <MapSelectionModal
+            onClose={() => setShowMapPicker(false)}
+            onSelect={(location) => setDiveData(prev => ({ ...prev, location }))}
+          />
+        )}
+        {showDiveTypePicker && (
+          <DiveTypePickerModal
+            isOpen={showDiveTypePicker}
+            onClose={() => setShowDiveTypePicker(false)}
+            onSelect={(type) => setDiveData(prev => ({ ...prev, diveType: type }))}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// Species Info Modal
+const SpeciesInfoModal = ({ species, onClose, currentUserId }: { species: any, onClose: () => void, currentUserId?: string }) => {
+    const [locations, setLocations] = useState<{location: string, count: number}[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Fetch where this species has been spotted by the community
+        const fetchLocations = async () => {
+            try {
+                // Since firestore doesn't support array-contains with group easily without index,
+                // we'll fetch a sample of dives and filter client side for prototype, or just use a mock if empty
+                const q = query(collection(db, "dives"), limit(100));
+                const snapshot = await getDocs(q);
+                
+                const locCounts: Record<string, number> = {};
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.fishSpotted?.includes(species.name) && data.location) {
+                        const loc = data.location.replace(/\s*\(\s*GPS\s*\)\s*/i, '');
+                        locCounts[loc] = (locCounts[loc] || 0) + 1;
+                    }
+                });
+
+                const sortedLocs = Object.entries(locCounts)
+                    .map(([location, count]) => ({ location, count }))
+                    .sort((a, b) => b.count - a.count);
+                
+                // If no real data, provide some mock data for the prototype
+                if (sortedLocs.length === 0) {
+                    setLocations([
+                        { location: "Great Barrier Reef", count: 14 },
+                        { location: "Blue Hole, Belize", count: 8 },
+                        { location: "Similan Islands", count: 3 }
+                    ]);
+                } else {
+                    setLocations(sortedLocs);
+                }
+            } catch (err) {
+                console.error("Error fetching locations:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchLocations();
+    }, [species.name]);
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-0 sm:pb-4">
+            <motion.div 
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                className="w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+                <div className="relative h-64 shrink-0">
+                    <img src={species.image} alt={species.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+                    <button onClick={onClose} className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-colors cursor-pointer z-10">
+                        <X size={20} />
+                    </button>
+                    <div className="absolute bottom-6 left-6 right-6">
+                        <h2 className="text-3xl font-black text-white italic leading-none">{species.name}</h2>
+                        <p className="text-sm font-bold text-white/70 italic">{species.scientificName}</p>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+                    {/* Stats */}
+                    <div className="flex gap-4">
+                        <div className="flex-1 bg-slate-50 rounded-2xl p-4 flex flex-col items-center text-center border border-slate-100">
+                            <span className="text-2xl font-black text-[#0089b7]">{species.spottedCount}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Sightings</span>
+                        </div>
+                        <div className="flex-1 bg-slate-50 rounded-2xl p-4 flex flex-col items-center text-center border border-slate-100">
+                            <span className="text-2xl font-black text-amber-500 capitalize">{species.rarity}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rarity</span>
+                        </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <Info size={16} className="text-[#0089b7]" />
+                            About
+                        </h3>
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                            The {species.name} ({species.scientificName}) is a fascinating marine species. 
+                            Users of GoDive log this species to track its migration and population across various dive sites.
+                        </p>
+                        <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(species.name)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#0089b7] text-xs font-bold mt-2 hover:underline">
+                            Read more on Wikipedia <ArrowUpRight size={12} />
+                        </a>
+                    </div>
+
+                    {/* Where to see it */}
+                    <div>
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <MapPin size={16} className="text-[#0089b7]" />
+                            High Chances To See It
+                        </h3>
+                        {loading ? (
+                            <div className="animate-pulse flex flex-col gap-2">
+                                <div className="h-12 bg-slate-100 rounded-2xl"></div>
+                                <div className="h-12 bg-slate-100 rounded-2xl"></div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {locations.map((loc, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-[#0089b7]/10 flex items-center justify-center text-[#0089b7] font-black text-xs">
+                                                #{i + 1}
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-700">{loc.location}</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-400">{loc.count} logs</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
 

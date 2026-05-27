@@ -73,7 +73,7 @@ function AppContent() {
       case "profile": return <ProfileView setView={handleSetView} />;
       case "admin": return <AdminView setView={handleSetView} />;
       case "equipment": return <EquipmentView setView={handleSetView} />;
-      case "diveTimer": return <DiveTimerView onClose={() => setView("dashboard")} />;
+      case "diveTimer": return <DiveTimerView />;
       default: return <DashboardView onNavigateToDiveTimer={() => setView("diveTimer")} onNavigateToEvent={(id: string) => { if (id === 'equipment') setView('equipment'); else { setSelectedEventId(id); setView("buddy"); } }} onNavigateToProfile={() => setView("profile")} />;
     }
   };
