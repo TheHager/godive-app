@@ -118,7 +118,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
     fetchPrivateInfo();
   }, [profile?.id]);
 
-  const validatePhone = (phone: string) => {
+  const validatePhone = (phone?: string) => {
     if (!phone) return true; // Optional fields
     // Strip non-digits and check if we have at least 10
     const digits = phone.replace(/\D/g, "");
@@ -143,7 +143,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
       return;
     }
 
-    if (formData.emergencyContactPhone && !formData.emergencyContactName.trim()) {
+    if (formData.emergencyContactPhone && !formData.emergencyContactName?.trim()) {
       setToast("Please provide a name for your emergency contact.");
       return;
     }
@@ -300,8 +300,9 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
         reader.readAsDataURL(file);
       });
 
-      // 2. Validate with backend /api/moderate-image
-      const response = await fetch("/api/moderate-image", {
+      // 2. Validate with backend /moderateImage
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/moderateImage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

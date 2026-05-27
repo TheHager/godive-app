@@ -1474,9 +1474,13 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
     setAiDetectionStatus('detecting');
 
     try {
-      const response = await fetch('/api/vision/identify-species', {
+      // Ensure we hit the absolute URL in production so we don't fall back to an empty static file
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/identifySpecies`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           image: imageBase64,
           maxResults: 3,
