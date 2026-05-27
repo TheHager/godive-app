@@ -1491,11 +1491,18 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
         return;
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        console.error("Invalid JSON response from vision API. Is the backend server running?", parseErr);
+        setAiDetectionStatus('done');
+        return;
+      }
 
       // Expected response shape:
       // { matches: [{ name: string, confidence: number }] }
-      if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
+      if (data?.matches && Array.isArray(data.matches) && data.matches.length > 0) {
         // De-duplicate within the new batch and cap at 3 results
         const seen = new Set<string>();
         const newResults = data.matches
