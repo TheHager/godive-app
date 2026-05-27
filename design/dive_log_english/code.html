@@ -1,0 +1,337 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<title>GoDive - Dive Log</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#eaf1ff",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#e2e2e5",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-primary-fixed-variant": "#004c68",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#78d1ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "on-error": "#ffffff",
+                        "primary-container": "#007da8",
+                        "tertiary-fixed": "#e0e3e5",
+                        "error-container": "#ffdad6",
+                        "secondary": "#5d5e61",
+                        "outline-variant": "#bdc8d0",
+                        "on-tertiary-container": "#fbfdff",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#191c1e",
+                        "background": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e2c",
+                        "outline": "#6e7880",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006689",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#fbfcff",
+                        "on-surface-variant": "#3e484f",
+                        "tertiary-container": "#727577",
+                        "on-background": "#0b1c30",
+                        "inverse-primary": "#78d1ff",
+                        "primary": "#006386",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#c3e8ff",
+                        "on-secondary-container": "#636467",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "tertiary": "#595c5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "margin-desktop": "48px",
+                        "md": "16px",
+                        "margin-mobile": "20px",
+                        "unit": "4px",
+                        "3xl": "64px",
+                        "sm": "8px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Manrope"],
+                        "stat-lg": ["Manrope"],
+                        "body-base": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "display-lg": ["Manrope"],
+                        "display-xl": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "label-caps": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "stat-lg": ["36px", {"lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+                        "display-xl": ["72px", {"lineHeight": "1.0", "letterSpacing": "-0.05em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.2em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9ff;
+            background-image: radial-gradient(circle at top center, rgba(0, 102, 137, 0.03) 0%, transparent 70%);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            min-height: max(884px, 100dvh);
+        }
+        .glass-pane {
+            background: #ffffff;
+            border: 1px solid #e2e2e5;
+            box-shadow: 0 4px 12px rgba(11, 28, 48, 0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-pane:hover {
+            box-shadow: 0 12px 24px rgba(11, 28, 48, 0.06);
+            border-color: #006386;
+        }
+        .bioluminescent-glow {
+            box-shadow: 0 8px 24px rgba(0, 99, 134, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8f9ff;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 99, 134, 0.15);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-surface selection:bg-primary/20">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 border-secondary-fixed/50 flex justify-between items-center px-margin-mobile h-16 bg-transparent">
+<div class="flex items-center gap-3">
+
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-secondary-fixed overflow-hidden ring-2 ring-primary/10">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZNCYK01uMpE1IPZjNGBVcwHpzSHzt9rfMk9iu7gCzNiyAob2fKBJkIDf_Echt-zBsEiw20EjARGbsve9zAAojNyB7s_DTIjDrckngGIIWCWEMZb83cGic72GU8P8V2Oc3Z_C6UbDbhfs-vPAhyjkL4v0L7eZz-aP0aj_7zg_J1LPfFP1hRjZ6V8cpvM4QSprbRpIY5CLFChh_QkUkNmJ1GClmwOtU5yZiMZjmoNnDyKBEkft3TM5SwaxFo6sGWuBylXmRxecXtpIV">
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile max-w-screen-xl mx-auto">
+<!-- Dashboard Summary -->
+<section class="mb-3xl">
+<div class="flex flex-col gap-xs mb-lg">
+<p class="font-label-caps text-label-caps text-primary uppercase tracking-widest">Dive Statistics</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Mission Log Summary</h2>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<div class="glass-pane p-md rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-xs">TOTAL DIVES</p>
+<p class="font-stat-lg text-stat-lg text-primary">128</p>
+</div>
+<div class="glass-pane p-md rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-xs">MAX DEPTH</p>
+<p class="font-stat-lg text-stat-lg text-on-surface">42.5<span class="text-body-sm font-body-sm text-on-surface-variant ml-1">m</span></p>
+</div>
+<div class="glass-pane p-md rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-xs">BOTTOM TIME</p>
+<p class="font-stat-lg text-stat-lg text-on-surface">5.2<span class="text-body-sm font-body-sm text-on-surface-variant ml-1">k</span></p>
+</div>
+<div class="glass-pane p-md rounded-xl">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-xs">LAST TEMP</p>
+<p class="font-stat-lg text-stat-lg text-error">18<span class="text-body-sm font-body-sm text-error/60 ml-1">°C</span></p>
+</div>
+</div>
+</section>
+<!-- Recent Dives -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<div>
+<p class="font-label-caps text-label-caps text-primary uppercase tracking-widest">Chronicle</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Recent Deployments</h2>
+</div>
+<button class="text-primary hover:text-primary-container font-label-caps text-label-caps transition-colors">VIEW ALL</button>
+</div>
+<div class="flex flex-col gap-md">
+<!-- Dive Card 1 -->
+<div class="glass-pane rounded-xl overflow-hidden group">
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-48 h-32 md:h-auto overflow-hidden">
+<img alt="Blue Hole" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD19TDSkrltiRw8IPQqjssjBYG8qy5e6m2LiwvYr70-ZkRTcsJCrs1pXl89oP-rwE0mZYcuaKBxP5ESSj_FXrscMEXI6Jlt0tCiTTMGbUw5DcmKscSrD4mqP_mUIAQiVBbSkxiLqsWa0XWdqMoW3e0avgXABqqgAxHQJjhiFiq7iqH0xwSttHh5crejiARiYtazfuyoeIxC5ltrT0q2WWpytZ3KlrnTpKko-p-W1QiPJxbwbsjvrhFwCNu-hceCgFEKpqdXSKGxVacb">
+</div>
+<div class="flex-1 p-lg flex flex-col justify-center">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface group-hover:text-primary transition-colors">Blue Hole</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Dahab, Egypt • Oct 12, 2023</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex gap-xl border-t border-secondary-fixed pt-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="straighten">straighten</span>
+<span class="font-body-base text-body-base text-on-surface">18m</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-body-base text-body-base text-on-surface">45 min</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="thermostat">thermostat</span>
+<span class="font-body-base text-body-base text-on-surface">22°C</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dive Card 2 -->
+<div class="glass-pane rounded-xl overflow-hidden group">
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-48 h-32 md:h-auto overflow-hidden">
+<img alt="Cenote Angelita" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0N2TyaPk9Y59TSLhNlWmgPN4DpnUYJZ5WgyqroHIGZXLQuTVg2_FqhZfHuYiJiJyokKLmcMYdk7j-ud58rhMXTuU-Kvh-LrNivh4hpgULugFpX_v2pVmRHpMyWqu8MnSgbAf9V6V2Whdqzs-jNsupYMzvzFiNJbXZgGqjss_9GOHX-TiMfwu9pwaEhTlM2_Rl-nSCRBTpVyjeE061_WTmZCe5KDO9zTDfnyWFnCDIg9jnBhrHXrZZZpwrDJYJTkNEv7Fw0Nm_4nkL">
+</div>
+<div class="flex-1 p-lg flex flex-col justify-center">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface group-hover:text-primary transition-colors">Cenote Angelita</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tulum, Mexico • Oct 08, 2023</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex gap-xl border-t border-secondary-fixed pt-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="straighten">straighten</span>
+<span class="font-body-base text-body-base text-on-surface">30m</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-body-base text-body-base text-on-surface">52 min</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="thermostat">thermostat</span>
+<span class="font-body-base text-body-base text-on-surface">24°C</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dive Card 3 -->
+<div class="glass-pane rounded-xl overflow-hidden group">
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-48 h-32 md:h-auto overflow-hidden">
+<img alt="Night Reef" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdu9TIoX4QNmFiApy2KIjjDo2DDRAiprMfUjsQbJph8enD6-dD-Bj1yCW0pdGFvhdIpPZTbEFIHxgwNkspSAAFkLJXzX7rTbIZp6D9gnUd_cNAh1RsF-IoPu1rM2m36Y01cvPbR0Ncmm4mdVBrUYoz7pTZPw33Szo-yPKKGYeCXqQHPchrILc32LghA7RZnoz4H2-BDfL25bceofOgVfmjJN2Hhr3rWDbsC6uRj3XO98XUB9N14bGBhnTq7kGtkCWKsKGHVpSvKxpi">
+</div>
+<div class="flex-1 p-lg flex flex-col justify-center">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface group-hover:text-primary transition-colors">Night Reef</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Maldives • Sep 29, 2023</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex gap-xl border-t border-secondary-fixed pt-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="straighten">straighten</span>
+<span class="font-body-base text-body-base text-on-surface">12m</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="schedule">schedule</span>
+<span class="font-body-base text-body-base text-on-surface">65 min</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="thermostat">thermostat</span>
+<span class="font-body-base text-body-base text-on-surface">28°C</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center bioluminescent-glow hover:scale-110 hover:bg-primary-container active:scale-95 transition-all z-[60]">
+<span class="material-symbols-outlined text-[32px]" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-white/90 backdrop-blur-3xl border-t border-secondary-fixed">
+<a class="flex flex-col items-center justify-center text-primary bg-primary/5 rounded-xl px-4 py-2 transition-all" href="#">
+<span class="material-symbols-outlined fill-1" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps mt-1">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-label-caps mt-1">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-caps text-label-caps mt-1">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-caps text-label-caps mt-1">Profile</span>
+</a>
+</nav>
+<script>
+        // Subtle Hover Depth Effect
+        document.querySelectorAll('.glass-pane').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.background = `radial-gradient(600px circle at ${x}px ${y}px, rgba(0, 99, 134, 0.03), #ffffff)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.background = `#ffffff`;
+            });
+        });
+    </script>
+
+
+
+
+
+
+
+
+</body></html>

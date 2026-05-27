@@ -95,12 +95,12 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
       <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Community Feed</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0b2240] whitespace-nowrap">Community Feed</h2>
           </div>
           <div className="relative z-10 shrink-0 mr-4">
             <ActionMenu 
-              triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
-              buttonClassName="hover:bg-white/10"
+              triggerIcon={<Settings size={24} className="text-[#475569]" />}
+              buttonClassName="hover:premium-glass"
               items={[
                 { label: "Type", isHeader: true },
                 { label: "All Posts", icon: <Tag size={16} />, onClick: () => setActiveFilter("all"), active: activeFilter === "all" },
@@ -139,7 +139,7 @@ export const FeedView = ({ setView, onNavigateToEvent }: { setView: (v: any) => 
       {profile?.id && (
         <button
           onClick={() => setShowCreatePostModal(true)}
-          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border border-white/20"
+          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border "
           title="Create Post"
         >
           <Plus size={28} />
@@ -413,34 +413,34 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
   const isVideo = image?.startsWith("data:video");
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-3xl bg-surface-container-high/20 backdrop-blur-3xl border border-white/5 shadow-2xl relative">
+    <article className="group flex flex-col overflow-hidden rounded-3xl premium-glass  border  shadow-2xl relative">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           {avatar ? (
-            <img src={avatar} alt={user} className="h-12 w-12 shrink-0 rounded-full border border-white/10 object-cover shadow-lg" />
+            <img src={avatar} alt={user} className="h-12 w-12 shrink-0 rounded-full border  object-cover shadow-lg" />
           ) : (
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary shadow-lg">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border  bg-surface/50 text-secondary shadow-lg">
               <UserIcon size={24} />
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-black tracking-tight text-primary">{user}</h4>
+              <h4 className="font-black tracking-tight text-[#0055ff]">{user}</h4>
               {pinnedBadge && (
                 <div 
                   className={cn("flex items-center justify-center p-1 rounded-full", `bg-${pinnedBadge.color}/20 text-${pinnedBadge.color}`)} 
                   title={`Pinned Badge: ${pinnedBadge.label}`}
                 >
-                  <pinnedBadge.icon size={12} className="text-primary" />
+                  <pinnedBadge.icon size={12} className="text-[#0055ff]" />
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
+            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#083344]">
               <MapPin size={10} />
               {location?.replace(/\s*\(\s*GPS\s*\)\s*/i, '')}
             </div>
             {timestamp && (
-              <div className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 mt-0.5 font-medium">
+              <div className="text-[10px] uppercase tracking-widest text-[#083344] mt-0.5 font-medium">
                 {formatDate(timestamp)}
               </div>
             )}
@@ -462,7 +462,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
       {image && (
         <>
           <div 
-            className="relative aspect-[4/3] w-full overflow-hidden bg-surface-container cursor-pointer"
+            className="relative aspect-[4/3] w-full overflow-hidden premium-glass cursor-pointer"
             onClick={() => setShowFullImage(true)}
           >
             {isVideo ? (
@@ -478,7 +478,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl"
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 "
                 onClick={() => setShowFullImage(false)}
               >
                 <div onClick={(e) => e.stopPropagation()} className="relative flex items-center justify-center h-full w-full">
@@ -513,7 +513,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                   </TransformWrapper>
                 </div>
                 <button 
-                  className="absolute top-6 right-6 z-10 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+                  className="absolute top-6 right-6 z-10 rounded-full premium-glass p-3 text-[#083344]  transition-colors hover:premium-glass"
                   onClick={(e) => { e.stopPropagation(); setShowFullImage(false); }}
                 >
                   <CloseIcon size={24} />
@@ -530,7 +530,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
             onClick={handleToggleLike}
             className={cn(
               "flex items-center gap-2 font-black transition-colors group/btn",
-              hasLiked ? "text-primary hover:text-primary/80" : "text-on-surface-variant hover:text-secondary"
+              hasLiked ? "text-[#0055ff] hover:text-[#0055ff]/80" : "text-[#475569] hover:text-secondary"
             )}
           >
             <Heart size={24} className={cn(
@@ -541,7 +541,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
           </button>
           <button 
             onClick={() => setShowComments(!showComments)}
-            className="flex items-center gap-2 font-black text-on-surface-variant transition-colors hover:text-secondary"
+            className="flex items-center gap-2 font-black text-[#475569] transition-colors hover:text-secondary"
           >
             <MessageSquare size={24} />
             <span>{comments}</span>
@@ -559,7 +559,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
         )}
 
         {title && (
-          <h3 className="text-xl font-bold text-on-surface mb-2">{title}</h3>
+          <h3 className="text-xl font-bold text-[#0b2240] mb-2">{title}</h3>
         )}
 
         {isEditing ? (
@@ -567,13 +567,13 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full resize-none rounded-xl border border-white/10 bg-surface-container p-3 text-sm text-on-surface outline-none focus:border-secondary"
+              className="premium-input w-full resize-none rounded-xl  -white/10  p-3 text-sm text-[#0b2240]  focus:-secondary"
               rows={3}
             />
             <div className="flex gap-2 justify-end">
               <button 
                 onClick={() => { setIsEditing(false); setEditedContent(content); }}
-                className="rounded-xl px-4 py-2 text-xs font-bold text-on-surface-variant hover:bg-white/5 transition-colors"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-[#475569] hover:premium-glass transition-colors"
               >
                 Cancel
               </button>
@@ -586,7 +586,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
             </div>
           </div>
         ) : (
-          <p className="text-sm leading-relaxed text-on-surface mb-6">
+          <p className="text-sm leading-relaxed text-[#0b2240] mb-6">
             {content}
           </p>
         )}
@@ -597,7 +597,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-4 overflow-hidden border-t border-white/10 pt-4"
+              className="flex flex-col gap-4 overflow-hidden border-t  pt-4"
             >
               <div className="flex max-h-60 flex-col gap-4 overflow-y-auto no-scrollbar pb-2">
                 {commentsList.map((comment) => {
@@ -617,9 +617,9 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                       <div className="flex w-full flex-col">
                         <div className="flex justify-between items-start">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xs font-black text-primary">{comment.userDisplayName}</span>
+                            <span className="text-xs font-black text-[#0055ff]">{comment.userDisplayName}</span>
                             {comment.timestamp && (
-                              <span className="text-[10px] text-on-surface-variant/60">{formatDate(comment.timestamp)}</span>
+                              <span className="text-[10px] text-[#083344]">{formatDate(comment.timestamp)}</span>
                             )}
                           </div>
                           
@@ -641,13 +641,13 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                             <textarea
                               value={editedCommentContent}
                               onChange={(e) => setEditedCommentContent(e.target.value)}
-                              className="w-full resize-none rounded-lg border border-white/10 bg-surface-container-high p-2 text-sm text-on-surface outline-none focus:border-secondary"
+                              className="premium-input w-full resize-none rounded-lg  -white/10  p-2 text-sm text-[#0b2240]  focus:-secondary"
                               rows={2}
                             />
                             <div className="flex gap-2 justify-end">
                               <button 
                                 onClick={() => { setEditingCommentId(null); setEditedCommentContent(""); }}
-                                className="rounded-lg px-3 py-1 text-[10px] font-bold text-on-surface-variant hover:bg-white/5 transition-colors"
+                                className="rounded-lg px-3 py-1 text-[10px] font-bold text-[#475569] hover:premium-glass transition-colors"
                               >
                                 Cancel
                               </button>
@@ -661,12 +661,12 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1 pr-8">
-                            <p className="text-sm text-on-surface mt-0.5">{comment.content}</p>
+                            <p className="text-sm text-[#0b2240] mt-0.5">{comment.content}</p>
                             <div className="flex items-center gap-4 mt-1">
                               <button 
                                 onClick={() => handleToggleCommentLike(comment)}
                                 className={cn("flex items-center gap-1.5 text-[10px] font-bold transition-colors", 
-                                  comment.likedBy?.includes(currentUserId) ? "text-primary" : "text-on-surface-variant hover:text-white"
+                                  comment.likedBy?.includes(currentUserId) ? "text-[#0055ff]" : "text-[#475569] hover:text-[#083344]"
                                 )}
                               >
                                 <Heart size={12} className={cn(comment.likedBy?.includes(currentUserId) && "fill-current")} />
@@ -680,7 +680,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                   );
                 })}
                 {commentsList.length === 0 && (
-                  <div className="text-center text-sm text-on-surface-variant/60 py-4">No comments yet. Be the first!</div>
+                  <div className="text-center text-sm text-[#083344] py-4">No comments yet. Be the first!</div>
                 )}
               </div>
               <div className="flex gap-2 items-center">
@@ -690,7 +690,7 @@ const PostCard = ({ id, user, userId, location, title, content, image, avatar, l
                   onChange={(e) => setCommentText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                   placeholder="Add a comment..." 
-                  className="flex-1 rounded-xl border border-white/10 bg-surface-container-high px-4 py-2 text-sm text-on-surface outline-none focus:border-secondary"
+                  className="premium-input flex-1 rounded-xl  -white/10  px-4 py-2 text-sm text-[#0b2240]  focus:-secondary"
                 />
                 <button 
                   onClick={handleAddComment}
@@ -828,7 +828,7 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-slate-900/20 backdrop-blur-sm "
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -836,19 +836,19 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 p-4"
           >
-            <div className="flex flex-col overflow-hidden rounded-3xl bg-surface-container border border-white/10 shadow-2xl max-h-[90vh]">
-              <div className="flex items-center justify-between border-b border-white/5 p-6 bg-surface-container-high/50 shrink-0">
-                <h3 className="text-xl font-black tracking-tight text-on-surface">Create Post</h3>
+            <div className="flex flex-col overflow-hidden rounded-3xl premium-glass border  shadow-2xl max-h-[90vh]">
+              <div className="flex items-center justify-between border-b  p-6 premium-glass shrink-0">
+                <h3 className="text-xl font-black tracking-tight text-[#0b2240]">Create Post</h3>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 hover:text-on-surface transition-colors"
+                  className="rounded-full p-2 text-[#475569] hover:premium-glass hover:text-[#0b2240] transition-colors"
                 >
                   <CloseIcon size={20} />
                 </button>
               </div>
               <div className="flex flex-col gap-6 p-6 overflow-y-auto">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                  <label className="text-xs font-black uppercase tracking-widest text-[#475569]">
                     Headline <span className="text-error">*</span>
                   </label>
                   <input
@@ -856,11 +856,11 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="E.g., Amazing dive at the Blue Hole!"
-                    className="w-full rounded-2xl border-none bg-surface-container-highest/50 p-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all font-bold"
+                    className="premium-input w-full rounded-2xl -none -highest/50 p-4 text-[#0b2240] placeholder:text-[#083344] -1  transition-all font-bold"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-[#475569] flex items-center gap-2">
                     <MessageSquare size={14} />
                     What's on your mind?
                   </label>
@@ -868,19 +868,19 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Share your diving stories, ask questions..."
-                    className="w-full rounded-2xl border-none bg-surface-container-highest/50 p-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all resize-none min-h-[120px]"
+                    className="premium-input w-full rounded-2xl -none -highest/50 p-4 text-[#0b2240] placeholder:text-[#083344] -1  transition-all resize-none min-h-[120px]"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+                  <label className="text-xs font-black uppercase tracking-widest text-[#475569]">
                     Photo or Video (Optional)
                   </label>
-                  <label className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-surface-container-highest/50 p-6 text-on-surface-variant transition-colors hover:border-secondary hover:bg-white/5 hover:text-secondary">
+                  <label className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed  premium-glass-highest/50 p-6 text-[#475569] transition-colors hover:border-secondary hover:premium-glass hover:text-secondary">
                     <input 
                       type="file" 
                       accept="image/*,video/*" 
                       onChange={handleImageUpload} 
-                      className="hidden" 
+                      className="premium-input hidden" 
                     />
                     {image ? (
                       <div className="absolute inset-0 overflow-hidden rounded-2xl">
@@ -890,25 +890,25 @@ const CreatePostModal = ({ isOpen, onClose, profile }: CreatePostModalProps) => 
                           <img src={image} alt="Preview" className="h-full w-full object-cover opacity-50 transition-opacity group-hover:opacity-30" />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                          <span className="font-bold text-white tracking-widest text-xs uppercase uppercase">Change Media</span>
+                          <span className="font-bold text-[#083344] tracking-widest text-xs uppercase uppercase">Change Media</span>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <div className="mb-2 rounded-full bg-surface-container p-3 text-on-surface-variant group-hover:bg-secondary/20 group-hover:text-secondary transition-colors">
+                        <div className="mb-2 rounded-full premium-glass p-3 text-[#475569] group-hover:bg-secondary/20 group-hover:text-secondary transition-colors">
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                         </div>
-                        <span className="text-xs font-bold text-on-surface">Click to upload media</span>
-                        <span className="mt-1 text-[10px] text-on-surface-variant/60">Max 700KB</span>
+                        <span className="text-xs font-bold text-[#0b2240]">Click to upload media</span>
+                        <span className="mt-1 text-[10px] text-[#083344]">Max 700KB</span>
                       </>
                     )}
                   </label>
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-3 border-t border-white/5 p-6 bg-surface-container-high/50 shrink-0">
+              <div className="flex items-center justify-end gap-3 border-t  p-6 premium-glass shrink-0">
                 <button
                   onClick={onClose}
-                  className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:bg-white/5 transition-colors"
+                  className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#475569] hover:premium-glass transition-colors"
                 >
                   Cancel
                 </button>

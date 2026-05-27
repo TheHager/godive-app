@@ -18,7 +18,7 @@ export interface UserProfile {
   pinnedBadgeId?: string;
   badgeStats?: Record<string, number>;
   homeBase?: string;
-  role?: "user" | "moderator" | "superadmin";
+  role?: string;
 }
 
 export interface UserPrivateInfo {
@@ -76,7 +76,6 @@ export interface CommunityEvent {
   lat?: number;
   lng?: number;
   reportedBy?: string[];
-  reportDetails?: { uid: string; reason: string; timestamp: string }[];
   reportsCount?: number;
   certificateRequirements?: string[];
   equipmentRequirements?: string[];
@@ -95,7 +94,7 @@ export interface Post {
   reportsCount?: number;
 }
 
-export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile" | "admin" | "equipment";
+export type View = "dashboard" | "explorer" | "feed" | "buddy" | "friends" | "pricing" | "profile" | "admin" | "equipment" | "diveTimer";
 
 export interface Equipment {
   id: string;
@@ -111,5 +110,54 @@ export interface Equipment {
   capacity?: number;
   notes?: string;
   isStandardSetup?: boolean;
-  timestamp: any;
+}
+
+export enum DiveState {
+  INACTIVE = 'INACTIVE',
+  DIVING = 'DIVING',
+  WARNING_LEVEL_1 = 'WARNING_LEVEL_1',
+  WARNING_LEVEL_2 = 'WARNING_LEVEL_2',
+  ALARM_TRIGGERED = 'ALARM_TRIGGERED',
+}
+
+export interface ActiveDive {
+  diveId: string;
+  userId: string;
+  diverName: string;
+  
+  // Timing (Firestore Timestamps)
+  startTime: any;
+  plannedDurationMinutes: number;
+  expectedEndTime: any;
+  bufferMinutes: number;
+  
+  // Location
+  lastKnownLat: number;
+  lastKnownLng: number;
+  lastKnownLocationName?: string;
+  
+  // Emergency Contacts
+  emergencyContact1Name: string;
+  emergencyContact1Phone: string;
+  emergencyContact2Name?: string;
+  emergencyContact2Phone?: string;
+  medicalNotes?: string;
+  
+  // Status
+  status: 'ACTIVE' | 'EXTENDED' | 'ENDED' | 'ESCALATED';
+  
+  // Push & Mesh
+  deviceToken: string;
+  buddyIds?: string[];
+  buddyDeviceTokens?: string[];
+  
+  // Metadata
+  createdAt: any;
+  endedAt?: any;
+  escalatedAt?: any;
+  escalationResults?: {
+    sms1: boolean;
+    sms2: boolean;
+    push: boolean;
+  };
 }

@@ -214,19 +214,19 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       <section className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Community Events</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0b2240] whitespace-nowrap">Community Events</h2>
           </div>
           {archivedEvents.length > 0 && (
-            <div className="flex gap-1 rounded-full bg-surface-container-high/50 p-1 border border-white/5 backdrop-blur-sm shrink-0">
+            <div className="flex gap-1 rounded-full premium-glass p-1 border   shrink-0">
               <button
                 onClick={() => setEventViewMode("upcoming")}
-                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "upcoming" ? "bg-primary/20 text-primary border border-primary/30 shadow-lg" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
+                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "upcoming" ? "bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 shadow-lg" : "text-[#475569] hover:text-[#0b2240] hover:premium-glass")}
               >
                 Upcoming
               </button>
               <button
                 onClick={() => setEventViewMode("archive")}
-                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "archive" ? "bg-primary/20 text-primary border border-primary/30 shadow-lg" : "text-on-surface-variant hover:text-on-surface hover:bg-white/5")}
+                className={cn("px-4 py-2 rounded-full text-xs font-bold transition-colors", eventViewMode === "archive" ? "bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 shadow-lg" : "text-[#475569] hover:text-[#0b2240] hover:premium-glass")}
               >
                 Archive
               </button>
@@ -235,8 +235,8 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
           {!localInitialEventId && (
             <div className="relative z-10 shrink-0 mr-4">
               <ActionMenu 
-                triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
-                buttonClassName="hover:bg-white/10"
+                triggerIcon={<Settings size={24} className="text-[#475569]" />}
+                buttonClassName="hover:premium-glass"
                 items={[
                   { label: "Sort By", isHeader: true },
                   { label: "Date", icon: <Calendar size={16} />, onClick: () => setEventSortBy("date"), active: eventSortBy === "date" },
@@ -252,7 +252,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
                             type="date"
                             value={eventSearchDate}
                             onChange={(e) => setEventSearchDate(e.target.value)}
-                            className="pl-9 pr-4 py-2 w-full bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all"
+                            className="premium-input pl-9 pr-4 py-2 w-full   -white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#0b2240] -1  focus: transition-all"
                           />
                         </div>
                         <div className="relative group">
@@ -264,16 +264,16 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
                             onChange={(e) => setEventSearchLocation(e.target.value)}
                             onClick={() => setShowLocationSearchModal(true)}
                             readOnly
-                            className="pl-9 pr-4 py-2 w-full bg-surface-container-high/40 border border-white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-1 focus:ring-secondary/50 focus:bg-surface-container-high transition-all placeholder:text-on-surface-variant/30 cursor-pointer hover:bg-white/5"
+                            className="premium-input pl-9 pr-4 py-2 w-full   -white/5 rounded-full text-[10px] font-black uppercase tracking-widest text-[#0b2240] -1  focus: transition-all placeholder:text-[#083344] cursor-pointer hover:"
                           />
                         </div>
                         {eventSearchCoords && (
-                          <div className="flex items-center gap-2 bg-surface-container-high/40 border border-white/5 rounded-full px-4 py-2">
+                          <div className="flex items-center gap-2 premium-glass border  rounded-full px-4 py-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-secondary">Radius:</span>
                             <select 
                               value={eventSearchRadius}
                               onChange={(e) => setEventSearchRadius(Number(e.target.value))}
-                              className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-on-surface focus:ring-0 p-0 cursor-pointer w-full text-right"
+                              className="premium-input bg-transparent -none text-[10px] font-black uppercase tracking-widest text-[#0b2240] -0 p-0 cursor-pointer w-full text-right"
                             >
                               <option value={10}>10km</option>
                               <option value={20}>20km</option>
@@ -350,7 +350,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
         <section className="flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#475569]">
                 Specific Expedition
               </h3>
               <button 
@@ -388,10 +388,10 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
             />
           ))
         ) : (
-          <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center bg-surface-container-high/20 rounded-[40px] border border-white/5">
-            <Calendar size={48} className="text-on-surface-variant/20 mb-4" />
-            <h4 className="text-on-surface font-black italic text-xl">No Events Found</h4>
-            <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-widest mt-2">Try changing your filters</p>
+          <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center premium-glass rounded-[40px] border ">
+            <Calendar size={48} className="text-[#083344] mb-4" />
+            <h4 className="text-[#0b2240] font-black italic text-xl">No Events Found</h4>
+            <p className="text-[#083344] text-xs font-bold uppercase tracking-widest mt-2">Try changing your filters</p>
           </div>
         )}
       </section>
@@ -399,7 +399,7 @@ export const BuddyView = ({ setView, initialEventId }: { setView: (v: View) => v
       {profile?.id && (
         <button
           onClick={() => setShowCreateEventModal(true)}
-          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border border-white/20"
+          className="fixed bottom-24 right-6 sm:bottom-8 sm:right-8 z-40 flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-secondary text-on-secondary shadow-[0_0_40px_rgba(76,214,251,0.3)] transition-all hover:bg-secondary-container hover:scale-110 hover:-rotate-12 active:scale-95 border "
           title="Create Event"
         >
           <Plus size={28} />
@@ -418,27 +418,27 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/90 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/90 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-lg rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="p-6 border-b border-white/5 bg-surface-container-highest shrink-0">
+            <div className="p-6 border-b  premium-glass-highest shrink-0">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-2xl font-black italic tracking-tight text-on-surface">Find Buddies</h3>
-                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">Community Discovery</p>
+                  <h3 className="text-2xl font-black italic tracking-tight text-[#0b2240]">Find Buddies</h3>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#083344]">Community Discovery</p>
                 </div>
-                <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border ">
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={onSearch} className="flex gap-2 rounded-2xl bg-white/5 p-2 border border-white/5 focus-within:ring-1 focus-within:ring-secondary/50">
+              <form onSubmit={onSearch} className="flex gap-2 rounded-2xl premium-glass p-2 border  focus-within:ring-1 focus-within:ring-secondary/50">
                 <div className="flex flex-1 items-center gap-3 px-3 min-w-0">
                   <Search size={18} className="text-secondary shrink-0" />
                   <input
@@ -447,7 +447,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search name, email, phone..."
-                    className="w-full bg-transparent border-none p-0 text-sm font-medium text-on-surface placeholder:text-outline/30 focus:ring-0 min-w-0 flex-1"
+                    className="premium-input w-full bg-transparent -none p-0 text-sm font-medium text-[#0b2240] placeholder:text-[#083344] -0 min-w-0 flex-1"
                   />
                 </div>
                 <button 
@@ -472,7 +472,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
               ) : results.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Possible Matches</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#083344]">Possible Matches</span>
                     <span className="text-[10px] font-black text-secondary uppercase bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">{results.length} Found</span>
                   </div>
                   {results.map((user: UserProfile, index: number) => {
@@ -483,27 +483,27 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                         key={user.id} 
-                        className="flex items-center justify-between p-3 rounded-[2rem] bg-surface-container-high/30 border border-white/5 backdrop-blur-md group hover:bg-surface-container-high hover:border-white/10 transition-all duration-300"
+                        className="flex items-center justify-between p-3 rounded-[2rem] premium-glass border   group hover:premium-glass hover: transition-all duration-300"
                       >
                         <div className="flex items-center gap-4 ml-1 min-w-0 flex-1">
                           <div className="relative shrink-0">
                             {user.photoURL ? (
                               <img 
                                 src={user.photoURL} 
-                                className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
+                                className="h-14 w-14 rounded-2xl border-2  shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
                                 alt={user.displayName}
                               />
                             ) : (
-                              <div className="flex h-14 w-14 rounded-2xl border-2 border-white/10 bg-surface/50 text-secondary shadow-2xl items-center justify-center transition-transform group-hover:scale-105 duration-500">
+                              <div className="flex h-14 w-14 rounded-2xl border-2  bg-surface/50 text-secondary shadow-2xl items-center justify-center transition-transform group-hover:scale-105 duration-500">
                                 <UserIcon size={28} />
                               </div>
                             )}
                             <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-secondary border-4 border-surface-container-highest shadow-xl" />
                           </div>
                           <div className="flex flex-col min-w-0 flex-1 pr-2">
-                            <span className="font-extrabold text-on-surface group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
+                            <span className="font-extrabold text-[#0b2240] group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[9px] text-on-surface-variant uppercase font-black tracking-[0.1em]">
+                              <span className="text-[9px] text-[#475569] uppercase font-black tracking-[0.1em]">
                                 {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
                               </span>
                             </div>
@@ -514,13 +514,13 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                           className={cn(
                             "flex items-center gap-2 rounded-full px-6 py-3 transition-all duration-300 shadow-xl font-black uppercase tracking-[0.2em] text-[9px] shrink-0 active:scale-95 border",
                             isBuddy 
-                              ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20" 
+                              ? "bg-[#0055ff]/10 text-[#0055ff] border-[#0055ff]/20 hover:bg-[#0055ff]/20" 
                               : "bg-secondary text-on-secondary border-secondary/20 hover:shadow-secondary/20"
                           )}
                         >
                           {isBuddy ? (
                             <>
-                              <UserCheck size={14} className="text-primary" />
+                              <UserCheck size={14} className="text-[#0055ff]" />
                               <span className="hidden sm:inline">Buddy</span>
                               <span className="sm:hidden">OK</span>
                             </>
@@ -537,12 +537,12 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
-                  <div className="rounded-full bg-surface-container-high p-6 text-on-surface-variant/20 border border-white/5">
+                  <div className="rounded-full premium-glass p-6 text-[#083344] border ">
                     <Users size={48} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-on-surface">No Divers Found</h4>
-                    <p className="text-xs font-medium text-on-surface-variant mt-1 max-w-[200px] mx-auto opacity-60">Try searching for a different username, email, or phone number.</p>
+                    <h4 className="text-lg font-black text-[#0b2240]">No Divers Found</h4>
+                    <p className="text-xs font-medium text-[#475569] mt-1 max-w-[200px] mx-auto opacity-60">Try searching for a different username, email, or phone number.</p>
                   </div>
                 </div>
               )}
@@ -566,29 +566,29 @@ const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+            className="absolute inset-0 bg-background/95 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
+            className="relative w-full max-w-2xl rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
           >
-            <div className="p-6 border-b border-white/5 bg-surface-container-highest flex items-center justify-between shrink-0">
+            <div className="p-6 border-b  premium-glass-highest flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-black italic tracking-tighter text-on-surface">{event.title}</h3>
-                <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant opacity-60">
+                <h3 className="text-xl font-black italic tracking-tighter text-[#0b2240]">{event.title}</h3>
+                <div className="flex items-center gap-2 text-xs font-bold text-[#475569] opacity-60">
                    <MapPin size={12} className="text-secondary" />
                    {event.location}
                 </div>
               </div>
-              <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+              <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border ">
                 <X size={20} />
               </button>
             </div>
 
-            <div className="flex-1 relative bg-surface-container-lowest">
+            <div className="flex-1 relative premium-glass">
               <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_PLATFORM_KEY || ''}>
                 <GoogleMap
                   defaultCenter={{ lat: event.lat || 0, lng: event.lng || 0 }}
@@ -601,11 +601,11 @@ const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: (
                     <div className="relative group">
                       <div className="absolute -inset-4 bg-secondary/20 rounded-full blur-xl group-hover:bg-secondary/40 transition-colors animate-pulse" />
                       <div className="relative flex flex-col items-center">
-                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2 border-white/20 mb-2">
+                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2  mb-2">
                            <MapIcon size={24} className="text-on-secondary" />
                         </div>
-                        <div className="bg-background/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-xl">
-                           <span className="text-[10px] font-black uppercase text-on-surface whitespace-nowrap">{event.location}</span>
+                        <div className="bg-background/80  px-3 py-1 rounded-full border  shadow-xl">
+                           <span className="text-[10px] font-black uppercase text-[#0b2240] whitespace-nowrap">{event.location}</span>
                         </div>
                       </div>
                     </div>
@@ -614,7 +614,7 @@ const EventMapModal = ({ isOpen, onClose, event }: { isOpen: boolean, onClose: (
               </APIProvider>
             </div>
 
-            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+            <div className="p-6 premium-glass shrink-0 border-t ">
               <button 
                 onClick={onClose}
                 className="w-full py-4 rounded-2xl bg-secondary text-on-secondary text-xs font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all hover:bg-secondary-container active:scale-95"
@@ -638,14 +638,14 @@ const SafetyRequirementModal = ({ isOpen, onClose, onGoToProfile }: { isOpen: bo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/90 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/90 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center gap-6"
+            className="relative w-full max-w-sm rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center gap-6"
           >
             <div className="h-20 w-20 rounded-3xl bg-secondary/20 flex items-center justify-center text-secondary mb-2 relative">
                <ShieldCheck size={40} />
@@ -653,8 +653,8 @@ const SafetyRequirementModal = ({ isOpen, onClose, onGoToProfile }: { isOpen: bo
             </div>
             
             <div>
-              <h3 className="text-2xl font-black italic tracking-tighter text-on-surface mb-2">Dive Safety Required</h3>
-              <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
+              <h3 className="text-2xl font-black italic tracking-tighter text-[#0b2240] mb-2">Dive Safety Required</h3>
+              <p className="text-sm font-medium text-[#475569] leading-relaxed">
                 To join community events, you must have your emergency contact and medical information filled out. This ensures everyone's safety during expeditions.
               </p>
             </div>
@@ -668,7 +668,7 @@ const SafetyRequirementModal = ({ isOpen, onClose, onGoToProfile }: { isOpen: bo
               </button>
               <button 
                 onClick={onClose}
-                className="w-full py-4 rounded-2xl bg-white/5 text-on-surface-variant text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                className="w-full py-4 rounded-2xl premium-glass text-[#475569] text-[11px] font-black uppercase tracking-widest hover:premium-glass transition-colors"
               >
                 Maybe Later
               </button>
@@ -786,8 +786,8 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "group flex flex-col rounded-[32px] bg-surface-container-high/20 backdrop-blur-3xl border shadow-xl transition-all hover:bg-surface-container-high/40 overflow-hidden relative",
-        event.isFeatured ? "border-secondary shadow-[0_0_20px_rgba(76,214,251,0.3)] ring-1 ring-secondary/50" : "border-white/5",
+        "group flex flex-col rounded-[32px] premium-glass  border shadow-xl transition-all hover:premium-glass overflow-hidden relative",
+        event.isFeatured ? "border-secondary shadow-[0_0_20px_rgba(76,214,251,0.3)] ring-1 ring-secondary/50" : "",
         isFull && "opacity-80"
       )}
     >
@@ -799,7 +799,7 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       )}
       <div className="absolute top-4 right-4 z-20">
         {(isHost || (!isHost && profile?.id)) && (
-          <div className="bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+          <div className="premium-glass  rounded-full border ">
             <ActionMenu 
               items={(isHost || profile?.email?.toLowerCase() === 'tobias.h.jensen@gmail.com') ? [
                 { label: "Edit Event", icon: <Edit2 size={16} />, onClick: () => onEdit && onEdit() },
@@ -834,33 +834,33 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       <div className="p-6 flex flex-col flex-1">
         <div className={cn("mb-4 flex items-start justify-between", (!event.image && isHost) && "pl-12")}>
         <div className="flex gap-2">
-          <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+          <span className="rounded-lg premium-glass border  px-3 py-1 text-[10px] font-black text-[#0055ff] uppercase tracking-widest flex items-center gap-1.5">
             <Calendar size={10} />
             {formatDate(event.date)}
           </span>
-          <span className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1.5">
+          <span className="rounded-lg premium-glass border  px-3 py-1 text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1.5">
             <Clock size={10} />
             {event.time}
           </span>
         </div>
         <button 
           onClick={onViewParticipants}
-          className="rounded-full bg-white/5 border border-white/10 p-2 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all active:scale-95 group"
+          className="rounded-full premium-glass border  p-2 text-[#475569] hover:text-[#0055ff] hover:premium-glass transition-all active:scale-95 group"
           title="View Participants"
         >
           <ArrowUpRight size={20} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
       </div>
 
-      <h4 className="mb-2 text-2xl font-black italic tracking-tighter text-on-surface">{event.title}</h4>
-      <p className="mb-4 text-sm font-medium text-on-surface-variant line-clamp-2 leading-relaxed">{event.description}</p>
+      <h4 className="mb-2 text-2xl font-black italic tracking-tighter text-[#0b2240]">{event.title}</h4>
+      <p className="mb-4 text-sm font-medium text-[#475569] line-clamp-2 leading-relaxed">{event.description}</p>
       
       <div 
         onClick={onViewMap}
-        className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors group/loc"
+        className="flex items-center gap-2 mb-2 cursor-pointer hover:text-[#0055ff] transition-colors group/loc"
       >
         <MapPin size={14} className="text-secondary group-hover/loc:scale-110 transition-transform" />
-        <span className="text-xs font-bold text-on-surface-variant group-hover/loc:text-primary">{event.location}</span>
+        <span className="text-xs font-bold text-[#475569] group-hover/loc:text-[#0055ff]">{event.location}</span>
         {distanceDisplay && (
            <span className="text-[10px] bg-secondary/10 text-secondary border border-secondary/20 px-2 py-0.5 rounded-full font-black uppercase tracking-widest ml-2">
              {distanceDisplay} away
@@ -869,24 +869,24 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       </div>
 
       <div className="flex items-center gap-1.5 mb-2 opacity-80">
-        <Users size={12} className="text-primary" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies:</span>
-        <span className="text-[11px] font-bold text-on-surface">{event.participants?.length || 0} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
+        <Users size={12} className="text-[#0055ff]" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Max Buddies:</span>
+        <span className="text-[11px] font-bold text-[#0b2240]">{event.participants?.length || 0} / {event.maxParticipants === 0 ? "∞" : event.maxParticipants}</span>
       </div>
 
       {((event.certificateRequirements?.length ?? 0) > 0 || (event.equipmentRequirements?.length ?? 0) > 0) && (
         <div className="flex flex-col gap-2 mb-4">
           {event.certificateRequirements && event.certificateRequirements.length > 0 && (
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-outline mr-1">Certs:</span>
+              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-[#083344] mr-1">Certs:</span>
               {event.certificateRequirements.map((cert, idx) => (
-                <span key={idx} className="bg-primary/10 text-primary border border-primary/20 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">{cert}</span>
+                <span key={idx} className="bg-[#0055ff]/10 text-[#0055ff] border border-[#0055ff]/20 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">{cert}</span>
               ))}
             </div>
           )}
           {event.equipmentRequirements && event.equipmentRequirements.length > 0 && (
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-outline mr-1">Gear:</span>
+              <span className="text-[10px] font-black leading-none uppercase tracking-widest text-[#083344] mr-1">Gear:</span>
               {event.equipmentRequirements.map((gear, idx) => (
                 <span key={idx} className="bg-tertiary/10 text-tertiary border border-tertiary/20 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">{gear}</span>
               ))}
@@ -898,32 +898,32 @@ const EventCard = ({ event, isJoined, isHost, userLocation, onEdit, onViewMap, o
       <div className={cn("flex items-center justify-between", !isHost ? "mb-6" : "mb-auto")}>
          <div className="flex items-center gap-3">
             {event.hostPhotoURL ? (
-              <img src={event.hostPhotoURL} className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover" />
+              <img src={event.hostPhotoURL} className="h-8 w-8 shrink-0 rounded-full border  object-cover" />
             ) : (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border  bg-surface/50 text-secondary">
                 <UserIcon size={16} />
               </div>
             )}
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-outline">Hosted By</span>
-              <span className="text-[11px] font-bold text-on-surface">{event.hostDisplayName}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Hosted By</span>
+              <span className="text-[11px] font-bold text-[#0b2240]">{event.hostDisplayName}</span>
             </div>
          </div>
          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-outline">Type</span>
-            <span className="text-[11px] font-bold text-primary">{event.type}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Type</span>
+            <span className="text-[11px] font-bold text-[#0055ff]">{event.type}</span>
          </div>
       </div>
 
       {!isHost && (
-        <div className="mt-auto flex justify-center pt-4 border-t border-white/5">
+        <div className="mt-auto flex justify-center pt-4 border-t ">
           <button 
             onClick={handleJoin}
             disabled={isJoining || (isFull && !isJoined) || isPending}
             className={cn(
               "w-full max-w-[240px] rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2",
               isJoined 
-                ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" 
+                ? "bg-[#0055ff]/10 text-[#0055ff] border border-[#0055ff]/20 hover:bg-[#0055ff]/20" 
                 : "bg-secondary text-on-secondary shadow-lg shadow-secondary/10 hover:bg-secondary-container"
             )}
           >
@@ -1196,18 +1196,18 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+              className="absolute inset-0 bg-background/95 " 
               onClick={onClose} 
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 border-b border-white/5 bg-surface-container-highest flex items-center justify-between">
+              <div className="p-8 border-b  premium-glass-highest flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="text-3xl font-black italic tracking-tighter text-on-surface">
+                  <h3 className="text-3xl font-black italic tracking-tighter text-[#0b2240]">
                     {eventToEdit ? "Edit Expedition" : "Plan Expedition"}
                   </h3>
                   <div className="flex items-center justify-between mt-1">
@@ -1223,27 +1223,26 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
-                  <button onClick={onClose} className="rounded-full bg-surface-container-high p-3 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                  <button onClick={onClose} className="rounded-full premium-glass p-3 text-[#0b2240] hover:premium-glass transition-colors border ">
                     <X size={24} />
                   </button>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 no-scrollbar bg-surface-container-highest/50">
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 no-scrollbar premium-glass-highest/50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Expedition Title</label>
-                    <input 
-                      type="text"
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Expedition Title</label>
+                    <input type="text"
                       value={formData.title}
                       onChange={e => {
                         setFormData(prev => ({ ...prev, title: e.target.value }));
                         if (errors.title) setErrors(prev => { const n = {...prev}; delete n.title; return n; });
                       }}
                       placeholder="e.g. Midnight Wreck Exploration"
-                      className={cn(
-                        "w-full rounded-2xl bg-white/5 border p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all",
-                        errors.title ? "border-error/50 bg-error/5" : "border-white/10"
+                      className={cn("premium-input", 
+                        "w-full rounded-2xl   p-4 text-[#0b2240] -secondary focus:-secondary transition-all",
+                        errors.title ? "-error/50 bg-error/5" : "-white/10"
                       )}
                     />
                     {errors.title && (
@@ -1252,18 +1251,17 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   </div>
 
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Description</label>
-                    <textarea 
-                      rows={3}
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Description</label>
+                    <textarea rows={3}
                       value={formData.description}
                       onChange={e => {
                         setFormData(prev => ({ ...prev, description: e.target.value }));
                         if (errors.description) setErrors(prev => { const n = {...prev}; delete n.description; return n; });
                       }}
                       placeholder="Share details about the dive, what to bring, and expectations..."
-                      className={cn(
-                        "w-full rounded-2xl bg-white/5 border p-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all",
-                        errors.description ? "border-error/50 bg-error/5" : "border-white/10"
+                      className={cn("premium-input", 
+                        "w-full rounded-2xl   p-4 text-[#0b2240] -secondary focus:-secondary transition-all",
+                        errors.description ? "-error/50 bg-error/5" : "-white/10"
                       )}
                     />
                     {errors.description && (
@@ -1273,7 +1271,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between ml-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-outline">Location</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Location</label>
                     </div>
                     <button 
                       type="button"
@@ -1282,15 +1280,15 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                         if (errors.location) setErrors(prev => { const n = {...prev}; delete n.location; return n; });
                       }}
                       className={cn(
-                        "w-full group flex items-center justify-between rounded-2xl bg-white/5 border p-4 text-left transition-all hover:border-secondary/50",
-                        errors.location ? "border-error/50 bg-error/5" : "border-white/10"
+                        "w-full group flex items-center justify-between rounded-2xl premium-glass border p-4 text-left transition-all hover:border-secondary/50",
+                        errors.location ? "border-error/50 bg-error/5" : ""
                       )}
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
                         <MapPin className="text-secondary shrink-0" size={18} />
                         <span className={cn(
                           "text-sm font-medium truncate",
-                          formData.location ? "text-on-surface" : "text-outline/40"
+                          formData.location ? "text-[#0b2240]" : "text-[#083344]"
                         )}>
                           {formData.location || "Select location on map"}
                         </span>
@@ -1302,32 +1300,31 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Type</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Event Type</label>
                   <select 
                     value={formData.type}
                     onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
-                    className="w-full rounded-2xl bg-white/5 border-white/10 p-4 text-on-surface focus:ring-secondary focus:border-secondary appearance-none"
+                    className="premium-input w-full rounded-2xl  -white/10 p-4 text-[#0b2240] -secondary focus:-secondary appearance-none"
                   >
                     {["Eco-Cleanup", "Photography / Macro", "Drift / Current", "Species Hunt", "Training / Skills", "Exploration", "Sunrise / Early Bird", "Shore Dive", "Liveaboard / Full Day", "After-Dive Social"].map(t => (
-                      <option key={t} value={t} className="bg-surface-container-highest">{t}</option>
+                      <option key={t} value={t} className="premium-glass-highest">{t}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Date</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Date</label>
                   <div className="relative">
-                    <input 
-                      type="date"
+                    <input type="date"
                       min={new Date().toISOString().split('T')[0]}
                       value={formData.date}
                       onChange={e => {
                         setFormData(prev => ({ ...prev, date: e.target.value }));
                         if (errors.date) setErrors(prev => { const n = {...prev}; delete n.date; return n; });
                       }}
-                      className={cn(
-                        "w-full rounded-2xl bg-white/5 border py-4 px-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none",
-                        errors.date ? "border-error/50 bg-error/5" : "border-white/10"
+                      className={cn("premium-input", 
+                        "w-full rounded-2xl   py-4 px-4 text-[#0b2240] -secondary focus:-secondary transition-all appearance-none",
+                        errors.date ? "-error/50 bg-error/5" : "-white/10"
                       )}
                     />
                   </div>
@@ -1337,18 +1334,17 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Time</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Time</label>
                   <div className="relative">
-                    <input 
-                      type="time"
+                    <input type="time"
                       value={formData.time}
                       onChange={e => {
                         setFormData(prev => ({ ...prev, time: e.target.value }));
                         if (errors.time) setErrors(prev => { const n = {...prev}; delete n.time; return n; });
                       }}
-                      className={cn(
-                        "w-full rounded-2xl bg-white/5 border py-4 px-4 text-on-surface focus:ring-secondary focus:border-secondary transition-all appearance-none",
-                        errors.time ? "border-error/50 bg-error/5" : "border-white/10"
+                      className={cn("premium-input", 
+                        "w-full rounded-2xl   py-4 px-4 text-[#0b2240] -secondary focus:-secondary transition-all appearance-none",
+                        errors.time ? "-error/50 bg-error/5" : "-white/10"
                       )}
                     />
                   </div>
@@ -1359,7 +1355,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between ml-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline">Max Buddies</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Max Buddies</label>
                     <button 
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, maxParticipants: prev.maxParticipants === 0 ? 4 : 0 }))}
@@ -1371,9 +1367,9 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                   <div className="relative">
                     <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={18} />
                     {formData.maxParticipants === 0 ? (
-                      <div className="w-full rounded-2xl bg-white/5 border-white/10 py-4 pr-4 pl-12 text-on-surface flex items-center">
+                      <div className="w-full rounded-2xl premium-glass  py-4 pr-4 pl-12 text-[#0b2240] flex items-center">
                         <span className="text-xl">∞</span>
-                        <span className="ml-2 text-xs font-bold text-outline/40">(Unlimited)</span>
+                        <span className="ml-2 text-xs font-bold text-[#083344]">(Unlimited)</span>
                       </div>
                     ) : (
                       <input 
@@ -1382,19 +1378,19 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                         max={100}
                         value={formData.maxParticipants}
                         onChange={e => setFormData(prev => ({ ...prev, maxParticipants: Math.max(2, parseInt(e.target.value) || 2) }))}
-                        className="w-full rounded-2xl bg-white/5 border-white/10 py-4 pr-4 pl-12 text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                        className="premium-input w-full rounded-2xl  -white/10 py-4 pr-4 pl-12 text-[#0b2240] -secondary focus:-secondary transition-all"
                       />
                     )}
                   </div>
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Certificate Requirements</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Certificate Requirements</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {formData.certificateRequirements.map((cert, idx) => (
-                      <div key={idx} className="flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-bold">
+                      <div key={idx} className="flex items-center gap-1 bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 rounded-lg px-3 py-1.5 text-xs font-bold">
                         <span>{cert}</span>
-                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, certificateRequirements: prev.certificateRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-white transition-colors">
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, certificateRequirements: prev.certificateRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-[#083344] transition-colors">
                           <X size={14} />
                         </button>
                       </div>
@@ -1415,7 +1411,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                         }
                       }}
                       placeholder="e.g. Open Water, Nitrox"
-                      className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                      className="premium-input flex-1 rounded-2xl   -white/10 p-4 text-sm text-[#0b2240] -secondary focus:-secondary transition-all"
                     />
                     <button 
                       type="button" 
@@ -1425,7 +1421,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                           setCertInput("");
                         }
                       }}
-                      className="rounded-2xl bg-primary px-6 font-bold text-on-primary hover:bg-primary-container transition-colors"
+                      className="rounded-2xl bg-[#0055ff] px-6 font-bold text-on-primary hover:bg-[#0055ff]-container transition-colors"
                     >
                       Add
                     </button>
@@ -1433,12 +1429,12 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Equipment Requirements</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Equipment Requirements</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {formData.equipmentRequirements.map((equip, idx) => (
                       <div key={idx} className="flex items-center gap-1 bg-tertiary/20 text-tertiary border border-tertiary/30 rounded-lg px-3 py-1.5 text-xs font-bold">
                         <span>{equip}</span>
-                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, equipmentRequirements: prev.equipmentRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-white transition-colors">
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, equipmentRequirements: prev.equipmentRequirements.filter((_, i) => i !== idx) }))} className="ml-1 hover:text-[#083344] transition-colors">
                           <X size={14} />
                         </button>
                       </div>
@@ -1459,7 +1455,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                         }
                       }}
                       placeholder="e.g. Dive Computer, Compass"
-                      className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-on-surface focus:ring-secondary focus:border-secondary transition-all"
+                      className="premium-input flex-1 rounded-2xl   -white/10 p-4 text-sm text-[#0b2240] -secondary focus:-secondary transition-all"
                     />
                     <button 
                       type="button" 
@@ -1477,17 +1473,17 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 </div>
 
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-outline ml-1">Event Image (Optional)</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#083344] ml-1">Event Image (Optional)</label>
                     <div className="relative group/img">
                       <div className={cn(
-                        "w-full h-40 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden relative bg-white/5",
-                        formData.image ? "border-secondary/50" : "border-white/10 hover:border-secondary/30"
+                        "w-full h-40 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden relative premium-glass",
+                        formData.image ? "border-secondary/50" : " hover:border-secondary/30"
                       )}>
                         {formData.image ? (
                           <>
                             <img src={formData.image} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                              <ImagePlus size={24} className="text-white" />
+                            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                              <ImagePlus size={24} className="text-[#083344]" />
                             </div>
                           </>
                         ) : (
@@ -1497,7 +1493,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                             ) : (
                               <ImagePlus size={32} className="text-secondary opacity-40" />
                             )}
-                            <span className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                            <span className="text-xs font-bold text-[#083344] uppercase tracking-widest">
                               {isModerating ? "Verifying..." : "Click to Upload (Max 2MB)"}
                             </span>
                           </>
@@ -1506,7 +1502,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                           type="file" 
                           accept="image/*"
                           onChange={handleImageUpload}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          className="premium-input absolute inset-0 opacity-0 cursor-pointer"
                         />
                       </div>
                       {formData.image && (
@@ -1529,8 +1525,8 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                       <Share2 size={20} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-on-surface">Share to Community Feed</p>
-                      <p className="text-[10px] text-on-surface-variant/60 font-black uppercase tracking-widest">Post this event to the feed automatically</p>
+                      <p className="text-sm font-bold text-[#0b2240]">Share to Community Feed</p>
+                      <p className="text-[10px] text-[#083344] font-black uppercase tracking-widest">Post this event to the feed automatically</p>
                     </div>
                   </div>
                   <button
@@ -1538,12 +1534,12 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                     onClick={() => setFormData(prev => ({ ...prev, shareToFeed: !prev.shareToFeed }))}
                     className={cn(
                       "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                      formData.shareToFeed ? "bg-secondary" : "bg-white/10"
+                      formData.shareToFeed ? "bg-secondary" : "premium-glass"
                     )}
                   >
                     <span
                       className={cn(
-                        "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200",
+                        "pointer-events-none block h-5 w-5 rounded-full premium-glass shadow-lg ring-0 transition-transform duration-200",
                         formData.shareToFeed ? "translate-x-5" : "translate-x-0"
                       )}
                     />
@@ -1555,7 +1551,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 <button 
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+                  className="flex-1 py-4 rounded-2xl premium-glass border  text-xs font-black uppercase tracking-widest text-[#0b2240] hover:premium-glass transition-colors"
                 >
                   Cancel
                 </button>
@@ -1579,14 +1575,14 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                 <div className="mt-4 pt-4 border-t border-error/10">
                   {showDeleteConfirm && (
                     <div className="rounded-2xl border border-error/20 bg-error/10 p-4">
-                      <p className="text-center text-sm font-bold text-on-surface mb-4">
+                      <p className="text-center text-sm font-bold text-[#0b2240] mb-4">
                         Are you sure you want to delete this expedition?
                       </p>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => setShowDeleteConfirm(false)}
-                          className="flex-1 py-3 rounded-xl bg-white/5 text-on-surface text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                          className="flex-1 py-3 rounded-xl premium-glass text-[#0b2240] text-xs font-black uppercase tracking-widest hover:premium-glass transition-colors"
                         >
                           Cancel
                         </button>
@@ -1610,7 +1606,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
                               console.error("Error deleting event:", err);
                             }
                           }}
-                          className="flex-1 py-3 rounded-xl bg-error text-white text-xs font-black uppercase tracking-widest hover:bg-error/80 transition-colors"
+                          className="flex-1 py-3 rounded-xl bg-error text-[#083344] text-xs font-black uppercase tracking-widest hover:bg-error/80 transition-colors"
                         >
                           Yes, Delete
                         </button>
@@ -1713,23 +1709,23 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+              className="absolute inset-0 bg-background/95 " 
               onClick={onClose} 
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+              className="relative w-full max-w-lg rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             >
-              <div className="p-6 border-b border-white/5 bg-surface-container-highest flex items-center justify-between shrink-0">
+              <div className="p-6 border-b  premium-glass-highest flex items-center justify-between shrink-0">
                 <div>
-                  <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Expedition Crew</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
+                  <h3 className="text-xl font-black italic tracking-tighter text-[#0b2240]">Expedition Crew</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#083344]">
                     {liveEvent?.participants?.length || 0} Divers Registered
                   </p>
                 </div>
-                <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border ">
                   <X size={20} />
                 </button>
               </div>
@@ -1738,7 +1734,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-4">
                     <Loader2 size={32} className="animate-spin text-secondary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-outline">Gathering profiles...</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Gathering profiles...</span>
                   </div>
                 ) : participants.length > 0 ? (
                   <div className="flex flex-col gap-3">
@@ -1748,23 +1744,23 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         onClick={() => setSelectedParticipant(member)}
-                        className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group"
+                        className="flex items-center justify-between p-3 rounded-2xl premium-glass border  hover:premium-glass transition-all cursor-pointer group"
                       >
                         <div className="flex items-center gap-4">
                           {member.photoURL ? (
                             <img 
                               src={member.photoURL} 
-                              className="h-12 w-12 shrink-0 rounded-xl object-cover border border-white/10" 
+                              className="h-12 w-12 shrink-0 rounded-xl object-cover border " 
                             />
                           ) : (
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-surface/50 text-secondary">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border  bg-surface/50 text-secondary">
                               <UserIcon size={24} />
                             </div>
                           )}
                           <div className="flex flex-col">
-                            <span className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">{member.displayName}</span>
+                            <span className="font-bold text-[#0b2240] text-sm group-hover:text-[#0055ff] transition-colors">{member.displayName}</span>
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-outline">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">
                                 {getRankInfo(calculateLevel((member.points || 0) + (member.rankingPoints || 0))).title}
                               </span>
                               <span className="text-[9px] font-bold text-secondary tracking-tight">
@@ -1788,41 +1784,41 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                                   }
                                 } catch (error) { console.error("Error updating co-host:", error); }
                               }}
-                              className={cn("px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all", liveEvent?.coHosts?.includes(member.id) ? "bg-error/10 text-error hover:bg-error/20" : "bg-white/5 text-on-surface hover:bg-white/10")}
+                              className={cn("px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all", liveEvent?.coHosts?.includes(member.id) ? "bg-error/10 text-error hover:bg-error/20" : "premium-glass text-[#0b2240] hover:premium-glass")}
                             >
                               {liveEvent?.coHosts?.includes(member.id) ? "Remove Co-Host" : "Make Co-Host"}
                             </button>
                           )}
-                          <ArrowUpRight size={16} className="text-outline/40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                          <ArrowUpRight size={16} className="text-[#083344] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                         </div>
                       </motion.div>
                     ))}
                   </div>
                 ) : (
                   <div className="py-12 text-center">
-                    <Users size={40} className="mx-auto text-outline/20 mb-3" />
-                    <p className="text-xs font-bold text-outline uppercase tracking-widest">No divers yet</p>
+                    <Users size={40} className="mx-auto text-[#083344] mb-3" />
+                    <p className="text-xs font-bold text-[#083344] uppercase tracking-widest">No divers yet</p>
                   </div>
                 )}
 
               {isHost && pendingParticipants.length > 0 && (
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">Pending Approval <span className="bg-error/20 text-error px-2 py-0.5 rounded-full text-[9px]">{pendingParticipants.length}</span></h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-[#475569] flex items-center gap-2">Pending Approval <span className="bg-error/20 text-error px-2 py-0.5 rounded-full text-[9px]">{pendingParticipants.length}</span></h3>
                   </div>
                   <div className="flex flex-col gap-2">
                     {pendingParticipants.map((user) => (
-                      <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl bg-white/5 border border-white/5 p-4">
+                      <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl premium-glass border  p-4">
                         <div className="flex items-center gap-4 min-w-0">
                           {user.photoURL ? (
-                            <img src={user.photoURL} className="h-12 w-12 rounded-full border border-white/10 object-cover" />
+                            <img src={user.photoURL} className="h-12 w-12 rounded-full border  object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-surface/50 text-secondary">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border  bg-surface/50 text-secondary">
                               <UserIcon size={20} />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="font-bold text-on-surface truncate text-sm">{user.displayName}</div>
+                            <div className="font-bold text-[#0b2240] truncate text-sm">{user.displayName}</div>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -1836,7 +1832,7 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
                                 });
                               } catch(e) {}
                             }}
-                            className="bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-primary/30 transition-all"
+                            className="bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-[#0055ff]/30 transition-all"
                           >
                             Approve
                           </button>
@@ -1861,10 +1857,10 @@ const ParticipantsModal = ({ isOpen, onClose, event, profile, onRemoveBuddy, onP
               )}
               </div>
 
-              <div className="p-6 bg-surface-container shrink-0 border-t border-white/5">
+              <div className="p-6 premium-glass shrink-0 border-t ">
                 <button 
                   onClick={onClose}
-                  className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+                  className="w-full py-4 rounded-2xl premium-glass border  text-xs font-black uppercase tracking-widest text-[#0b2240] hover:premium-glass transition-colors"
                 >
                   Close
                 </button>
@@ -1966,14 +1962,14 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/95 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/95 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            className="relative w-full max-w-sm rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
           >
             <div className="p-8 text-center flex flex-col items-center bg-gradient-to-b from-secondary/10 to-transparent shrink-0">
               <div className="relative mb-4">
@@ -1997,24 +1993,24 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   if (b && b.earned) {
                     const BIcon = b.icon;
                     return (
-                      <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-3 pl-1 py-1 rounded-full border border-white/10">
-                        <div className="bg-primary/20 text-primary p-1.5 rounded-full">
+                      <div className="flex items-center justify-center gap-2 mb-2 premium-glass pr-3 pl-1 py-1 rounded-full border ">
+                        <div className="bg-[#0055ff]/20 text-[#0055ff] p-1.5 rounded-full">
                           <BIcon size={14} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">{b.label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#0055ff]">{b.label}</span>
                       </div>
                     );
                   }
                   return null;
               })())}
               
-              <h3 className="text-2xl font-black italic tracking-tighter text-on-surface">{user.displayName}</h3>
+              <h3 className="text-2xl font-black italic tracking-tighter text-[#0b2240]">{user.displayName}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
                   {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
                 </span>
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                <span className="h-1 w-1 rounded-full premium-glass" />
+                <span className="text-[10px] font-bold text-[#083344] uppercase tracking-widest">
                   LVL {calculateLevel((user.points || 0) + (user.rankingPoints || 0))}
                 </span>
               </div>
@@ -2023,40 +2019,40 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
             <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
               <div className="space-y-4">
                 {user.bio && (
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 mb-4">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-outline">Bio</div>
-                    <div className="text-xs font-medium text-on-surface-variant leading-relaxed italic">"{user.bio}"</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 mb-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Bio</div>
+                    <div className="text-xs font-medium text-[#475569] leading-relaxed italic">"{user.bio}"</div>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2">
                   <Ship size={12} />
                   Dive Stats
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Total Dives</div>
-                     <div className="text-xl font-black text-on-surface italic">{user.divesCount || 0}</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Total Dives</div>
+                     <div className="text-xl font-black text-[#0b2240] italic">{user.divesCount || 0}</div>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Exp. Points</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Exp. Points</div>
                      <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                   <Award size={12} />
                   Diving Certifications
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(user.certificates || []).length > 0 ? (
                     user.certificates?.map((cert: string) => (
-                      <span key={cert} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
+                      <span key={cert} className="rounded-xl border border-[#0055ff]/20 bg-[#0055ff]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#0055ff] shadow-sm">
                         {cert}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
+                    <span className="text-xs italic text-[#083344]">No certifications recorded</span>
                   )}
                 </div>
 
@@ -2065,7 +2061,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                   if (earnedBadges.length > 0) {
                     return (
                       <>
-                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                           <Award size={12} />
                           Earned Badges
                         </div>
@@ -2073,9 +2069,9 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                           {earnedBadges.map((b: any) => {
                             const BIcon = b.icon;
                             return (
-                              <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-2.5 py-1.5" title={b.label}>
+                              <div key={b.id} className="flex items-center gap-2 premium-glass border  rounded-xl px-2.5 py-1.5" title={b.label}>
                                 <BIcon size={14} className="text-secondary" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#475569]">{b.label}</span>
                               </div>
                             );
                           })}
@@ -2088,7 +2084,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
 
                 {canViewPrivate && (
                   <>
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                       <Phone size={12} />
                       Contact Info
                     </div>
@@ -2102,9 +2098,9 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                           <span className="text-[10px] font-black uppercase tracking-widest">{errorMessage}</span>
                         </div>
                       ) : privateInfo?.phoneNumber && (
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                           <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone</div>
-                           <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
+                        <div className="premium-glass rounded-2xl p-4 border  space-y-1">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Phone</div>
+                           <div className="text-sm font-bold text-[#0b2240]">{privateInfo.phoneNumber}</div>
                         </div>
                       )}
                     </div>
@@ -2120,31 +2116,31 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
                           <div className="space-y-3">
                             <div className="bg-error/5 rounded-2xl p-4 border border-error/10 space-y-1">
                                <div className="text-[9px] font-black uppercase tracking-widest text-error/60">Primary Contact</div>
-                               <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName}</div>
-                               <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone}</div>
+                               <div className="text-sm font-bold text-[#0b2240]">{privateInfo.emergencyContactName}</div>
+                               <div className="text-xs font-medium text-[#475569]">{privateInfo.emergencyContactPhone}</div>
                             </div>
                             {privateInfo.emergencyContactName2 && (
-                              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                                 <div className="text-[9px] font-black uppercase tracking-widest text-outline">Secondary Contact</div>
-                                 <div className="text-sm font-bold text-on-surface">{privateInfo.emergencyContactName2}</div>
-                                 <div className="text-xs font-medium text-on-surface-variant">{privateInfo.emergencyContactPhone2}</div>
+                              <div className="premium-glass rounded-2xl p-4 border  space-y-1">
+                                 <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Secondary Contact</div>
+                                 <div className="text-sm font-bold text-[#0b2240]">{privateInfo.emergencyContactName2}</div>
+                                 <div className="text-xs font-medium text-[#475569]">{privateInfo.emergencyContactPhone2}</div>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center text-[10px] font-bold text-outline uppercase tracking-widest italic py-8">
+                          <div className="p-4 rounded-2xl premium-glass border  text-center text-[10px] font-bold text-[#083344] uppercase tracking-widest italic py-8">
                             No Emergency Contact Provided
                           </div>
                         )}
 
-                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary/60 mb-2 pt-2">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#0055ff]/60 mb-2 pt-2">
                           <Info size={12} />
                           Medical Information
                         </div>
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-h-[60px]">
+                        <div className="premium-glass rounded-2xl p-4 border  min-h-[60px]">
                            <p className={cn(
                              "text-xs font-medium leading-relaxed",
-                             privateInfo?.medicalNotes ? "text-on-surface italic" : "text-outline/40 italic"
+                             privateInfo?.medicalNotes ? "text-[#0b2240] italic" : "text-[#083344] italic"
                            )}>
                              {privateInfo?.medicalNotes || "No medical history or allergies noted."}
                            </p>
@@ -2156,7 +2152,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy, isEve
               </div>
             </div>
 
-            <div className="p-6 bg-surface-container shrink-0 border-t border-white/5 space-y-3">
+            <div className="p-6 premium-glass shrink-0 border-t  space-y-3">
               {isBuddy && onRemoveBuddy && (
                 <button 
                   onClick={() => {
@@ -2222,23 +2218,23 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/95 backdrop-blur-xl" 
+            className="absolute inset-0 bg-background/95 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
+            className="relative w-full max-w-2xl rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col aspect-square md:aspect-video"
           >
-            <div className="p-6 bg-surface-container-highest flex items-center justify-between shrink-0">
+            <div className="p-6 premium-glass-highest flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-xl font-black italic tracking-tighter text-on-surface">Search by Map</h3>
-                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">
+                <h3 className="text-xl font-black italic tracking-tighter text-[#0b2240]">Search by Map</h3>
+                <p className="text-[10px] font-bold text-[#475569] uppercase tracking-widest opacity-60">
                   Click on the map to set search center
                 </p>
               </div>
-              <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors">
+              <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -2263,7 +2259,7 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
                     <AdvancedMarker position={selectedCoords}>
                       <div className="relative">
                         <div className="absolute -inset-8 bg-secondary/10 rounded-full animate-ping" />
-                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2 border-white/20">
+                        <div className="bg-secondary p-2 rounded-xl shadow-2xl border-2 ">
                           <MapIcon size={24} className="text-on-secondary" />
                         </div>
                       </div>
@@ -2273,7 +2269,7 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
               </APIProvider>
               
               <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
-                <div className="bg-background/80 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
+                <div className="bg-background/80  p-4 rounded-2xl border  shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handleGetCurrentLocation}
@@ -2284,7 +2280,7 @@ const LocationSearchModal = ({ isOpen, onClose, onSelectLocation }: { isOpen: bo
                     </button>
                     <div>
                       <div className="text-[10px] font-black uppercase tracking-widest text-secondary">Search Center</div>
-                      <div className="text-xs font-bold text-on-surface truncate max-w-[200px]">
+                      <div className="text-xs font-bold text-[#0b2240] truncate max-w-[200px]">
                         {address || "Select a location on map..."}
                       </div>
                     </div>

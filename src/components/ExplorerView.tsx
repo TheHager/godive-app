@@ -529,27 +529,27 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
 
   if (!hasValidKey) {
     return (
-      <div className="flex flex-1 w-full items-center justify-center p-6 bg-surface-container-lowest text-on-surface">
-        <div className="max-w-md text-center rounded-3xl bg-surface-container p-8 shadow-2xl border border-white/10">
+      <div className="flex flex-1 w-full items-center justify-center p-6 premium-glass text-[#0b2240]">
+        <div className="max-w-md text-center rounded-3xl premium-glass p-8 shadow-2xl border ">
           <h2 className="mb-4 text-xl font-black uppercase text-secondary">Google Maps API Key Required</h2>
-          <p className="mb-6 text-sm text-on-surface-variant text-left">
+          <p className="mb-6 text-sm text-[#475569] text-left">
             <strong>Step 1:</strong> <a href="https://console.cloud.google.com/google/maps-apis/start" target="_blank" rel="noopener" className="text-secondary hover:underline">Get an API Key</a><br/><br/>
             <strong>Step 2:</strong> Add your key as a secret in AI Studio:
           </p>
-          <ul className="mb-6 text-sm text-left text-on-surface-variant list-disc pl-5 space-y-2">
+          <ul className="mb-6 text-sm text-left text-[#475569] list-disc pl-5 space-y-2">
             <li>Open <strong>Settings</strong> (⚙️ gear icon, <strong>top-right corner</strong>)</li>
             <li>Select <strong>Secrets</strong></li>
             <li>Type <code>GOOGLE_MAPS_PLATFORM_KEY</code> as the secret name, press <strong>Enter</strong></li>
             <li>Paste your API key as the value, press <strong>Enter</strong></li>
           </ul>
-          <p className="text-xs text-on-surface-variant/70">The app builds automatically after you add the secret.</p>
+          <p className="text-xs text-[#083344]">The app builds automatically after you add the secret.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex-1 w-full overflow-hidden bg-surface-container-lowest">
+    <div className="relative flex-1 w-full overflow-hidden premium-glass">
         <Map
           center={mapCenter}
           onCenterChanged={e => {
@@ -599,12 +599,12 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                   <div className="flex flex-col items-center group">
                     <div 
                       className={cn(
-                         "p-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 cursor-pointer backdrop-blur-md border",
-                         marker.type === 'fish' ? "bg-surface-container-high/90 border-secondary/30 text-secondary" : 
-                         marker.type === 'site' ? "bg-surface-container-high/90 border-primary/30 text-primary" : 
-                         marker.type === 'unverified' ? "bg-surface-container-high/90 border-orange-500/30 text-orange-500" :
-                         marker.type === 'event' ? "bg-surface-container-high/90 border-purple-500/30 text-purple-500" :
-                         "bg-surface-container-high/90 border-tertiary/30 text-tertiary"
+                         "p-2.5 rounded-full shadow-lg transition-transform group-hover:scale-110 cursor-pointer  border",
+                         marker.type === 'fish' ? "premium-glass border-secondary/30 text-secondary" : 
+                         marker.type === 'site' ? "premium-glass border-[#0055ff]/30 text-[#0055ff]" : 
+                         marker.type === 'unverified' ? "premium-glass border-orange-500/30 text-orange-500" :
+                         marker.type === 'event' ? "premium-glass border-purple-500/30 text-purple-500" :
+                         "premium-glass border-tertiary/30 text-tertiary"
                       )}
                     >
                       {marker.type === 'fish' ? <Fish size={20} /> : 
@@ -613,10 +613,10 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                        marker.type === 'event' ? <Calendar size={20} /> :
                        <Star size={20} />}
                     </div>
-                    <div className="mt-2 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-xl bg-surface-container-high/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-on-surface backdrop-blur-md border border-white/10 pointer-events-none">
+                    <div className="mt-2 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-xl premium-glass px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#0b2240]  border  pointer-events-none">
                       <span>{marker.label}</span>
                       {marker.createdAt && (
-                        <span className="text-[8px] text-on-surface-variant font-medium normal-case tracking-normal mt-0.5">
+                        <span className="text-[8px] text-[#475569] font-medium normal-case tracking-normal mt-0.5">
                           {formatDate(marker.createdAt)}
                         </span>
                       )}
@@ -657,28 +657,28 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         )}
         {selectedSighting && (
           <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSelectedSighting(null)} />
+            <div className="absolute inset-0 bg-background/80 " onClick={() => setSelectedSighting(null)} />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6"
+              className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] premium-glass-highest/60  shadow-2xl border  p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black uppercase text-on-surface flex items-center gap-2">
+                <h2 className="text-xl font-black uppercase text-[#0b2240] flex items-center gap-2">
                   <Fish size={24} className="text-secondary" />
                   {selectedSighting.label || selectedSighting.species}
                 </h2>
-                <button onClick={() => setSelectedSighting(null)} className="rounded-full bg-surface-container p-2 text-on-surface hover:bg-white/10 transition-colors">
+                <button onClick={() => setSelectedSighting(null)} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors">
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="bg-surface-container-high rounded-2xl p-6 flex items-center justify-center border border-white/5 mb-6 shadow-inner">
+              <div className="premium-glass rounded-2xl p-6 flex items-center justify-center border  mb-6 shadow-inner">
                 <Fish size={64} className="text-secondary opacity-50" />
               </div>
 
-              <p className="text-sm font-medium text-on-surface-variant mb-8 text-center leading-relaxed">
+              <p className="text-sm font-medium text-[#475569] mb-8 text-center leading-relaxed">
                 A recent sighting of a {selectedSighting.label || selectedSighting.species} logged by the community. Learn more about this marine species and its habitat.
               </p>
 
@@ -717,9 +717,9 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className="pointer-events-auto absolute top-6 left-1/2 -translate-x-1/2 z-[60] rounded-2xl bg-surface-container-highest px-6 py-4 shadow-2xl border border-primary/30"
+            className="pointer-events-auto absolute top-6 left-1/2 -translate-x-1/2 z-[60] rounded-2xl premium-glass-highest px-6 py-4 shadow-2xl border border-[#0055ff]/30"
           >
-            <span className="text-sm font-bold text-on-surface">{toastMessage}</span>
+            <span className="text-sm font-bold text-[#0b2240]">{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -727,9 +727,9 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col p-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6 justify-between">
         <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
           <div className="pointer-events-auto w-full max-w-md relative flex-1">
-            <div className="flex gap-2 rounded-full bg-surface-container-high/90 p-1.5 backdrop-blur-md shadow-lg border border-white/10 focus-within:border-primary/50 transition-colors">
+            <div className="flex gap-2 rounded-full premium-glass p-1.5  shadow-lg border  focus-within:border-[#0055ff]/50 transition-colors">
             <div className="flex flex-1 items-center gap-3 px-4">
-              <Search size={18} className="text-on-surface-variant" />
+              <Search size={18} className="text-[#475569]" />
               <input
                 type="text"
                 placeholder="Search marine life, sites..."
@@ -740,12 +740,12 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                 }}
                 onFocus={() => setShowSearchSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                className="w-full bg-transparent border-none p-0 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/50 focus:ring-0 outline-none"
+                className="premium-input w-full bg-transparent -none p-0 text-sm font-medium text-[#0b2240] placeholder:text-[#083344] -0 "
               />
             </div>
             <button 
               onClick={handleFindNearMe}
-              className="rounded-full p-2 text-primary hover:bg-primary/10 transition-colors"
+              className="rounded-full p-2 text-[#0055ff] hover:bg-[#0055ff]/10 transition-colors"
                title="Find near me"
              >
               <MapPin size={18} />
@@ -758,10 +758,10 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-white/10 bg-surface-container-highest shadow-2xl z-20 py-2 max-h-[60vh] overflow-y-auto no-scrollbar"
+                className="absolute top-full left-0 right-0 mt-2 rounded-2xl border  premium-glass-highest shadow-2xl z-20 py-2 max-h-[60vh] overflow-y-auto no-scrollbar"
               >
                 {searchSuggestions.length > 0 && (
-                  <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50">
+                  <div className="px-4 pb-1 pt-2 text-[10px] font-black uppercase tracking-widest text-[#083344]">
                     Dive Sites & Marine Life
                   </div>
                 )}
@@ -769,15 +769,15 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                   <div
                     key={`sug-${suggestion}-${i}`}
                     onClick={() => handleSuggestionSelect(suggestion)}
-                    className="cursor-pointer px-4 py-2.5 text-sm font-medium text-on-surface hover:bg-white/5 transition-colors flex items-center gap-2"
+                    className="cursor-pointer px-4 py-2.5 text-sm font-medium text-[#0b2240] hover:premium-glass transition-colors flex items-center gap-2"
                   >
-                    <Search size={14} className="text-on-surface-variant" />
+                    <Search size={14} className="text-[#475569]" />
                     {suggestion}
                   </div>
                 ))}
 
                 {placesSuggestions.length > 0 && (
-                  <div className="px-4 pb-1 pt-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50">
+                  <div className="px-4 pb-1 pt-3 text-[10px] font-black uppercase tracking-widest text-[#083344]">
                     Locations
                   </div>
                 )}
@@ -790,9 +790,9 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                     <div
                       key={`place-${id}`}
                       onClick={() => handlePlaceSelect(id)}
-                      className="cursor-pointer px-4 py-2.5 text-sm font-medium text-on-surface hover:bg-white/5 transition-colors flex items-center gap-2"
+                      className="cursor-pointer px-4 py-2.5 text-sm font-medium text-[#0b2240] hover:premium-glass transition-colors flex items-center gap-2"
                     >
-                      <MapPin size={14} className="text-on-surface-variant" />
+                      <MapPin size={14} className="text-[#475569]" />
                       {text}
                     </div>
                   );
@@ -802,10 +802,10 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           </AnimatePresence>
         </div>
         <div className="pointer-events-auto relative shrink-0">
-          <div className="rounded-full bg-surface-container-high/90 backdrop-blur-md shadow-lg border border-white/10 p-1.5 flex items-center justify-center">
+          <div className="rounded-full premium-glass shadow-lg border  p-1.5 flex items-center justify-center">
             <ActionMenu 
-              triggerIcon={<Settings size={20} className="text-on-surface-variant" />}
-              buttonClassName="hover:bg-white/10 rounded-full w-[34px] h-[34px] flex items-center justify-center p-0 m-0 transition-colors"
+              triggerIcon={<Settings size={20} className="text-[#475569]" />}
+              buttonClassName="hover:premium-glass rounded-full w-[34px] h-[34px] flex items-center justify-center p-0 m-0 transition-colors"
               items={[
                 { label: "View Mode", isHeader: true },
                 { label: "All", icon: <Filter size={16} />, onClick: () => setViewMode("all"), active: viewMode === "all" },
@@ -835,16 +835,16 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
                 >
                   <button 
                     onClick={() => { setSelectionMode('site'); setShowAddMenu(false); }}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-surface-container-high p-4 text-sm font-bold text-on-surface shadow-xl hover:bg-surface-container-highest transition-colors border border-white/10"
+                    className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
                   >
-                    <div className="rounded-full bg-primary/20 p-2 text-primary">
+                    <div className="rounded-full bg-[#0055ff]/20 p-2 text-[#0055ff]">
                       <MapPin size={18} />
                     </div>
                     Suggest Dive Site
                   </button>
                   <button 
                     onClick={() => { setSelectionMode('sighting'); setShowAddMenu(false); }}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-surface-container-high p-4 text-sm font-bold text-on-surface shadow-xl hover:bg-surface-container-highest transition-colors border border-white/10"
+                    className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
                   >
                     <div className="rounded-full bg-secondary/20 p-2 text-secondary">
                       <Fish size={18} />
@@ -857,8 +857,8 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             <button 
               onClick={() => setShowAddMenu(!showAddMenu)}
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-[1.25rem] transition-all active:scale-95 border border-white/20 hover:scale-110",
-                showAddMenu ? "bg-surface-container-highest text-on-surface" : "bg-secondary text-on-secondary hover:bg-secondary-container hover:-rotate-12 shadow-[0_0_40px_rgba(76,214,251,0.3)]"
+                "flex h-14 w-14 items-center justify-center rounded-[1.25rem] transition-all active:scale-95 border  hover:scale-110",
+                showAddMenu ? "premium-glass-highest text-[#0b2240]" : "bg-secondary text-on-secondary hover:bg-secondary-container hover:-rotate-12 shadow-[0_0_40px_rgba(76,214,251,0.3)]"
               )}
             >
               <Plus size={28} className={cn("transition-transform", showAddMenu && "rotate-45")} />
@@ -873,15 +873,15 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full bg-surface-container-highest p-3 pr-6 shadow-2xl border border-secondary/30"
+            className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 rounded-full premium-glass-highest p-3 pr-6 shadow-2xl border border-secondary/30"
           >
             <button 
               onClick={() => setSelectionMode('none')}
-              className="rounded-full bg-surface-container-lowest p-2 text-on-surface-variant hover:text-on-surface transition-colors"
+              className="rounded-full premium-glass p-2 text-[#475569] hover:text-[#0b2240] transition-colors"
             >
                <X size={16} />
             </button>
-            <span className="text-sm font-bold text-on-surface">Tap map to select {selectionMode === 'site' ? 'suggested dive site' : 'sighting'} location</span>
+            <span className="text-sm font-bold text-[#0b2240]">Tap map to select {selectionMode === 'site' ? 'suggested dive site' : 'sighting'} location</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -951,12 +951,12 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
-        className="relative flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5"
+        className="relative flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-[2rem] premium-glass-highest/60  shadow-2xl border "
       >
         {site.photo && (
           <div className="w-full h-48 relative shrink-0">
@@ -964,15 +964,15 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
             <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/60 to-transparent" />
           </div>
         )}
-        <div className="flex items-center justify-between border-b border-white/5 p-6 relative">
+        <div className="flex items-center justify-between border-b  p-6 relative">
           <div className="relative z-10">
-            <h2 className="text-lg font-black uppercase text-on-surface">{site.name}</h2>
+            <h2 className="text-lg font-black uppercase text-[#0b2240]">{site.name}</h2>
             <div className="flex items-center gap-2 mt-1">
               <Star size={14} className="text-secondary fill-secondary" />
-              <span className="text-xs font-bold text-on-surface-variant">{avgRating} • {totalReviews} reviews</span>
+              <span className="text-xs font-bold text-[#475569]">{avgRating} • {totalReviews} reviews</span>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors relative z-10">
+          <button onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors relative z-10">
             <X size={20} />
           </button>
         </div>
@@ -981,31 +981,31 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <div className="h-8 w-8 border-4 border-secondary/20 border-t-secondary rounded-full animate-spin" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">Fetching Reviews...</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Fetching Reviews...</span>
             </div>
           ) : siteReviews.length === 0 ? (
-            <div className="text-center text-on-surface-variant text-sm py-8">
+            <div className="text-center text-[#475569] text-sm py-8">
               No reviews yet. Be the first to review!
             </div>
           ) : (
             siteReviews.map((r: any) => (
-              <div key={r.id} className="rounded-2xl border border-white/5 bg-surface-container-high p-4">
+              <div key={r.id} className="rounded-2xl border  premium-glass p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-on-surface">{r.userDisplayName}</span>
+                  <span className="text-sm font-bold text-[#0b2240]">{r.userDisplayName}</span>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} size={12} className={star <= r.rating ? "text-secondary fill-secondary" : "text-outline"} />
+                      <Star key={star} size={12} className={star <= r.rating ? "text-secondary fill-secondary" : "text-[#083344]"} />
                     ))}
                   </div>
                 </div>
-                <p className="text-sm text-on-surface-variant leading-relaxed">{r.text}</p>
+                <p className="text-sm text-[#475569] leading-relaxed">{r.text}</p>
               </div>
             ))
           )}
         </div>
 
-        <div className="border-t border-white/5 bg-surface-container-high p-6">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+        <div className="border-t  premium-glass p-6">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-[#475569] mb-3">
             {isUpdating ? "Update Your Review" : "Add Your Review"}
           </h3>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -1017,7 +1017,7 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
                   onClick={() => setNewRating(star)}
                   className="rounded-full p-1"
                 >
-                  <Star size={24} className={star <= newRating ? "text-secondary fill-secondary" : "text-outline transition-colors hover:text-secondary"} />
+                  <Star size={24} className={star <= newRating ? "text-secondary fill-secondary" : "text-[#083344] transition-colors hover:text-secondary"} />
                 </button>
               ))}
             </div>
@@ -1026,7 +1026,7 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
                 value={newReviewText}
                 onChange={(e) => setNewReviewText(e.target.value)}
                 placeholder="What did you see? How was the visibility?"
-                className="w-full resize-none rounded-xl border border-white/10 bg-surface-container-highest p-3 pr-12 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary min-h-[80px]"
+                className="premium-input w-full resize-none rounded-xl  -white/10 -highest p-3 pr-12 text-sm text-[#0b2240] placeholder:text-[#083344] focus:-secondary focus: -1 -secondary min-h-[80px]"
               />
               <button
                 type="submit"
@@ -1109,70 +1109,70 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6 max-h-[90vh] overflow-y-auto no-scrollbar"
+        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] premium-glass-highest/60  shadow-2xl border  p-6 max-h-[90vh] overflow-y-auto no-scrollbar"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-black uppercase text-on-surface">Suggest Dive Site</h2>
-          <button type="button" onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
+          <h2 className="text-lg font-black uppercase text-[#0b2240]">Suggest Dive Site</h2>
+          <button type="button" onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors">
             <X size={20} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="group">
-            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Site Name</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Site Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Shark Point"
-              className="w-full rounded-2xl bg-black/40 p-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+              className="premium-input w-full rounded-2xl  p-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Latitude</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Latitude</label>
               <input
                 type="number"
                 step="any"
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
-                className="w-full rounded-2xl bg-black/40 p-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-white/20 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="premium-input w-full rounded-2xl  p-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
               />
             </div>
             <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Longitude</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Longitude</label>
               <input
                 type="number"
                 step="any"
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
-                className="w-full rounded-2xl bg-black/40 p-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-white/20 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="premium-input w-full rounded-2xl  p-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
               />
             </div>
           </div>
 
           <div className="group">
-            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Attach Photo</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Attach Photo</label>
             <input 
               type="file" 
               ref={fileInputRef} 
               onChange={handlePhotoUpload} 
-              className="hidden" 
+              className="premium-input hidden" 
               accept="image/*" 
             />
             {photo ? (
-              <div className="relative aspect-video rounded-2xl bg-black/40 overflow-hidden border border-white/5 group-hover:border-white/20 transition-all">
+              <div className="relative aspect-video rounded-2xl premium-glass overflow-hidden border  group-hover: transition-all">
                 <img src={photo} alt="Preview" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => setPhoto(null)}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-red-500/80 transition-colors"
+                  className="absolute top-2 right-2 p-1.5 rounded-full premium-glass text-white hover:bg-red-500/80 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -1181,7 +1181,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex w-full min-h-[100px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-black/20 hover:bg-white/5 hover:border-white/30 transition-all text-on-surface-variant/50 hover:text-white/80"
+                className="flex w-full min-h-[100px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed   hover:premium-glass hover: transition-all text-[#083344] hover:text-[#083344]"
               >
                 <Camera size={24} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Upload Image</span>
@@ -1194,7 +1194,7 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={!name.trim() || !lat || !lng}
-            className="mt-4 w-full rounded-2xl bg-primary py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-primary shadow-[0_20px_40px_-12px_rgba(76,145,251,0.3)] disabled:opacity-50 disabled:grayscale transition-all"
+            className="mt-4 w-full rounded-2xl bg-[#0055ff] py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-primary shadow-[0_20px_40px_-12px_rgba(76,145,251,0.3)] disabled:opacity-50 disabled:grayscale transition-all"
           >
             Submit Suggestion
           </motion.button>
@@ -1233,24 +1233,24 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 p-6"
+        className="relative flex w-full max-w-sm flex-col overflow-hidden rounded-[2rem] premium-glass-highest/60  shadow-2xl border  p-6"
         style={{ overflow: 'visible' }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-black uppercase text-on-surface">Log Marine Life</h2>
-          <button type="button" onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
+          <h2 className="text-lg font-black uppercase text-[#0b2240]">Log Marine Life</h2>
+          <button type="button" onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors">
             <X size={20} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="relative group">
-            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-secondary transition-colors">Species</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-secondary transition-colors">Species</label>
             <div className="relative">
               <input
                 type="text"
@@ -1262,9 +1262,9 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
                 onFocus={() => setShowSearchDropdown(true)}
                 onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
                 placeholder="Search marine life..."
-                className="w-full rounded-2xl bg-black/40 py-4 pl-12 pr-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-secondary/40 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="premium-input w-full rounded-2xl  py-4 pl-12 pr-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
               />
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/20 z-10">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#083344] z-10">
                 <Fish size={22} />
               </div>
             </div>
@@ -1274,11 +1274,11 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute left-0 right-0 top-full mt-3 max-h-56 overflow-y-auto rounded-3xl border border-white/10 bg-surface-container-highest shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)] z-[60] no-scrollbar py-3 backdrop-blur-xl"
+                  className="absolute left-0 right-0 top-full mt-3 max-h-56 overflow-y-auto rounded-3xl border  premium-glass-highest shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)] z-[60] no-scrollbar py-3 "
                 >
                   {filteredFish.length === 0 ? (
                     <div className="text-center p-6">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-4">Species Not Found</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#083344] mb-4">Species Not Found</p>
                       <motion.button 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -1296,7 +1296,7 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
                       <button
                         key={`${f}-${idx}`}
                         type="button"
-                        className="w-full text-left px-5 py-3 text-sm font-bold text-white/80 hover:text-white hover:bg-white/5 transition-all flex items-center gap-3 group/item border-b border-white/5 last:border-0"
+                        className="w-full text-left px-5 py-3 text-sm font-bold text-[#083344] hover:text-[#083344] hover:premium-glass transition-all flex items-center gap-3 group/item border-b  last:border-0"
                         onClick={() => {
                           setFishSearch(f);
                           setShowSearchDropdown(false);
@@ -1313,23 +1313,23 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Latitude</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Latitude</label>
               <input
                 type="number"
                 step="any"
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
-                className="w-full rounded-2xl bg-black/40 p-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-white/20 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="premium-input w-full rounded-2xl  p-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
               />
             </div>
             <div className="group">
-              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-3 ml-1 group-focus-within:text-white transition-colors">Longitude</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-3 ml-1 group-focus-within:text-[#083344] transition-colors">Longitude</label>
               <input
                 type="number"
                 step="any"
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
-                className="w-full rounded-2xl bg-black/40 p-4 text-sm font-bold text-white placeholder:text-on-surface-variant/20 focus:outline-none focus:ring-2 focus:ring-white/20 border border-white/5 transition-all hover:border-white/20 hover:bg-black/60"
+                className="premium-input w-full rounded-2xl  p-4 text-sm font-bold text-[#083344] placeholder:text-[#083344] focus: -2   -white/5 transition-all hover:-white/20 hover:"
               />
             </div>
           </div>
@@ -1382,12 +1382,12 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 " onClick={onClose} />
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-sm rounded-[2rem] bg-surface-container-highest/60 backdrop-blur-3xl shadow-2xl border border-white/5 overflow-hidden"
+        className="relative w-full max-w-sm rounded-[2rem] premium-glass-highest/60  shadow-2xl border  overflow-hidden"
       >
         {site.photo && !isEditing && (
           <div className="w-full h-40 relative">
@@ -1403,7 +1403,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                   Unverified
                 </span>
               </div>
-              <h2 className="text-xl font-black text-on-surface">{site.name}</h2>
+              <h2 className="text-xl font-black text-[#0b2240]">{site.name}</h2>
             </div>
             <div className="flex items-center gap-1">
               {profile?.id === site.userId && !isEditing && (
@@ -1413,7 +1413,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                   ]}
                 />
               )}
-              <button onClick={onClose} className="rounded-full p-2 text-on-surface-variant hover:bg-white/5 transition-colors">
+              <button onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors">
                  <X size={20} />
               </button>
             </div>
@@ -1429,35 +1429,35 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
           }}>
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-2 ml-1">Site Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Site Name</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-2xl bg-black/40 p-3 text-sm font-bold text-white border border-white/5 focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                  className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
                   required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-2 ml-1">Lat</label>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lat</label>
                   <input
                     type="number"
                     step="any"
                     value={editLat}
                     onChange={(e) => setEditLat(e.target.value)}
-                    className="w-full rounded-2xl bg-black/40 p-3 text-sm font-bold text-white border border-white/5 focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                    className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 mb-2 ml-1">Lng</label>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lng</label>
                   <input
                     type="number"
                     step="any"
                     value={editLng}
                     onChange={(e) => setEditLng(e.target.value)}
-                    className="w-full rounded-2xl bg-black/40 p-3 text-sm font-bold text-white border border-white/5 focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                    className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
                     required
                   />
                 </div>
@@ -1467,19 +1467,19 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
               <button 
                 type="button" 
                 onClick={() => setIsEditing(false)}
-                className="flex-1 py-3 rounded-2xl border border-white/10 text-[11px] font-black uppercase tracking-widest text-on-surface-variant/80 hover:bg-white/5"
+                className="flex-1 py-3 rounded-2xl border  text-[11px] font-black uppercase tracking-widest text-[#083344] hover:premium-glass"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="flex-1 py-3 rounded-2xl bg-primary text-[11px] font-black uppercase tracking-widest text-black shadow-[0_0_15px_rgba(76,145,251,0.3)]"
+                className="flex-1 py-3 rounded-2xl bg-[#0055ff] text-[11px] font-black uppercase tracking-widest text-black shadow-[0_0_15px_rgba(76,145,251,0.3)]"
               >
                 Save
               </button>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-white/5">
+            <div className="mt-4 pt-4 border-t ">
               {!isDeleting ? (
                 <button 
                   type="button"
@@ -1490,12 +1490,12 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                 </button>
               ) : (
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">Are you sure?</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Are you sure?</span>
                   <div className="flex gap-2">
                     <button 
                       type="button"
                       onClick={() => setIsDeleting(false)}
-                      className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface"
+                      className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#475569] hover:text-[#0b2240]"
                     >
                       No
                     </button>
@@ -1513,7 +1513,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
           </form>
         ) : (
           <>
-            <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+            <p className="text-sm text-[#475569] leading-relaxed mb-6">
               {hasVoted 
                 ? "You have already submitted your verification for this dive site. Thank you for contributing to the community!"
                 : isCreator
@@ -1528,8 +1528,8 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                 className={cn(
                   "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
                   hasVoted || checkingVote || isCreator
-                    ? "bg-white/5 border-white/10 text-on-surface-variant/40 opacity-50 cursor-not-allowed"
-                    : "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 cursor-pointer"
+                    ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
+                    : "bg-[#0055ff]/10 border-[#0055ff]/30 text-[#0055ff] hover:bg-[#0055ff]/20 cursor-pointer"
                 )}
               >
                 <span className="text-lg font-black">{site.upvotes || 0} / 10</span>
@@ -1542,7 +1542,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                  className={cn(
                    "flex flex-1 flex-col items-center gap-1 rounded-2xl border p-4 transition-all",
                    hasVoted || checkingVote || isCreator
-                     ? "bg-white/5 border-white/10 text-on-surface-variant/40 opacity-50 cursor-not-allowed"
+                     ? "premium-glass  text-[#083344] opacity-50 cursor-not-allowed"
                      : "bg-error/10 border-error/30 text-error hover:bg-error/20 cursor-pointer"
                  )}
               >

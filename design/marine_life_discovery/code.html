@@ -1,0 +1,278 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GoDive - Marine Life Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e5eeff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-primary-fixed": "#001e2c",
+                        "surface-bright": "#f8f9ff",
+                        "primary": "#006386",
+                        "on-tertiary-fixed": "#191c1e",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#78d1ff",
+                        "secondary": "#5d5e61",
+                        "on-surface": "#0b1c30",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "on-surface-variant": "#3e484f",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary-fixed-dim": "#78d1ff",
+                        "outline": "#6e7880",
+                        "surface-dim": "#cbdbf5",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-container": "#e2e2e5",
+                        "surface": "#f8f9ff",
+                        "on-primary-container": "#fbfcff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "surface-tint": "#006689",
+                        "secondary-fixed": "#e2e2e5",
+                        "primary-fixed": "#c3e8ff",
+                        "inverse-surface": "#213145",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#727577",
+                        "tertiary": "#595c5e",
+                        "on-tertiary-container": "#fbfdff",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#454749",
+                        "primary-container": "#007da8",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#636467",
+                        "outline-variant": "#bdc8d0",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-high": "#dce9ff",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#004c68",
+                        "on-background": "#0b1c30"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "display": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 12px 40px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 border-secondary-fixed/50 flex justify-between items-center px-margin-mobile h-16 bg-transparent"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary" data-icon="waves">waves</span><h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1></div><div class="flex items-center gap-4"><button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95"><span class="material-symbols-outlined" data-icon="search">search</span></button><button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button></div></header>
+<main class="pt-20 px-margin-mobile max-w-container-max mx-auto">
+<!-- Search & Discovery Header -->
+<section class="mt-8 mb-6">
+<div class="relative w-full max-w-2xl mx-auto">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body-md text-body-md" placeholder="Search marine species..." type="text">
+</div>
+</section>
+<!-- Filter Chips -->
+<section class="flex gap-2 overflow-x-auto pb-4 no-scrollbar max-w-2xl mx-auto mb-8">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap shadow-md">All</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/30 font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">Spotted</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/30 font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">Not Seen</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/30 font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">Endangered</button>
+</section>
+<!-- Species Bento Grid -->
+<section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-gutter">
+<!-- Whale Shark (Large Card) -->
+<div class="col-span-2 glass-card rounded-xl overflow-hidden relative aspect-[16/9] md:aspect-auto">
+<img class="w-full h-full object-cover" data-alt="A majestic whale shark swimming gracefully in deep blue oceanic water, filtered sunlight creating ethereal rays from the surface. The scene is shot in a high-contrast cinematic style with deep navy and vibrant aquatic blues, maintaining a clean and professional marine photography aesthetic. Soft particulate matter in the water adds a sense of immense scale and depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9UXrkrKzxPf5dlISm8_fWwx_wS2yIiVhi26tR1dg6mWenORQ7meHUqLEJKKtfaRcMVoCPJ-nn-vG9bDnfEZs15ENbXo66E3GQfDNrnwOJ0spA26oAz9IQi0pVtpNSYoRuPgce2tetpI5kmG9fIvLOtdIx-ZoBA6GUDztMtPhh51u0Ahl65zD9nkT43oRcTy6w6U9PI-xjKcVDpkrqfCDa34EsxtqtR-sj2KpygWrsxDCG1o5suvNfzOUqOj2p7nxwydIfdQYL_XAc">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+<div>
+<h3 class="font-headline-md text-headline-md text-white">Whale Shark</h3>
+<p class="font-label-sm text-label-sm text-white/80">Rhincodon typus</p>
+</div>
+<div class="bg-primary/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-white" data-icon="verified" data-weight="fill" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-sm text-label-sm text-white uppercase">Spotted</span>
+</div>
+</div>
+</div>
+<!-- Clownfish -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A vibrant orange and white clownfish nestled within the flowing tentacles of a pale sea anemone. The lighting is bright and clear, emphasizing the high-contrast patterns of the fish against the soft, minimalist background of the reef. The overall mood is serene and technically precise, characteristic of professional naturalist documentation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTneP-sKAmUBZG5JMbjw5ZTR_wWfxEB0yRt7Gh55vErBAuHXkATtM918CDWq4jX2w9BWJIB-5cl2kJ8WltbYQiaFkQUosdlhjh3I2dvjcFkA1RiQ66VjHBAsqePFCzmcZBx2NShTc8zJ1ce_uQPLtdOy4xSM-u7zpFiv-2aAG7prpfSQNehf197_LL0nJch1Aj7LrC2rJ-UnPaqhVs5KlkAX0YJtcVvshL9nI_KnDzddXC41knIYeoRH6qu07AO6DveA7tqNq2FbiI">
+<div class="absolute top-3 right-3 bg-white/20 backdrop-blur-md p-1.5 rounded-full border border-white/30">
+<span class="material-symbols-outlined text-white text-[20px]" data-icon="favorite">favorite</span>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface">Clownfish</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 mb-3">Amphiprioninae</p>
+<div class="flex items-center gap-2">
+<span class="flex-1 h-[2px] bg-outline-variant/30 rounded-full overflow-hidden">
+<span class="block h-full w-full bg-primary/20"></span>
+</span>
+<span class="font-label-sm text-label-sm text-outline">Not Seen</span>
+</div>
+</div>
+</div>
+<!-- Green Sea Turtle -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A detailed close-up of a Green Sea Turtle swimming in crystal clear, turquoise tropical water over a white sandy seabed. High-key lighting creates a bright, airy environment with surgical focus on the intricate patterns of the turtle's shell. The aesthetic is clean, athletic, and minimalist, emphasizing the natural beauty and reliability of the species." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd-e9yx6G9Pa9Q1TX-SnswOx9cnHsZQTiTJy0zvtonxT8kMcX8neA48Pnsvfch4gpvMq6cTAxW9sdn0GvVnC9rnBtj7QJBDh9YG2VPlQwVNd7B77Fx-rkYZpoauYXOEb-dq8Hkw6SmFws3_mB-qPTSbDY0aO5In3RBu0_n8FhW_JUon4sEvM28WpVwuj42-A5oYf050VYMuHVjKiXmuWW0pkLk23kGSe41K_qPvFmZsMIdaht_289bHlmwRwOsAiteh77YNw-VBpa-">
+</div>
+<div class="p-4 bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface">Green Sea Turtle</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 mb-3">Chelonia mydas</p>
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified" data-weight="fill" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-sm text-label-sm uppercase">Spotted 3x</span>
+</div>
+</div>
+</div>
+<!-- Manta Ray -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="An elegant Manta Ray gliding through deep indigo water, its underside bright white against the dark ocean depth. The lighting is sophisticated and atmospheric, highlighting the technical grace of the creature's silhouette. The composition uses expansive negative space to create a feeling of premium focus and calm, consistent with a high-end maritime UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7anLp3nAXzzFOymRL606bosx9wat9QUz2478my0R6cIZhs88w-tt_UUHu7pCQUWLdv2P9wZbuetP9RGmun4DGqNZ8h54jfRVx6L30fMuyCbRc87aFw8NUB1lGweEUv8JcnlyjGO_F0KFoTeYLTsSRUqB4OPugh3l3hA4kzIiAl2CGE09NNz7w57lmaHCt3LfbSQF1BuXgotv3QbbGInXghpB-SnSryKynSBnxKi_S-gNzOnWqp0biNZfrehauX4whGAZS_Y8QIywT">
+</div>
+<div class="p-4 bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface">Manta Ray</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 mb-3">Mobula alfredi</p>
+<div class="flex items-center gap-2">
+<span class="flex-1 h-[2px] bg-outline-variant/30 rounded-full overflow-hidden">
+<span class="block h-full w-full bg-primary/20"></span>
+</span>
+<span class="font-label-sm text-label-sm text-outline">Not Seen</span>
+</div>
+</div>
+</div>
+<!-- Blue Ringed Octopus -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A macro shot of a Blue-ringed Octopus on a dark volcanic sand seafloor, its glowing blue rings pulsing with vibrant electricity. The lighting is focused and dramatic, capturing the precise details of the octopus's skin texture and warning colors. The style is athletic and high-contrast, portraying the dangerous beauty of the rare marine life species." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZRiOiVb5k44qRDWukpI42YrGEJgbXriMApAAaGQOf5xwIB2JxMXfpste62fvR5suElJP3XO2hp2hsIHCHDkl1LfaPUNJykGo6JmmNw5Rt7USzrXY-tuhFnaTl1_-J8lz_hJR-7brMKT-ONaKpk10L_MYfBMxat2tI7_NCsTrTlIRIQ05RRiyDUBwi8T6yI9dRTzAj5TWrhj_hIFsXbvi1KBB_akNDMfTpoo2Fj4KMNiikPYWdN2qMpy-RWt_rgK4KbBp03uxrX5MU">
+</div>
+<div class="p-4 bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface">Blue Ringed Octopus</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 mb-3">Hapalochlaena</p>
+<div class="flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-[16px]" data-icon="report_problem">report_problem</span>
+<span class="font-label-sm text-label-sm uppercase">Rare Species</span>
+</div>
+</div>
+</div>
+<!-- Lionfish -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A Lionfish fanning its ornate, venomous spines in a high-clarity coral reef environment. The lighting is bright white and balanced, highlighting the complex red and white patterns of the fish's body. The visual style feels like a high-end dive watch face, precise and detailed, emphasizing the biological complexity of the specimen." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5vgC_mpyQfpVoOPS4NCOOjFX-S573nJtUpEBGdOPDaHEXB9qmbM0Xb28eFmD_i7G4djaHsKbZNOzM-TLe8oSy5vKL4dnbPz-0W8WZy4jqm0SA65fXU1gqVhUTjDpaOPS416sHg7H0nrS3yYG1MdRTkuEJzxWsCPRGJZfHdDE45wU-DmIFSaTnoZm_UmeZRXhmuly1lrIkmnMKrcr7OQC6sGejGi9Eca868p6g_NDEHdM00yPlYoa4GKlAD1Tp4JtSt1xU8D8SLvz-">
+</div>
+<div class="p-4 bg-surface-container-lowest">
+<h3 class="font-label-md text-label-md text-on-surface">Lionfish</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 mb-3">Pterois</p>
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified" data-weight="fill" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-sm text-label-sm uppercase">Spotted 1x</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-surface-container-lowest/30 backdrop-blur-3xl border-t border-white/5 rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-sm text-label-sm mt-1">Log</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl p-2 shadow-[0_0_20px_rgba(76,214,251,0.15)] active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-sm text-label-sm mt-1">Sites</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-sm text-label-sm mt-1">Gear</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for filter chips
+        const filterChips = document.querySelectorAll('section.flex button');
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                filterChips.forEach(c => {
+                    c.classList.remove('bg-primary', 'text-on-primary', 'shadow-md');
+                    c.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+                });
+                chip.classList.add('bg-primary', 'text-on-primary', 'shadow-md');
+                chip.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchIcon = document.querySelector('.relative.w-full .material-symbols-outlined');
+        
+        searchInput.addEventListener('focus', () => {
+            searchIcon.classList.add('text-primary');
+        });
+        
+        searchInput.addEventListener('blur', () => {
+            searchIcon.classList.remove('text-primary');
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GoDive - Friends &amp; Rankings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f8f9ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "inverse-primary": "#78d1ff",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "outline-variant": "#bdc8d0",
+                        "on-primary-fixed": "#001e2c",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container": "#e5eeff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#c3e8ff",
+                        "on-secondary-container": "#636467",
+                        "primary": "#006386",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-background": "#0b1c30",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "inverse-surface": "#213145",
+                        "surface-container-high": "#dce9ff",
+                        "secondary": "#5d5e61",
+                        "secondary-fixed": "#e2e2e5",
+                        "surface-tint": "#006689",
+                        "secondary-container": "#e2e2e5",
+                        "primary-fixed-dim": "#78d1ff",
+                        "on-error": "#ffffff",
+                        "on-surface": "#0b1c30",
+                        "tertiary": "#595c5e",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-tertiary-container": "#fbfdff",
+                        "error-container": "#ffdad6",
+                        "outline": "#6e7880",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary-container": "#007da8",
+                        "surface-container-low": "#eff4ff",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#fbfcff",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed-variant": "#004c68",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#3e484f",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#727577"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-desktop": "48px",
+                        "base": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "display": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+            -webkit-font-smoothing: antialiased;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: theme('colors.surface-container-lowest');
+            border: 1px solid theme('colors.outline-variant');
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen relative pb-24 md:pb-0 bg-surface">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 bg-surface/20 backdrop-blur-2xl flex justify-between items-center w-full px-margin-mobile h-16 md:hidden"><div class="flex items-center gap-2">
+
+<span class="font-headline-md text-headline-md font-extrabold text-primary tracking-tighter">GoDive</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:text-primary-container transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBzi7ULYR3RukMICueHelm4Q6Pt-wDgMTPTQckQbgrl4gqOpjx2-kvDWixijKKQEmrGzK3k5TIVgW67cDI3AsGBE9XMiTE4D-_iJk63aXYjpsz6LW04j_BQXx77y3B5uin7zcjCDvloVEKBg7IZC-KwN9-QgShz1qVwPVoQaJaPm3tuUbpm3IKkIlJ_CR60qjSr3hES4gVJoUBPzSAx2awEIR_YAGgOuwtl3QumPyJFfIDqfa86yn4-X5AMnbQO9dFGGnreP47eitt">
+</div>
+</div></header>
+<!-- Main Content Canvas -->
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop pt-6">
+<!-- Header (Desktop) -->
+<div class="hidden md:flex justify-between items-center mb-10 pb-4 border-b border-outline-variant/30 sticky top-0 z-40 bg-surface/20 backdrop-blur-2xl pt-4 -mt-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[36px]">waves</span>
+<h1 class="font-headline-md text-headline-md font-extrabold text-primary tracking-tighter">GoDive</h1>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined text-[28px]">search</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary/20 cursor-pointer">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZfaY4Uy3FGLRV2M7gTqO-XOMM1U5BCaB8w9pMKhFGxb_U4cr0okE0S4cBdMw32NZPT5nGR7w-1QOXJd4Axuw15II4XeweathrxwOVNku8fcbWOm3XrTm1yJ1eOMsGjdONMMjvIKJ28n65QxScxppmv8CBzEaVjKHzamFE9HrhxemtbUa54tRQYdC6Tb8SGUUScz7wPd2NvmdiGAw52ic4si7cQt46yMYJlKwLOpIjEO3unfsTZ01YhOK4OxdiPvDIKM67HEiRrfvg">
+</div>
+</div>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg mb-6 text-on-surface">Community</h2>
+<!-- Navigation Toggle -->
+<div class="flex bg-surface-container p-1.5 rounded-xl mb-10 w-full max-w-md mx-auto md:mx-0">
+<button class="flex-1 py-2.5 px-4 rounded-lg bg-surface-container-lowest shadow-sm text-primary font-label-md text-label-md transition-all">Friends</button>
+<button class="flex-1 py-2.5 px-4 rounded-lg text-on-surface-variant hover:text-primary font-label-md text-label-md transition-all">Rankings</button>
+</div>
+<!-- Friends Tab Content -->
+<div class="space-y-8" id="friends-tab">
+<!-- Search -->
+<div class="relative max-w-2xl">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3.5 bg-surface-container-lowest border border-outline-variant/30 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant transition-all shadow-sm" placeholder="Find friends..." type="text">
+</div>
+<!-- Friends List -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Friend Card 1 -->
+<div class="glass-card rounded-2xl p-5 flex items-center justify-between transition-transform hover:-translate-y-0.5">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="Friend" class="w-full h-full object-cover" data-alt="Portrait of a young woman smiling outdoors. High-key lighting, bright atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0HyMTj4ryxi2jTruOrNi-2JD-LWtpDRyYkGP8VoCHgDQGUVHHvPsep3Y_kYE8V9yfRErIYUfSoE5EN9kRvzRQ3udfcjwXHVGiJ8TzdFGX1ap7sekQg4GKFU2myGBbWQXmkwveJHBKIMpQOv8Xpw3HTHd-ZhdVNsgmFGqRWgwZfzypIrU-QHKaTUdGe6mfkqwtsRblAVKWIvPPMKtzNW84pIgrw1soHXqdfIm9x2tuVBQ1pLlAMoEsEsoSM-JuDcQrnE8UfZY8mG8r">
+</div>
+<div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#10B981] border-2 border-surface-container-lowest rounded-full"></div>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface text-[16px]">Sarah Jenkins</h3>
+<p class="font-body-sm text-[13px] text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="scuba_diving">scuba_diving</span>
+                                Currently Diving
+                            </p>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all bg-surface">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Friend Card 2 -->
+<div class="glass-card rounded-2xl p-5 flex items-center justify-between transition-transform hover:-translate-y-0.5">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="Friend" class="w-full h-full object-cover" data-alt="Portrait of a young man with a neutral expression. Clean, minimalist studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVkw7rDTc5NS_x6xOOrZS6YwZGWnlgV13lqy95QMLDGLma2w6xWKb4DZTI_YaeJ0ZeuLcCaQfMMXK01ALGabwIbuBvOMA3tHTiXZKMnc2ACBNsg8ohZou-4zl0NGw8FDcN7MBGG87fUABr1BJr2XIJSNJTiocW4gUOVtMA2UDyCX_klJJZgBZFONt0NAYtc0xyuTIlt4of-9wlh1PZC_-Y2XkAoYx0TCxCJbDDB6MxC4zTokR7S-w8IRPkfWBOSxlg0YlFEr5V6tvU">
+</div>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface text-[16px]">Marcus Chen</h3>
+<p class="font-body-sm text-[13px] text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="history">history</span>
+                                Last dive: 2 days ago
+                            </p>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all bg-surface">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Add Friend Card -->
+<div class="glass-card border-dashed border-2 border-outline-variant/50 bg-surface/50 rounded-2xl p-5 flex items-center justify-center cursor-pointer hover:bg-surface-container transition-colors min-h-[96px]">
+<div class="flex flex-col items-center gap-2 text-primary">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<span class="font-label-md text-label-md">Add New Friend</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Rankings Tab Content (Hidden by default for this static implementation, shown here for structure) -->
+<div class="hidden space-y-6" id="rankings-tab">
+<!-- Rankings Content would go here -->
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-surface/80 border-t border-outline-variant/20 backdrop-blur-2xl docked full-width md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px] uppercase tracking-wider font-bold">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px] uppercase tracking-wider font-bold">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px] uppercase tracking-wider font-bold">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl p-2 shadow-[0_0_20px_rgba(76,214,251,0.15)] hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle" style="font-variation-settings: &quot;FILL&quot; 1;">account_circle</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px] uppercase tracking-wider font-bold">Profile</span>
+</a>
+</nav>
+
+
+
+
+</body></html>

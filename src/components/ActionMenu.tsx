@@ -47,24 +47,24 @@ export const ActionMenu = ({ items, triggerIcon, buttonClassName }: ActionMenuPr
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={cn("p-2 rounded-full text-on-surface hover:text-secondary hover:bg-white/5 transition-colors", buttonClassName)}
+        className={cn("p-2 rounded-full text-[#0b2240] hover:text-secondary hover:premium-glass transition-colors", buttonClassName)}
       >
         {triggerIcon || <MoreVertical size={16} />}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl bg-surface-container-high border border-white/10 shadow-2xl overflow-hidden z-50">
+        <div className="absolute right-0 mt-2 w-56 rounded-xl premium-glass border  shadow-2xl overflow-hidden z-50">
           <div className="py-1 flex flex-col">
             {items.map((item, index) => {
               if (item.customComponent) {
                 return <div key={index}>{item.customComponent}</div>;
               }
               if (item.isDivider) {
-                return <div key={index} className="h-px bg-white/10 my-1 mx-2" />;
+                return <div key={index} className="h-px premium-glass my-1 mx-2" />;
               }
               if (item.isHeader) {
                 return (
-                  <div key={index} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                  <div key={index} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#083344]">
                     {item.label}
                   </div>
                 );
@@ -83,7 +83,7 @@ export const ActionMenu = ({ items, triggerIcon, buttonClassName }: ActionMenuPr
                       ? "text-error hover:bg-error/10" 
                       : item.active 
                         ? "text-secondary bg-secondary/10" 
-                        : "text-on-surface hover:bg-white/5 hover:text-on-background"
+                        : "text-[#0b2240] hover:premium-glass hover:text-on-background"
                   )}
                 >
                   {item.icon}

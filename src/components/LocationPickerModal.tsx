@@ -167,7 +167,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm "
         onClick={onClose}
       />
       
@@ -175,20 +175,20 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
         initial={{ y: "100%", opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: "100%", opacity: 0 }}
-        className="relative w-full max-w-4xl h-full sm:h-[80vh] bg-surface-container-highest sm:rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl border border-white/10"
+        className="relative w-full max-w-4xl h-full sm:h-[80vh] premium-glass-highest sm:rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl border "
       >
         {/* Header */}
-        <div className="p-6 bg-surface-container-highest border-b border-white/5 flex items-center justify-between z-10 shrink-0">
+        <div className="p-6 premium-glass-highest border-b  flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-2xl bg-secondary/20 flex items-center justify-center text-secondary">
               <MapPin size={20} />
             </div>
             <div>
-              <h3 className="text-xl font-bold tracking-tight text-on-surface">Select Dive Site</h3>
-              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">Tap map or search for a location</p>
+              <h3 className="text-xl font-bold tracking-tight text-[#0b2240]">Select Dive Site</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Tap map or search for a location</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+          <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border ">
             <X size={20} />
           </button>
         </div>
@@ -196,7 +196,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
         {/* Search Bar - Floating */}
         <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
           <div className="relative group">
-            <div className="flex items-center gap-3 rounded-2xl bg-surface-container-highest/90 p-1.5 pl-4 backdrop-blur-md border border-white/10 shadow-2xl transition-all focus-within:border-secondary/50">
+            <div className="flex items-center gap-3 rounded-2xl premium-glass-highest/90 p-1.5 pl-4  border  shadow-2xl transition-all focus-within:border-secondary/50">
               <Search size={18} className="text-secondary shrink-0" />
               <input 
                 type="text"
@@ -204,7 +204,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
                 onChange={(e) => {setSearch(e.target.value); setShowSuggestions(true);}}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="Search dive sites or places..."
-                className="flex-1 bg-transparent border-none py-2 text-sm text-on-surface placeholder:text-outline/30 focus:ring-0"
+                className="premium-input flex-1 bg-transparent -none py-2 text-sm text-[#0b2240] placeholder:text-[#083344] -0"
               />
               <button 
                 onClick={handleCurrentLocation}
@@ -221,24 +221,24 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-2 rounded-[2rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden py-2"
+                  className="absolute top-full left-0 right-0 mt-2 rounded-[2rem] premium-glass-highest border  shadow-2xl overflow-hidden py-2"
                 >
                   {filteredSites.length > 0 && (
-                     <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-outline">Dive Sites</div>
+                     <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#083344]">Dive Sites</div>
                   )}
                   {filteredSites.map(site => (
                     <button 
                       key={site.id}
                       onClick={() => handleSiteSelect(site)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:premium-glass transition-colors text-left"
                     >
-                      <MapPin size={14} className="text-primary" />
-                      <span className="text-sm font-medium text-on-surface">{site.name}</span>
+                      <MapPin size={14} className="text-[#0055ff]" />
+                      <span className="text-sm font-medium text-[#0b2240]">{site.name}</span>
                     </button>
                   ))}
 
                   {placesSuggestions.length > 0 && (
-                     <div className="px-4 py-2 mt-2 text-[10px] font-black uppercase tracking-widest text-outline border-t border-white/5 pt-4">Global Locations</div>
+                     <div className="px-4 py-2 mt-2 text-[10px] font-black uppercase tracking-widest text-[#083344] border-t  pt-4">Global Locations</div>
                   )}
                   {placesSuggestions.map((suggestion, idx) => {
                     const isPrediction = 'place_id' in suggestion;
@@ -249,10 +249,10 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
                       <button 
                         key={id ? `${id}-${idx}` : `place-${idx}`}
                         onClick={() => handlePlaceSelect(id, text)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:premium-glass transition-colors text-left"
                       >
-                        <Search size={14} className="text-on-surface-variant" />
-                        <span className="text-sm font-medium text-on-surface truncate">{text}</span>
+                        <Search size={14} className="text-[#475569]" />
+                        <span className="text-sm font-medium text-[#0b2240] truncate">{text}</span>
                       </button>
                     );
                   })}
@@ -263,7 +263,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
         </div>
 
         {/* Map Area */}
-        <div className="flex-1 relative bg-surface-container">
+        <div className="flex-1 relative premium-glass">
             <Map
               center={mapCenter}
               onCenterChanged={e => {
@@ -289,7 +289,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
                     position={{lat: site.lat, lng: site.lng}}
                     onClick={() => handleSiteSelect(site)}
                   >
-                    <div className="p-2 rounded-full bg-primary/80 text-on-primary shadow-lg border border-white/20 backdrop-blur-sm transform transition-transform hover:scale-110">
+                    <div className="p-2 rounded-full bg-[#0055ff]/80 text-on-primary shadow-lg border   transform transition-transform hover:scale-110">
                       <MapPin size={18} />
                     </div>
                   </AdvancedMarker>
@@ -313,22 +313,22 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
           {/* Map Controls */}
           <div className="absolute right-6 bottom-32 flex flex-col gap-2">
              {/* Map hint */}
-             <div className="bg-surface-container-highest/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-on-surface pointer-events-none shadow-xl">
+             <div className="premium-glass-highest/80  px-4 py-2 rounded-2xl border  text-[10px] font-black uppercase tracking-widest text-[#0b2240] pointer-events-none shadow-xl">
                Tap map to select location
              </div>
           </div>
         </div>
 
         {/* Footer Info & Confirm */}
-        <div className="p-6 bg-surface-container-highest border-t border-white/5 shrink-0">
+        <div className="p-6 premium-glass-highest border-t  shrink-0">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-on-surface-variant flex-shrink-0 border border-white/10">
+              <div className="h-12 w-12 rounded-2xl premium-glass flex items-center justify-center text-[#475569] flex-shrink-0 border ">
                 <Info size={24} />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-outline">Selected Location</span>
-                <p className="text-lg font-bold text-on-surface truncate pr-4 italic tracking-tight underline decoration-secondary/30 decoration-2 underline-offset-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Selected Location</span>
+                <p className="text-lg font-bold text-[#0b2240] truncate pr-4 italic tracking-tight underline decoration-secondary/30 decoration-2 underline-offset-4">
                   {selectedPoint ? selectedPoint.name : "Tap on map..."}
                 </p>
               </div>
@@ -337,7 +337,7 @@ export const LocationPickerModal = ({ isOpen, onClose, onSelect, initialLocation
             <div className="flex gap-4 w-full sm:w-auto">
               <button 
                 onClick={onClose}
-                className="flex-1 sm:px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 transition-colors"
+                className="flex-1 sm:px-8 py-4 rounded-2xl premium-glass border  text-xs font-black uppercase tracking-widest text-[#0b2240] hover:premium-glass transition-colors"
               >
                 Cancel
               </button>

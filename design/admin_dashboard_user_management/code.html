@@ -1,0 +1,363 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GoDive - Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary": "#006386",
+                        "on-primary-fixed": "#001e2c",
+                        "error": "#ba1a1a",
+                        "background": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bdc8d0",
+                        "inverse-primary": "#78d1ff",
+                        "on-surface-variant": "#3e484f",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#727577",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "secondary": "#5d5e61",
+                        "on-secondary-container": "#636467",
+                        "surface-container-high": "#dce9ff",
+                        "on-tertiary-container": "#fbfdff",
+                        "primary-container": "#007da8",
+                        "surface-bright": "#f8f9ff",
+                        "primary-fixed": "#c3e8ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#e2e2e5",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-primary-fixed-variant": "#004c68",
+                        "surface-container-low": "#eff4ff",
+                        "inverse-surface": "#213145",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-background": "#0b1c30",
+                        "on-surface": "#0b1c30",
+                        "tertiary-fixed": "#e0e3e5",
+                        "primary-fixed-dim": "#78d1ff",
+                        "surface-container": "#e5eeff",
+                        "surface-tint": "#006689",
+                        "on-secondary-fixed-variant": "#454749",
+                        "surface": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "outline": "#6e7880",
+                        "on-primary-container": "#fbfcff",
+                        "surface-variant": "#d3e4fe",
+                        "surface-dim": "#cbdbf5",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary": "#595c5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "margin-desktop": "48px",
+                        "base": "8px",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "display": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800" }]
+                    },
+                    "boxShadow": {
+                        "level-1": "0px 4px 20px rgba(0,0,0,0.04)",
+                        "level-2": "0px 12px 40px rgba(0,0,0,0.08)",
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col pt-16 pb-20 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface/20 backdrop-blur-2xl flex justify-between items-center w-full px-margin-mobile h-16 border-b border-white/5 transition-transform duration-300">
+<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary" data-icon="waves">waves</span><h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1></div>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-primary-fixed-dim transition-colors active:scale-95 flex flex-col items-center" href="#">
+<span class="font-label-md text-label-md">Log</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary-fixed-dim transition-colors active:scale-95 flex flex-col items-center" href="#">
+<span class="font-label-md text-label-md">Sites</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary-fixed-dim transition-colors active:scale-95 flex flex-col items-center" href="#">
+<span class="font-label-md text-label-md">Gear</span>
+</a>
+<a class="text-primary hover:text-primary-fixed-dim transition-colors active:scale-95 flex flex-col items-center border-b-2 border-primary pb-1" href="#">
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</div>
+<div class="md:hidden flex items-center">
+<button class="text-primary hover:text-primary-fixed-dim transition-colors active:scale-95">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-gutter flex flex-col gap-gutter">
+<!-- Welcome / Status Header -->
+<section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-surface-container pb-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-1">Command Center</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage diving community activity, data submissions, and platform health.</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low border border-surface-container-high rounded-full px-4 py-2 shadow-level-1">
+<span class="material-symbols-outlined text-primary text-sm" data-weight="fill">check_circle</span>
+<span class="font-label-sm text-label-sm text-on-surface">All Systems Operational</span>
+</div>
+</section>
+<!-- Bento Grid: Overview Stats -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-base">
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">group</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container-low px-2 py-1 rounded-md">+12%</span>
+</div>
+<div>
+<h3 class="font-display text-display text-on-surface">24.5k</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Divers</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1 flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-10 -mt-10"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="material-symbols-outlined text-primary text-3xl">scuba_diving</span>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container-low px-2 py-1 rounded-md">Live</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-display text-on-surface">1,402</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Active Dives Today</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-error text-3xl">report</span>
+<span class="font-label-sm text-label-sm text-error bg-error-container px-2 py-1 rounded-md">Needs Action</span>
+</div>
+<div>
+<h3 class="font-display text-display text-on-surface">18</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Pending Reports</p>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mt-4">
+<!-- Marine Life Moderation Queue -->
+<section class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-level-1 flex flex-col">
+<div class="p-6 border-b border-surface-container flex justify-between items-center">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Species Submissions</h2>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Review user-submitted marine life data.</p>
+</div>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="p-0 flex-grow">
+<ul class="divide-y divide-surface-container">
+<!-- Queue Item 1 -->
+<li class="p-6 flex items-start gap-4 hover:bg-surface-container-low/50 transition-colors">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img alt="" class="w-full h-full object-cover" data-alt="A macro photograph of a colorful nudibranch on a coral reef, captured underwater with bright, crisp lighting reflecting off its intricate gills. The background is a soft, deep blue ocean void. Shot in a high-resolution, Luminous Minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNNkefMK4ZV9tXOqhGMU7wN5hcH_hrKM8wpaT3cJGJGfoqxdbZvLmaf3_nvU-vKdAR02StrF6nIc13GenUtUh32wPCSKVB9TE_5wr2n8Fwhvc38mlaYZ2vVMCINWHpf1bzglk1CYvDy9gCF7QbRxp0GjiB0sAHE-8fCHeTRwMEin-Fp7DfzIzV-5Iwajz6qU4yHUmX2xg1Q50N9rFQxu61Y5C33oPoTmCUzoYDoy2BH0TkzwJIOr9VIK-IWjTcbwuyPaH92QO46V8A">
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-label-md text-on-surface text-base">Chromodoris annae</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">New Specimen</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm line-clamp-1 mt-1">Submitted by @divemaster_jane at Blue Corner, Palau.</p>
+<div class="flex gap-2 mt-3">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-primary/90 transition-colors">Approve</button>
+<button class="border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-surface-container-low transition-colors">Reject</button>
+</div>
+</div>
+</li>
+<!-- Queue Item 2 -->
+<li class="p-6 flex items-start gap-4 hover:bg-surface-container-low/50 transition-colors">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline-variant text-3xl">set_meal</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<h4 class="font-label-md text-label-md text-on-surface text-base">Green Sea Turtle (Edit)</h4>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">Data Edit</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm line-clamp-1 mt-1">Suggested depth range update by @ocean_explorer.</p>
+<div class="flex gap-2 mt-3">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-primary/90 transition-colors">Review</button>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<!-- User Reports / Site Moderation Split -->
+<div class="flex flex-col gap-gutter">
+<!-- User Moderation -->
+<section class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-level-1 flex flex-col p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">gavel</span>
+                            Community Flags
+                        </h2>
+</div>
+<div class="bg-error-container/20 border border-error-container rounded-lg p-4 mb-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-0.5">warning</span>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Inappropriate log entry language</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Reported by 3 users on log #8921 by User @deepdiver88.</p>
+<div class="mt-3 flex gap-3">
+<button class="text-error font-label-md text-label-md hover:underline">Take Action</button>
+<button class="text-on-surface-variant font-label-md text-label-md hover:underline">Dismiss</button>
+</div>
+</div>
+</div>
+<button class="w-full border border-outline-variant text-on-surface font-label-md text-label-md py-3 rounded-full hover:bg-surface-container-low transition-colors mt-auto">
+                        View All Reports (17)
+                    </button>
+</section>
+<!-- User Management -->
+<section class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-level-1 flex flex-col p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">person_search</span>
+            User Management
+        </h2>
+</div>
+<div class="relative mb-6">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 pl-10 pr-4 text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:border-primary transition-colors" placeholder="Search users by name or @username..." type="text">
+</div>
+<ul class="divide-y divide-surface-container mb-4">
+<li class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">@marcus_diver</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-0.5">Tier: Elite</p>
+</div>
+<div class="flex gap-2">
+<button class="border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-surface-container-low transition-colors">Change Tier</button>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-primary/90 transition-colors">Promote</button>
+</div>
+</li>
+<li class="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">@ocean_explorer</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-0.5">Tier: Pro</p>
+</div>
+<div class="flex gap-2">
+<button class="border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-surface-container-low transition-colors">Change Tier</button>
+<button class="border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-1.5 rounded-full hover:bg-surface-container-low transition-colors">Revoke Mod</button>
+</div>
+</li>
+</ul>
+<button class="w-full border border-outline-variant text-on-surface font-label-md text-label-md py-3 rounded-full hover:bg-surface-container-low transition-colors mt-auto">
+        View All Users
+    </button>
+</section>
+<!-- Site Suggestions -->
+<section class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-level-1 flex flex-col p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">map</span>
+                            New Site Suggestions
+                        </h2>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center justify-between">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Secret Cenote</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Quintana Roo, Mexico</p>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</li>
+<li class="flex items-center justify-between">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Wreck of the SS Thistlegorm</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Red Sea, Egypt (Coordinates Update)</p>
+</div>
+<button class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</li>
+</ul>
+</section>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest/30 backdrop-blur-3xl border-t border-white/5 flex justify-around items-center px-4 pb-safe h-20 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-label-caps text-label-caps text-[10px] mt-1">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-caps text-label-caps text-[10px] mt-1">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">scuba_diving</span>
+<span class="font-label-caps text-label-caps text-[10px] mt-1">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl p-2 shadow-[0_0_20px_rgba(76,214,251,0.15)] hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-weight="fill">account_circle</span>
+<span class="font-label-caps text-label-caps text-[10px] mt-1 font-bold">Profile</span>
+</a>
+</nav>
+
+
+
+
+
+
+</body></html>

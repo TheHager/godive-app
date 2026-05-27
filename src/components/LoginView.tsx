@@ -124,14 +124,14 @@ export const LoginView = () => {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="z-10 w-full max-w-md overflow-hidden rounded-3xl bg-surface-container-high/40 p-8 backdrop-blur-3xl border border-white/5 shadow-2xl"
+        className="z-10 w-full max-w-md overflow-hidden rounded-3xl premium-glass p-8  border  shadow-2xl"
       >
         <div className="mb-10 text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/20 text-secondary shadow-[0_0_20px_rgba(76,214,251,0.2)]">
             <Ship size={32} />
           </div>
-          <h2 className="mb-2 text-4xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h2>
-          <p className="text-on-surface-variant opacity-70">Explore the depths of the ocean with us.</p>
+          <h2 className="mb-2 text-4xl font-black uppercase tracking-tighter text-[#083344]">GO<span className="text-secondary">DIVE</span></h2>
+          <p className="text-[#475569] opacity-70">Explore the depths of the ocean with us.</p>
         </div>
 
         {error && (
@@ -142,7 +142,7 @@ export const LoginView = () => {
         )}
 
         {success && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl bg-primary/10 p-4 text-sm text-primary border border-primary/20">
+          <div className="mb-6 flex items-center gap-3 rounded-xl bg-[#0055ff]/10 p-4 text-sm text-[#0055ff] border border-[#0055ff]/20">
             <Mail size={18} />
             <span>{success}</span>
           </div>
@@ -151,41 +151,41 @@ export const LoginView = () => {
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {!isLogin && (
             <div className="group relative">
-              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-secondary transition-colors" size={18} />
+              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors" size={18} />
               <input
                 type="text"
                 placeholder="Your Name"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+                className="premium-input w-full rounded-2xl -none -highest/50 py-4 pl-12 pr-4 text-[#0b2240] placeholder:text-[#083344] -1  transition-all"
               />
             </div>
           )}
           <div className="group relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-secondary transition-colors" size={18} />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors" size={18} />
             <input
               type="email"
               placeholder="Email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+              className="premium-input w-full rounded-2xl -none -highest/50 py-4 pl-12 pr-4 text-[#0b2240] placeholder:text-[#083344] -1  transition-all"
             />
           </div>
           <div className="group relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-secondary transition-colors" size={18} />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#083344] group-focus-within:text-secondary transition-colors" size={18} />
             <input
               type="password"
               placeholder="Password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl border-none bg-surface-container-highest/50 py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-secondary/50 transition-all"
+              className="premium-input w-full rounded-2xl -none -highest/50 py-4 pl-12 pr-4 text-[#0b2240] placeholder:text-[#083344] -1  transition-all"
             />
           </div>
           {!isLogin && (
-            <p className="text-xs text-on-surface-variant opacity-70 px-2 mt-1">
+            <p className="text-xs text-[#475569] opacity-70 px-2 mt-1">
               Password must be at least 6 characters and include an uppercase letter, a lowercase letter, and a number or special character.
             </p>
           )}
@@ -201,17 +201,17 @@ export const LoginView = () => {
 
         <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/5"></div>
+            <div className="w-full border-t "></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-surface-container-high px-2 text-on-surface-variant font-bold tracking-widest">Or continue with</span>
+            <span className="premium-glass px-2 text-[#475569] font-bold tracking-widest">Or continue with</span>
           </div>
         </div>
 
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-4 font-bold text-on-background transition-all hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border  premium-glass py-4 font-bold text-on-background transition-all hover:premium-glass"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -234,7 +234,7 @@ export const LoginView = () => {
           Google Login
         </button>
 
-        <p className="mt-8 text-center text-sm text-on-surface-variant">
+        <p className="mt-8 text-center text-sm text-[#475569]">
           {isLogin ? "Don't have a profile?" : "Already have a profile?"}
           <button
             onClick={() => setIsLogin(!isLogin)}

@@ -107,20 +107,20 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
   }, [item.id, item.type]);
 
   const renderValue = (key: string, value: any): React.ReactNode => {
-    if (value === null || value === undefined) return <span className="text-on-surface-variant italic">Not provided</span>;
+    if (value === null || value === undefined) return <span className="text-[#475569] italic">Not provided</span>;
     if (typeof value === 'boolean') return value ? "Yes" : "No";
 
     // Handle Profile Images (userPhotoUrl, photoURL)
     const lowerKey = key.toLowerCase();
     const isProfilePic = lowerKey === 'userphotourl' || lowerKey === 'photourl';
     if (typeof value === 'string' && value.startsWith('http') && isProfilePic) {
-        return <img src={value} alt="User Profile" onClick={() => setEnlargedImage(value)} className="w-12 h-12 rounded-full object-cover border border-white/10 cursor-pointer hover:opacity-80 transition-opacity" title="Click to enlarge" />;
+        return <img src={value} alt="User Profile" onClick={() => setEnlargedImage(value)} className="w-12 h-12 rounded-full object-cover border  cursor-pointer hover:opacity-80 transition-opacity" title="Click to enlarge" />;
     }
 
     // Handle Images
     const isImageKey = lowerKey.includes('image') || lowerKey.includes('photo');
     if (typeof value === 'string' && (value.startsWith('data:image/') || (value.startsWith('http') && isImageKey))) {
-        return <img src={value} alt="Reported content" onClick={() => setEnlargedImage(value)} className="w-full max-h-64 object-contain rounded-md mt-2 bg-black/10 cursor-pointer hover:opacity-90 transition-opacity" title="Click to enlarge" />;
+        return <img src={value} alt="Reported content" onClick={() => setEnlargedImage(value)} className="w-full max-h-64 object-contain rounded-md mt-2 premium-glass cursor-pointer hover:opacity-90 transition-opacity" title="Click to enlarge" />;
     }
 
     // Handle Clickable Links
@@ -129,19 +129,19 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
     }
 
     if (typeof value === 'string' || typeof value === 'number') {
-      return <span className="text-on-surface break-words">{value}</span>;
+      return <span className="text-[#0b2240] break-words">{value}</span>;
     }
 
     // Handle Arrays (Chips)
     if (Array.isArray(value)) {
-      if (value.length === 0) return <span className="text-on-surface-variant italic">None</span>;
+      if (value.length === 0) return <span className="text-[#475569] italic">None</span>;
 
       // Special handling for likedBy
       if (key === 'likedBy') {
         return (
           <div className="flex flex-wrap gap-2 mt-1">
             {value.map((uid, i) => (
-              <span key={i} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs font-mono break-all" title={String(uid)}>
+              <span key={i} className="px-2 py-1 premium-glass border  rounded-md text-xs font-mono break-all" title={String(uid)}>
                 {likedByNames[String(uid)] || String(uid)}
               </span>
             ))}
@@ -152,7 +152,7 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
       return (
         <div className="flex flex-wrap gap-2 mt-1">
           {value.map((v, i) => (
-            <span key={i} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs font-mono break-all">
+            <span key={i} className="px-2 py-1 premium-glass border  rounded-md text-xs font-mono break-all">
               {String(v)}
             </span>
           ))}
@@ -165,7 +165,7 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
       if ('seconds' in value && typeof value.seconds === 'number') {
         return new Date(value.seconds * 1000).toLocaleString();
       }
-      return <pre className="text-xs font-mono text-on-surface-variant bg-black/20 p-2 rounded-lg mt-1 overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>;
+      return <pre className="text-xs font-mono text-[#475569] premium-glass p-2 rounded-lg mt-1 overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>;
     }
     return String(value);
   };
@@ -180,23 +180,23 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
   const filteredData = getFilteredData();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-surface-container-high rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-surface-container">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm ">
+      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col premium-glass rounded-[2rem] border  shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-6 border-b  premium-glass">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-on-surface">Reported Content Details</h2>
+            <h2 className="text-xl font-black tracking-tight text-[#0b2240]">Reported Content Details</h2>
             <div className="flex gap-2 mt-1">
               <span className="text-xs font-bold uppercase tracking-widest text-error bg-error/10 border border-error/20 px-2 py-0.5 rounded-md">
                 {item.type}
               </span>
-              <span className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+              <span className="text-xs font-medium text-[#475569] flex items-center gap-1">
                 <Flag size={12} className="text-error" /> {item.reportsCount} report(s)
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-colors border border-white/10"
+            className="p-2 rounded-full premium-glass hover:premium-glass text-[#475569] hover:text-[#0b2240] transition-colors border "
           >
             <X size={20} />
           </button>
@@ -205,15 +205,15 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
           <div className="space-y-6">
             <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Reported By</h3>
-              <div className="bg-black/20 p-3 rounded-xl border border-white/5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#475569]">Reported By</h3>
+              <div className="premium-glass p-3 rounded-xl border ">
                 {item.reportedBy && item.reportedBy.length > 0 ? (
-                  <ul className="list-disc pl-5 text-sm space-y-1 text-on-surface">
+                  <ul className="list-disc pl-5 text-sm space-y-1 text-[#0b2240]">
                     {item.reportedBy.map((userId, idx) => (
                       <li key={idx} className="break-all flex flex-col mb-2">
                         <span className="font-bold">{reporterNames[userId] || userId}</span>
                         {item.originalData?.reportDetails?.find((r: any) => r.uid === userId)?.reason && (
-                          <span className="text-xs text-on-surface-variant italic mt-0.5 border-l-2 border-white/10 pl-2">
+                          <span className="text-xs text-[#475569] italic mt-0.5 border-l-2  pl-2">
                             "{item.originalData.reportDetails.find((r: any) => r.uid === userId).reason}"
                           </span>
                         )}
@@ -221,45 +221,45 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-sm text-on-surface-variant italic">No reporters recorded</span>
+                  <span className="text-sm text-[#475569] italic">No reporters recorded</span>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Content Data</h3>
-              <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#475569]">Content Data</h3>
+              <div className="premium-glass p-4 rounded-xl border ">
                 {!filteredData || Object.keys(filteredData).length === 0 ? (
-                   <div className="text-sm text-on-surface-variant italic">No content available</div>
+                   <div className="text-sm text-[#475569] italic">No content available</div>
                 ) : (
                    <div className="flex flex-col gap-4">
                      {Object.entries(filteredData).map(([key, value]) => (
-                       <div key={key} className="flex flex-col gap-1 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                       <div key={key} className="flex flex-col gap-1 border-b  pb-3 last:border-0 last:pb-0">
 
                          {/* Display actual comments above commentsCount */}
                          {key === 'commentsCount' && comments.length > 0 && (
                            <div className="mb-4 space-y-2">
-                             <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Actual Comments ({comments.length})</span>
-                             <div className="mt-2 pl-3 border-l-2 border-white/10 space-y-2">
+                             <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">Actual Comments ({comments.length})</span>
+                             <div className="mt-2 pl-3 border-l-2  space-y-2">
                                {comments.map((comment) => (
-                                 <div key={comment.id} className="bg-black/20 p-2 rounded-lg text-xs">
+                                 <div key={comment.id} className="premium-glass p-2 rounded-lg text-xs">
                                    <div className="flex items-center gap-2 mb-1">
                                      {comment.userPhotoURL ? (
                                         <img src={comment.userPhotoURL} alt="" className="w-4 h-4 rounded-full object-cover cursor-pointer" onClick={() => setEnlargedImage(comment.userPhotoURL)} />
                                      ) : (
-                                        <div className="w-4 h-4 rounded-full bg-surface-container flex items-center justify-center"><UserCheck size={8} /></div>
+                                        <div className="w-4 h-4 rounded-full premium-glass flex items-center justify-center"><UserCheck size={8} /></div>
                                      )}
                                      <span className="font-bold">{comment.userDisplayName || 'Unknown'}</span>
-                                     {comment.timestamp && <span className="text-[9px] text-on-surface-variant">{new Date(comment.timestamp.seconds * 1000).toLocaleString()}</span>}
+                                     {comment.timestamp && <span className="text-[9px] text-[#475569]">{new Date(comment.timestamp.seconds * 1000).toLocaleString()}</span>}
                                    </div>
-                                   <p className="text-on-surface">{comment.content}</p>
+                                   <p className="text-[#0b2240]">{comment.content}</p>
                                  </div>
                                ))}
                              </div>
                            </div>
                          )}
 
-                         <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{key}</span>
+                         <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">{key}</span>
                          <div className="text-sm">{renderValue(key, value)}</div>
                        </div>
                      ))}
@@ -273,12 +273,12 @@ export const ReportedContentDetailModal = ({ item, onClose }: { item: ReportedIt
 
       {enlargedImage && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-200"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm  cursor-zoom-out animate-in fade-in duration-200"
           onClick={() => setEnlargedImage(null)}
         >
           <div className="relative max-w-5xl max-h-screen">
             <button
-              className="absolute -top-12 right-0 p-2 text-white hover:text-white/80 transition-colors bg-white/10 rounded-full"
+              className="absolute -top-12 right-0 p-2 text-[#083344] hover:text-[#083344] transition-colors premium-glass rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 setEnlargedImage(null);
@@ -316,10 +316,10 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
   const hasAccess = isAdmin || profile?.role === "superadmin" || profile?.role === "moderator";
   if (!hasAccess) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-background text-on-surface p-6 text-center">
+      <div className="flex h-screen flex-col items-center justify-center bg-background text-[#0b2240] p-6 text-center">
         <ShieldAlert size={64} className="text-error mb-4" />
         <h1 className="text-3xl font-black uppercase tracking-widest">Access Denied</h1>
-        <p className="mt-2 text-on-surface-variant font-medium">You do not have permission to view this page.</p>
+        <p className="mt-2 text-[#475569] font-medium">You do not have permission to view this page.</p>
       </div>
     );
   }
@@ -529,18 +529,18 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
       {setView && (
         <button 
           onClick={() => setView('profile')}
-          className="absolute left-6 top-6 flex items-center justify-center p-3 rounded-2xl bg-surface-container-high/50 hover:bg-white/10 transition-colors z-10"
+          className="absolute left-6 top-6 flex items-center justify-center p-3 rounded-2xl premium-glass hover:premium-glass transition-colors z-10"
         >
-          <ArrowLeft size={20} className="text-on-surface" />
+          <ArrowLeft size={20} className="text-[#0b2240]" />
         </button>
       )}
 
       <div className="mb-10 text-center mt-4">
-        <h2 className="text-4xl font-black italic tracking-tighter text-on-surface">Admin <span className="text-secondary">Dashboard</span></h2>
-        <p className="font-bold text-xs uppercase tracking-widest text-on-surface-variant/60 mt-2">Manage User Subscriptions</p>
+        <h2 className="text-4xl font-black italic tracking-tighter text-[#0b2240]">Admin <span className="text-secondary">Dashboard</span></h2>
+        <p className="font-bold text-xs uppercase tracking-widest text-[#083344] mt-2">Manage User Subscriptions</p>
       </div>
 
-      <div className="rounded-[40px] bg-surface-container-high/20 border border-white/5 p-8 shadow-xl">
+      <div className="rounded-[40px] premium-glass border  p-8 shadow-xl">
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-secondary" size={20} />
@@ -549,7 +549,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
               placeholder="Search user by email address..."
               value={emailSearch}
               onChange={(e) => setEmailSearch(e.target.value)}
-              className="w-full rounded-2xl bg-surface-container-high border border-white/10 px-6 py-4 pl-14 text-sm font-bold text-on-surface outline-none focus:border-secondary focus:ring-1 focus:ring-secondary/50 placeholder:text-on-surface-variant/40"
+              className="premium-input w-full rounded-2xl   -white/10 px-6 py-4 pl-14 text-sm font-bold text-[#0b2240]  focus:-secondary -1  placeholder:text-[#083344]"
             />
           </div>
           <button 
@@ -562,25 +562,25 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
         </form>
 
         {message && (
-          <div className={cn("mb-8 p-4 rounded-2xl border text-sm font-bold text-center", message.type === 'error' ? "bg-error/10 border-error/20 text-error" : "bg-primary/10 border-primary/20 text-primary")}>
+          <div className={cn("mb-8 p-4 rounded-2xl border text-sm font-bold text-center", message.type === 'error' ? "bg-error/10 border-error/20 text-error" : "bg-[#0055ff]/10 border-[#0055ff]/20 text-[#0055ff]")}>
             {message.text}
           </div>
         )}
 
         {foundUser && (
-          <div className="rounded-3xl bg-surface-container/50 border border-white/10 p-6 flex flex-col md:flex-row items-center gap-8">
+          <div className="rounded-3xl premium-glass border  p-6 flex flex-col md:flex-row items-center gap-8">
             <div className="flex items-center gap-4 flex-1">
               {foundUser.photoURL ? (
-                <img src={foundUser.photoURL} alt="" className="w-16 h-16 rounded-2xl border-2 border-white/10 object-cover" />
+                <img src={foundUser.photoURL} alt="" className="w-16 h-16 rounded-2xl border-2  object-cover" />
               ) : (
-                <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                <div className="w-16 h-16 rounded-2xl premium-glass flex items-center justify-center text-[#475569]">
                   <UserCheck size={32} />
                 </div>
               )}
               <div>
-                <h3 className="text-xl font-black text-on-surface">{foundUser.displayName || 'Unnamed User'}</h3>
-                <p className="text-sm font-medium text-on-surface-variant">{foundUser.email}</p>
-                <div className="mt-2 text-xs font-bold uppercase tracking-widest px-3 py-1 bg-white/5 rounded-lg border border-white/10 inline-block text-secondary">
+                <h3 className="text-xl font-black text-[#0b2240]">{foundUser.displayName || 'Unnamed User'}</h3>
+                <p className="text-sm font-medium text-[#475569]">{foundUser.email}</p>
+                <div className="mt-2 text-xs font-bold uppercase tracking-widest px-3 py-1 premium-glass rounded-lg border  inline-block text-secondary">
                   Current Tier: {foundUser.subscriptionTier || 'Free'}
                 </div>
               </div>
@@ -592,7 +592,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                   key={tier}
                   onClick={() => handleUpdateTier(tier)}
                   disabled={isUpdating || foundUser.subscriptionTier === tier || (!foundUser.subscriptionTier && tier === 'free')}
-                  className="rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 hover:border-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-2xl premium-glass border  px-6 py-3 text-xs font-black uppercase tracking-widest text-[#0b2240] hover:premium-glass hover:border-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Set to {tier}
                 </button>
@@ -600,13 +600,13 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
             </div>
 
             {isAdmin && (
-              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 pt-4 border-t border-white/5">
+              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 pt-4 border-t ">
                 {(["user", "moderator"] as const).map(role => (
                   <button
                     key={role}
                     onClick={() => handleUpdateRole(role)}
                     disabled={isUpdating || (foundUser as any).role === role || (!(foundUser as any).role && role === 'user')}
-                    className="rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-xs font-black uppercase tracking-widest text-on-surface hover:bg-white/10 hover:border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-2xl premium-glass border  px-6 py-3 text-xs font-black uppercase tracking-widest text-[#0b2240] hover:premium-glass hover:border-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Make {role}
                   </button>
@@ -623,7 +623,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
               <h2 className="text-xl font-bold tracking-tight">Reported Content</h2>
               <button
                 onClick={fetchReports}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full premium-glass hover:premium-glass transition-colors text-xs font-medium"
               >
                 <RefreshCw size={14} className={cn(isLoadingReports && "animate-spin")} />
                 Refresh
@@ -631,30 +631,30 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
             </div>
 
             {reportedItems.length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
+              <div className="p-8 text-center text-[#475569] premium-glass rounded-3xl border ">
                 No reported content. Good job!
               </div>
             ) : (
               <div className="flex flex-col gap-4">
                 {reportedItems.map(item => (
-                  <div key={item.path} className="bg-surface-container-high/50 p-4 rounded-2xl border border-error/20 flex flex-col gap-4">
+                  <div key={item.path} className="premium-glass p-4 rounded-2xl border border-error/20 flex flex-col gap-4">
                     <div className="flex justify-between items-start gap-4">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="px-2 py-0.5 bg-error/10 text-error rounded text-[10px] font-bold uppercase tracking-widest border border-error/20">
                             {item.type}
                           </span>
-                          <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <span className="text-xs text-[#475569] flex items-center gap-1">
                             <Flag size={12} className="text-error" /> {item.reportsCount} report(s)
                           </span>
                         </div>
-                        <p className="text-sm text-on-surface mt-2 font-medium line-clamp-3">"{item.contentPreview}"</p>
-                        <div className="text-[10px] text-on-surface-variant mt-2 uppercase tracking-widest font-bold">
+                        <p className="text-sm text-[#0b2240] mt-2 font-medium line-clamp-3">"{item.contentPreview}"</p>
+                        <div className="text-[10px] text-[#475569] mt-2 uppercase tracking-widest font-bold">
                           Author ID: {item.authorId}
                         </div>
                       </div>
                     </div>
-                                        <div className="flex gap-2 pt-3 border-t border-white/5 justify-end mt-auto flex-wrap">
+                                        <div className="flex gap-2 pt-3 border-t  justify-end mt-auto flex-wrap">
                       <button
                         onClick={() => { console.log('Button clicked', item); setSelectedReportedItem(item); }}
                         className="flex items-center gap-1.5 px-4 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-secondary/20 transition-colors"
@@ -664,7 +664,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                       </button>
                       <button
                         onClick={() => handleDismissReport(item)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-container hover:bg-white/10 text-on-surface border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 premium-glass hover:premium-glass text-[#0b2240] border  rounded-xl text-xs font-bold uppercase tracking-widest transition-colors"
                       >
                         <XCircle size={14} />
                         Dismiss
@@ -688,7 +688,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
               <h2 className="text-xl font-bold tracking-tight">Pending Dive Sites</h2>
               <button
                 onClick={fetchPendingSites}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full premium-glass hover:premium-glass transition-colors text-xs font-medium"
               >
                 <RefreshCw size={14} className={cn(isLoadingSites && "animate-spin")} />
                 Refresh
@@ -696,16 +696,16 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
             </div>
 
             {pendingSites.length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant bg-surface-container-high/30 rounded-3xl border border-white/5">
+              <div className="p-8 text-center text-[#475569] premium-glass rounded-3xl border ">
                 No pending dive sites to moderate.
               </div>
             ) : (
               <div className="flex flex-col gap-4">
                 {pendingSites.map(site => (
-                  <div key={site.id} className="bg-surface-container-high/50 p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div key={site.id} className="premium-glass p-4 rounded-2xl border  flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <div className="font-bold">{site.name}</div>
-                      <div className="text-xs text-on-surface-variant flex gap-2 mt-1">
+                      <div className="text-xs text-[#475569] flex gap-2 mt-1">
                         <span>Lat: {site.lat}</span>
                         <span>Lng: {site.lng}</span>
                         <span>By: {site.userId}</span>
@@ -714,7 +714,7 @@ export const AdminView = ({ setView }: { setView?: (v: View) => void }) => {
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => handleUpdateSiteStatus(site.id, "verified")}
-                        className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary/30"
+                        className="px-4 py-2 bg-[#0055ff]/20 text-[#0055ff] border border-[#0055ff]/30 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#0055ff]/30"
                       >
                         Approve
                       </button>

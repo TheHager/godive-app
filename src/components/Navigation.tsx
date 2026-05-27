@@ -37,7 +37,7 @@ const NavItem = ({ view, currentView, label, icon: Icon, onClick }: NavItemProps
       onClick={() => onClick(view)}
       className={cn(
         "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-all duration-300 relative",
-        isActive ? "text-secondary" : "text-on-surface-variant opacity-60 hover:opacity-100"
+        isActive ? "text-secondary" : "text-[#475569] opacity-60 hover:opacity-100"
       )}
     >
       <Icon size={20} className={cn(isActive && "fill-secondary/20")} />
@@ -53,7 +53,7 @@ export const BottomNav = ({ currentView, setView }: { currentView: View; setView
   const { user } = useAuth();
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-1 overflow-x-auto no-scrollbar border-t border-white/5 bg-surface-container-high/60 px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] backdrop-blur-3xl md:hidden w-full max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-1 overflow-x-auto no-scrollbar border-t  premium-glass px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))]  md:hidden w-full max-w-full">
       <NavItem view="friends" currentView={currentView} label="Friends" icon={Users} onClick={setView} />
       <NavItem view="buddy" currentView={currentView} label="Events" icon={Calendar} onClick={setView} />
       <NavItem view="dashboard" currentView={currentView} label="Start" icon={BarChart3} onClick={setView} />
@@ -67,9 +67,9 @@ export const DesktopNav = ({ currentView, setView }: { currentView: View; setVie
   const { user } = useAuth();
   
   return (
-    <aside className="hidden w-64 flex-col border-r border-white/5 bg-surface-container-high p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:flex">
+    <aside className="hidden w-64 flex-col border-r  premium-glass p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:flex">
       <div className="mb-10 px-2">
-        <h1 className="text-2xl font-black uppercase tracking-tighter text-white">GO<span className="text-secondary">DIVE</span></h1>
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-[#083344]">GO<span className="text-secondary">DIVE</span></h1>
       </div>
       
       <nav className="flex flex-grow flex-col gap-2">
@@ -83,7 +83,7 @@ export const DesktopNav = ({ currentView, setView }: { currentView: View; setVie
       <div className="mt-auto opacity-40 hover:opacity-100 transition-opacity">
         <button 
           onClick={() => signOut(auth)}
-          className="flex w-full items-center gap-3 rounded-xl p-3 text-on-surface-variant hover:bg-error/10 hover:text-error"
+          className="flex w-full items-center gap-3 rounded-xl p-3 text-[#475569] hover:bg-error/10 hover:text-error"
         >
           <LogOut size={20} />
           <span className="font-semibold">Log out</span>
@@ -102,7 +102,7 @@ const DesktopNavItem = ({ view, currentView, label, icon: Icon, onClick }: NavIt
         "flex items-center gap-4 rounded-xl p-4 transition-all duration-300",
         isActive 
           ? "bg-secondary/10 text-secondary shadow-[0_0_15px_rgba(76,214,251,0.1)]" 
-          : "text-on-surface-variant hover:bg-white/5 hover:text-on-surface"
+          : "text-[#475569] hover:premium-glass hover:text-[#0b2240]"
       )}
     >
       <Icon size={24} className={cn(isActive ? "text-secondary" : "opacity-70")} />

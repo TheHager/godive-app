@@ -1,32 +1,61 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #020814;
-  --color-on-background: #e0e3e5;
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-surface: #0b2240;
+  --color-on-surface-variant: #083344;
+  --color-inverse-surface: #213145;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-outline: #6e7880;
+  --color-outline-variant: #bdc8d0;
+  --color-surface-tint: #00bfff;
   
-  --color-surface: #020814;
-  --color-on-surface: #e0e3e5;
-  --color-on-surface-variant: #c3c7cd;
-  --color-surface-container-low: #191c1e;
-  --color-surface-container: #1d2022;
-  --color-surface-container-high: #272a2c;
-  --color-surface-container-highest: #323537;
-  --color-surface-variant: #323537;
-  --color-surface-bright: #363a3b;
-  --color-surface-dim: #101415;
-  --color-surface-container-lowest: #0b0f10;
+  --color-primary: #0055ff;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #80dfff;
+  --color-on-primary-container: #00334d;
+  --color-inverse-primary: #0088cc;
   
-  --color-primary: #b1c9e2;
-  --color-on-primary: #1a3246;
-  --color-secondary: #4cd6fb;
-  --color-on-secondary: #003642;
-  --color-tertiary: #ffb59c;
-  --color-on-tertiary: #5c1a00;
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
+  --color-secondary: #5d5e61;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e2e2e5;
+  --color-on-secondary-container: #636467;
   
-  --color-outline: #8d9197;
-  --color-outline-variant: #43474c;
+  --color-tertiary: #595c5e;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #727577;
+  --color-on-tertiary-container: #fbfdff;
+  
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  
+  --color-primary-fixed: #c3e8ff;
+  --color-primary-fixed-dim: #78d1ff;
+  --color-on-primary-fixed: #001e2c;
+  --color-on-primary-fixed-variant: #004c68;
+  
+  --color-secondary-fixed: #e2e2e5;
+  --color-secondary-fixed-dim: #c6c6c9;
+  --color-on-secondary-fixed: #1a1c1e;
+  --color-on-secondary-fixed-variant: #454749;
+  
+  --color-tertiary-fixed: #e0e3e5;
+  --color-tertiary-fixed-dim: #c4c7c9;
+  --color-on-tertiary-fixed: #191c1e;
+  --color-on-tertiary-fixed-variant: #444749;
+  
+  --color-background: #f8f9ff;
+  --color-on-background: #0b2240;
+  --color-surface-variant: #d3e4fe;
   
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   
@@ -38,6 +67,8 @@
 @layer base {
   body {
     @apply bg-background text-on-background antialiased font-sans transition-colors duration-300;
+    background-image: radial-gradient(circle at 50% 0%, rgba(0, 99, 134, 0.05) 0%, transparent 70%);
+    min-height: 100vh;
   }
 }
 
@@ -48,6 +79,37 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Premium Glassmorphism styling */
+  .premium-glass {
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  /* Premium Input styling */
+  .premium-input {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #0b2240;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+  }
+  .premium-input:focus {
+    border-color: #0055ff;
+    box-shadow: 0 0 0 2px rgba(0, 85, 255, 0.2);
+    outline: none;
+  }
+
+  /* Bioluminescent glow for interactive focus/active states */
+  .bioluminescent-glow {
+    box-shadow: 0 0 20px rgba(0, 85, 255, 0.4);
   }
 
   /* Hide native date/time icons and make whole area trigger picker */
@@ -64,5 +126,16 @@
     top: 0;
     width: auto;
     opacity: 0;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
   }
 }

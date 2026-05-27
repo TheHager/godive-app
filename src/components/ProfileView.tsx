@@ -436,11 +436,11 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
       exit={{ opacity: 0, y: -20 }}
       className="p-3 md:p-6 max-w-2xl mx-auto flex flex-col gap-3 md:gap-6 pb-2"
     >
-      <div className="flex flex-col items-center justify-center p-3 md:p-8 bg-surface-container-high rounded-3xl border border-white/5 shadow-xl relative overflow-hidden">
+      <div className="flex flex-col items-center justify-center p-3 md:p-8 premium-glass rounded-3xl border  shadow-xl relative overflow-hidden">
         <div className="absolute top-4 right-4 z-10">
           <ActionMenu 
-            triggerIcon={<Settings size={24} className="text-on-surface-variant" />}
-            buttonClassName="hover:bg-white/10"
+            triggerIcon={<Settings size={24} className="text-[#475569]" />}
+            buttonClassName="hover:premium-glass"
             items={[
               { label: isEditing ? "Cancel Edit" : "Edit Profile", icon: isEditing ? <X size={16} /> : <Edit3 size={16} />, onClick: () => setIsEditing(!isEditing) },
               { label: "Delete Profile", icon: <Trash2 size={16} />, onClick: () => setShowDeleteConfirm(true), destructive: true }
@@ -452,29 +452,29 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
           <input 
             type="file" 
             accept="image/*" 
-            className="hidden" 
+            className="premium-input hidden" 
             onChange={handlePhotoUpload}
             disabled={isUploadingPhoto} 
           />
           {profile?.photoURL ? (
             <img src={profile.photoURL} alt="Profile" className="h-32 w-32 rounded-full border-4 border-secondary/20 object-cover shadow-2xl transition-opacity group-hover:opacity-75" />
           ) : (
-            <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-secondary/20 bg-surface text-primary shadow-2xl transition-opacity group-hover:opacity-75">
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-secondary/20 bg-surface text-[#0055ff] shadow-2xl transition-opacity group-hover:opacity-75">
               <UserIcon size={64} />
             </div>
           )}
           
           {/* Overlay loading or edit icon */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/20 backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
             {isUploadingPhoto ? (
-               <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+               <div className="h-8 w-8 animate-spin rounded-full border-4  border-t-white" />
             ) : (
-               <Edit3 size={24} className="text-white" />
+               <Edit3 size={24} className="text-[#083344]" />
             )}
           </div>
           {(isUploadingPhoto && !profile?.photoURL) && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-100">
-               <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-900/20 backdrop-blur-sm opacity-100">
+               <div className="h-8 w-8 animate-spin rounded-full border-4  border-t-white" />
             </div>
           )}
         </label>
@@ -484,11 +484,11 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             if (b && b.earned) {
               const BIcon = b.icon;
               return (
-                <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-4 pl-2 py-1.5 rounded-full border border-white/10">
-                  <div className="bg-primary/20 text-primary p-2 rounded-full">
+                <div className="flex items-center justify-center gap-2 mb-2 premium-glass pr-4 pl-2 py-1.5 rounded-full border ">
+                  <div className="bg-[#0055ff]/20 text-[#0055ff] p-2 rounded-full">
                     <BIcon size={16} />
                   </div>
-                  <span className="text-xs font-black uppercase tracking-wider text-primary">{b.label}</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-[#0055ff]">{b.label}</span>
                 </div>
               );
             }
@@ -500,30 +500,30 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             type="text"
             value={editDisplayName}
             onChange={(e) => setEditDisplayName(e.target.value)}
-            className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface mb-1 bg-surface-container border border-white/10 rounded-xl px-4 py-2 w-full max-w-xs text-center outline-none focus:border-secondary transition-colors"
+            className="premium-input text-2xl md:text-3xl font-black italic tracking-tighter text-[#0b2240] mb-1   -white/10 rounded-xl px-4 py-2 w-full max-w-xs text-center  focus:-secondary transition-colors"
             placeholder="Your Name"
           />
         ) : (
-          <div className="flex items-center justify-center md:justify-start gap-2 mb-1"><h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-on-surface">{profile?.displayName || "Aquavoyager"}</h2>{((profile as any)?.role === 'superadmin' || profile?.email === 'tobias.h.jensen@gmail.com') && <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">ADMIN</span>}{(profile as any)?.role === 'moderator' && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">MOD</span>}</div>
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-1"><h2 className="text-2xl md:text-3xl font-black italic tracking-tighter text-[#0b2240]">{profile?.displayName || "Aquavoyager"}</h2>{((profile as any)?.role === 'superadmin' || profile?.email === 'tobias.h.jensen@gmail.com') && <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">ADMIN</span>}{(profile as any)?.role === 'moderator' && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">MOD</span>}</div>
         )}
         <p className="text-secondary font-black uppercase tracking-[0.2em] text-[10px] md:text-xs mb-1">
           {getRankInfo(calculateLevel(totalPoints)).title}
         </p>
-        <p className="text-on-surface-variant font-medium text-sm mb-6">{profile?.email || "No email provided"}</p>
+        <p className="text-[#475569] font-medium text-sm mb-6">{profile?.email || "No email provided"}</p>
         
         <div className="flex gap-3 md:gap-4 mb-6 md:mb-8 w-full">
-          <div className="flex-1 bg-surface-container p-3 md:p-4 rounded-2xl flex flex-col items-center justify-center border border-white/5">
+          <div className="flex-1 premium-glass p-3 md:p-4 rounded-2xl flex flex-col items-center justify-center border ">
             <span className="text-xl md:text-2xl font-black text-secondary">{(totalPoints || 0).toLocaleString()}</span>
-            <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Points</span>
+            <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[#475569] mt-1">Points</span>
           </div>
-          <div className="flex-1 bg-surface-container p-3 md:p-4 rounded-2xl flex flex-col items-center justify-center border border-white/5">
+          <div className="flex-1 premium-glass p-3 md:p-4 rounded-2xl flex flex-col items-center justify-center border ">
             <span className="text-xl md:text-2xl font-black text-tertiary">LVL {calculateLevel(totalPoints)}</span>
-            <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-1">Explorer Level</span>
+            <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[#475569] mt-1">Explorer Level</span>
           </div>
         </div>
 
         <div className="w-full space-y-3 md:space-y-4">
-          <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border border-white/5 space-y-6">
+          <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border  space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <UserIcon className="text-secondary" size={18} />
@@ -535,10 +535,10 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                   onChange={(e) => setEditBio(e.target.value)}
                   placeholder="Tell us about your diving journey..."
                   rows={3}
-                  className="w-full bg-surface-container p-3 rounded-xl border border-white/5 outline-none text-sm font-medium resize-none focus:border-secondary transition-colors"
+                  className="premium-input w-full  p-3 rounded-xl  -white/5  text-sm font-medium resize-none focus:-secondary transition-colors"
                 />
               ) : (
-                <p className="text-sm text-on-surface-variant font-medium whitespace-pre-wrap">{profile?.bio || "No biography provided yet."}</p>
+                <p className="text-sm text-[#475569] font-medium whitespace-pre-wrap">{profile?.bio || "No biography provided yet."}</p>
               )}
             </div>
 
@@ -555,7 +555,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                       value={newCertificate}
                       onChange={e => setNewCertificate(e.target.value)}
                       placeholder="e.g. PADI Open Water"
-                      className="flex-1 bg-surface-container p-3 rounded-xl border border-white/5 outline-none text-sm font-medium focus:border-secondary transition-colors"
+                      className="premium-input flex-1  p-3 rounded-xl  -white/5  text-sm font-medium focus:-secondary transition-colors"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -581,11 +581,11 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {editCertificates.map((cert, i) => (
-                      <div key={i} className="flex items-center gap-2 bg-surface py-1.5 pl-3 pr-1.5 rounded-lg border border-white/10">
+                      <div key={i} className="flex items-center gap-2 bg-surface py-1.5 pl-3 pr-1.5 rounded-lg border ">
                         <span className="text-xs font-bold">{cert}</span>
                         <button 
                           onClick={() => setEditCertificates(editCertificates.filter((_, idx) => idx !== i))}
-                          className="p-1 rounded-md hover:bg-white/10 text-on-surface-variant hover:text-error transition-colors"
+                          className="p-1 rounded-md hover:premium-glass text-[#475569] hover:text-error transition-colors"
                         >
                           <X size={14} />
                         </button>
@@ -597,12 +597,12 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                 <div className="flex flex-wrap gap-2">
                   {profile?.certificates && profile.certificates.length > 0 ? (
                     profile.certificates.map((cert, i) => (
-                      <div key={i} className="bg-surface py-1.5 px-3 rounded-lg border border-white/10">
-                        <span className="text-xs font-bold text-on-surface">{cert}</span>
+                      <div key={i} className="bg-surface py-1.5 px-3 rounded-lg border ">
+                        <span className="text-xs font-bold text-[#0b2240]">{cert}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-on-surface-variant font-medium">No certifications added yet.</p>
+                    <p className="text-sm text-[#475569] font-medium">No certifications added yet.</p>
                   )}
                 </div>
               )}
@@ -612,7 +612,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
               const earnedBadges = computeBadgesWithStats(profile.badgeStats).filter((b: any) => b.earned && b.id !== profile.pinnedBadgeId);
               if (earnedBadges.length > 0) {
                 return (
-                  <div className="pt-4 border-t border-white/5 mt-4">
+                  <div className="pt-4 border-t  mt-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Trophy className="text-secondary" size={16} />
                       <h3 className="font-black italic uppercase tracking-widest text-xs">Other Earned Badges</h3>
@@ -621,9 +621,9 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
                       {earnedBadges.map((b: any) => {
                         const BIcon = b.icon;
                         return (
-                          <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-3 py-2" title={b.label}>
+                          <div key={b.id} className="flex items-center gap-2 premium-glass border  rounded-xl px-3 py-2" title={b.label}>
                             <BIcon size={14} className="text-secondary" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#475569]">{b.label}</span>
                           </div>
                         );
                       })}
@@ -635,7 +635,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             })()}
           </div>
 
-          <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border border-white/5">
+          <div className="p-3 md:p-6 bg-surface/50 rounded-2xl border ">
             <div className="flex items-center gap-2 mb-4">
               <HeartPulse className="text-error" size={18} />
               <h3 className="font-black italic uppercase tracking-widest text-xs">Dive Safety Information</h3>
@@ -647,114 +647,114 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Your Phone Number</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Your Phone Number</label>
                 {isEditing ? (
-                  <div className="flex items-center gap-2 bg-surface-container p-3 rounded-xl border border-white/5">
-                    <Phone size={16} className="text-on-surface-variant" />
+                  <div className="flex items-center gap-2 premium-glass p-3 rounded-xl border ">
+                    <Phone size={16} className="text-[#475569]" />
                     <input 
                       type="tel"
                       value={formData.phoneNumber}
                       onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                       placeholder="+1 (555) 000-0000"
-                      className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                      className="premium-input bg-transparent -none  text-sm w-full font-medium"
                     />
                   </div>
                 ) : (
-                  <div className="text-sm font-bold text-on-surface pl-1">{privateInfo.phoneNumber || "Not set"}</div>
+                  <div className="text-sm font-bold text-[#0b2240] pl-1">{privateInfo.phoneNumber || "Not set"}</div>
                 )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Emergency Contact Name</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Emergency Contact Name</label>
                   {isEditing ? (
-                    <div className="flex items-center gap-2 bg-surface-container p-3 rounded-xl border border-white/5">
-                      <UserPlus size={16} className="text-on-surface-variant" />
+                    <div className="flex items-center gap-2 premium-glass p-3 rounded-xl border ">
+                      <UserPlus size={16} className="text-[#475569]" />
                       <input 
                         type="text"
                         value={formData.emergencyContactName}
                         onChange={(e) => setFormData({...formData, emergencyContactName: e.target.value})}
                         placeholder="Name"
-                        className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                        className="premium-input bg-transparent -none  text-sm w-full font-medium"
                       />
                     </div>
                   ) : (
-                    <div className="text-sm font-bold text-on-surface pl-1">{privateInfo.emergencyContactName || "Not set"}</div>
+                    <div className="text-sm font-bold text-[#0b2240] pl-1">{privateInfo.emergencyContactName || "Not set"}</div>
                   )}
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Emergency Contact Phone</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Emergency Contact Phone</label>
                   {isEditing ? (
-                    <div className="flex items-center gap-2 bg-surface-container p-3 rounded-xl border border-white/5">
-                      <Phone size={16} className="text-on-surface-variant" />
+                    <div className="flex items-center gap-2 premium-glass p-3 rounded-xl border ">
+                      <Phone size={16} className="text-[#475569]" />
                       <input 
                         type="tel"
                         value={formData.emergencyContactPhone}
                         onChange={(e) => setFormData({...formData, emergencyContactPhone: e.target.value})}
                         placeholder="Phone"
-                        className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                        className="premium-input bg-transparent -none  text-sm w-full font-medium"
                       />
                     </div>
                   ) : (
-                    <div className="text-sm font-bold text-on-surface pl-1">{privateInfo.emergencyContactPhone || "Not set"}</div>
+                    <div className="text-sm font-bold text-[#0b2240] pl-1">{privateInfo.emergencyContactPhone || "Not set"}</div>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Medical Notes (Allergies, Meds, etc.)</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Medical Notes (Allergies, Meds, etc.)</label>
                 {isEditing ? (
                   <textarea 
                     value={formData.medicalNotes}
                     onChange={(e) => setFormData({...formData, medicalNotes: e.target.value})}
                     placeholder="E.g. Penicillin allergy, Asthma"
                     rows={3}
-                    className="w-full bg-surface-container p-3 rounded-xl border border-white/5 outline-none text-sm font-medium resize-none focus:border-primary/50 transition-colors"
+                    className="premium-input w-full  p-3 rounded-xl  -white/5  text-sm font-medium resize-none focus:-primary/50 transition-colors"
                   />
                 ) : (
-                  <div className="text-sm font-medium text-on-surface-variant pl-1 italic">
+                  <div className="text-sm font-medium text-[#475569] pl-1 italic">
                     {privateInfo.medicalNotes || "No medical notes provided"}
                   </div>
                 )}
               </div>
 
-              <div className="mt-2 border-t border-white/5 pt-4">
+              <div className="mt-2 border-t  pt-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant italic">Secondary Emergency Contact (Optional)</h4>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-[#475569] italic">Secondary Emergency Contact (Optional)</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Name</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Name</label>
                     {isEditing ? (
-                      <div className="flex items-center gap-2 bg-surface-container p-3 rounded-xl border border-white/5">
-                        <UserPlus size={16} className="text-on-surface-variant" />
+                      <div className="flex items-center gap-2 premium-glass p-3 rounded-xl border ">
+                        <UserPlus size={16} className="text-[#475569]" />
                         <input 
                           type="text"
                           value={formData.emergencyContactName2}
                           onChange={(e) => setFormData({...formData, emergencyContactName2: e.target.value})}
                           placeholder="Name (Optional)"
-                          className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                          className="premium-input bg-transparent -none  text-sm w-full font-medium"
                         />
                       </div>
                     ) : (
-                      <div className="text-sm font-bold text-on-surface pl-1">{privateInfo.emergencyContactName2 || "Not set"}</div>
+                      <div className="text-sm font-bold text-[#0b2240] pl-1">{privateInfo.emergencyContactName2 || "Not set"}</div>
                     )}
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 block ml-1">Phone</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#475569] mb-1.5 block ml-1">Phone</label>
                     {isEditing ? (
-                      <div className="flex items-center gap-2 bg-surface-container p-3 rounded-xl border border-white/5">
-                        <Phone size={16} className="text-on-surface-variant" />
+                      <div className="flex items-center gap-2 premium-glass p-3 rounded-xl border ">
+                        <Phone size={16} className="text-[#475569]" />
                         <input 
                           type="tel"
                           value={formData.emergencyContactPhone2}
                           onChange={(e) => setFormData({...formData, emergencyContactPhone2: e.target.value})}
                           placeholder="Phone (Optional)"
-                          className="bg-transparent border-none outline-none text-sm w-full font-medium"
+                          className="premium-input bg-transparent -none  text-sm w-full font-medium"
                         />
                       </div>
                     ) : (
-                      <div className="text-sm font-bold text-on-surface pl-1">{privateInfo.emergencyContactPhone2 || "Not set"}</div>
+                      <div className="text-sm font-bold text-[#0b2240] pl-1">{privateInfo.emergencyContactPhone2 || "Not set"}</div>
                     )}
                   </div>
                 </div>
@@ -765,7 +765,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
               <button 
                 onClick={handleSave}
                 disabled={isSaving}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary p-4 text-on-primary font-black uppercase tracking-widest transition-all hover:bg-primary/90 disabled:opacity-50"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0055ff] p-4 text-on-primary font-black uppercase tracking-widest transition-all hover:bg-[#0055ff]/90 disabled:opacity-50"
               >
                 {isSaving ? (
                   <div className="h-5 w-5 border-2 border-on-primary/30 border-t-on-primary animate-spin rounded-full" />
@@ -783,7 +783,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             {setView && (
               <button 
                 onClick={() => setView('equipment')}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-surface-container-high py-4 text-on-surface transition-colors hover:bg-white/10 font-black tracking-widest uppercase border border-white/10"
+                className="flex w-full items-center justify-center gap-3 rounded-2xl premium-glass py-4 text-[#0b2240] transition-colors hover:premium-glass font-black tracking-widest uppercase border "
               >
                 <Box size={20} />
                 <span className="text-sm">Equipment Log</span>
@@ -802,18 +802,18 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
               ) : (
                 <button 
                   onClick={() => setView('pricing')}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-tertiary/20 to-secondary/20 py-4 text-white transition-colors hover:from-tertiary/30 hover:to-secondary/30 font-black tracking-widest uppercase border border-secondary/20 shadow-[0_0_15px_rgba(76,214,251,0.15)] group relative overflow-hidden"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-tertiary/20 to-secondary/20 py-4 text-[#083344] transition-colors hover:from-tertiary/30 hover:to-secondary/30 font-black tracking-widest uppercase border border-secondary/20 shadow-[0_0_15px_rgba(76,214,251,0.15)] group relative overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-tertiary/0 via-white/10 to-secondary/0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
                   <Star size={20} className="text-secondary fill-secondary/50 group-hover:scale-110 transition-transform" />
-                  <span className="bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent group-hover:text-white transition-colors text-sm font-black uppercase tracking-tighter">GO DIVE PRO</span>
+                  <span className="bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent group-hover:text-[#083344] transition-colors text-sm font-black uppercase tracking-tighter">GO DIVE PRO</span>
                 </button>
               )
             )}
             
             <button 
               onClick={() => signOut(auth)}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-surface-container-high/50 py-4 text-on-surface transition-colors hover:bg-white/5 font-black tracking-widest uppercase border border-white/5"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl premium-glass py-4 text-[#0b2240] transition-colors hover:premium-glass font-black tracking-widest uppercase border "
             >
               <LogOut size={20} />
               <span className="text-sm">Log Out</span>
@@ -829,28 +829,28 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/90 backdrop-blur-sm"
+              className="absolute inset-0 bg-background/90 "
               onClick={() => !isDeleting && setShowDeleteConfirm(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-sm rounded-[2rem] bg-surface-container-highest p-6 sm:p-8 shadow-2xl border border-error/20"
+              className="relative w-full max-w-sm rounded-[2rem] premium-glass-highest p-6 sm:p-8 shadow-2xl border border-error/20"
             >
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="rounded-full bg-error/20 p-4 text-error">
                   <AlertTriangle size={32} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-on-surface mb-2">Delete Profile?</h3>
-                  <p className="text-sm text-on-surface-variant font-medium">This action cannot be undone. All your data, badges, and rankings will be permanently removed.</p>
+                  <h3 className="text-xl font-black text-[#0b2240] mb-2">Delete Profile?</h3>
+                  <p className="text-sm text-[#475569] font-medium">This action cannot be undone. All your data, badges, and rankings will be permanently removed.</p>
                 </div>
                 <div className="flex w-full gap-3 mt-4">
                   <button 
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={isDeleting}
-                    className="flex-1 rounded-xl p-3 font-bold text-on-surface-variant bg-surface-container hover:bg-white/5 transition-colors disabled:opacity-50"
+                    className="flex-1 rounded-xl p-3 font-bold text-[#475569] premium-glass hover:premium-glass transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -878,7 +878,7 @@ export const ProfileView = ({ setView }: ProfileViewProps) => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface-container-high px-4 md:px-6 py-2 md:py-3 rounded-full border border-secondary/20 text-secondary font-bold shadow-2xl z-50 text-[11px] md:text-sm text-center max-w-[85vw] md:max-w-none"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 premium-glass px-4 md:px-6 py-2 md:py-3 rounded-full border border-secondary/20 text-secondary font-bold shadow-2xl z-50 text-[11px] md:text-sm text-center max-w-[85vw] md:max-w-none"
           >
             {toast}
           </motion.div>

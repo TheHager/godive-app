@@ -1,0 +1,433 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GoDive - Events</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e0e3e5",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-primary-fixed-variant": "#004c68",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "inverse-primary": "#78d1ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#e2e2e5",
+                        "outline": "#6e7880",
+                        "on-surface-variant": "#3e484f",
+                        "surface-bright": "#f8f9ff",
+                        "primary": "#006386",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-background": "#0b1c30",
+                        "primary-fixed": "#c3e8ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#636467",
+                        "on-primary-container": "#fbfcff",
+                        "tertiary": "#595c5e",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-dim": "#cbdbf5",
+                        "tertiary-container": "#727577",
+                        "surface-variant": "#d3e4fe",
+                        "on-primary-fixed": "#001e2c",
+                        "surface-container-high": "#dce9ff",
+                        "outline-variant": "#bdc8d0",
+                        "on-tertiary-container": "#fbfdff",
+                        "primary-container": "#007da8",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#e2e2e5",
+                        "surface-tint": "#006689",
+                        "surface": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "surface-container": "#e5eeff",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#78d1ff",
+                        "secondary": "#5d5e61"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "label-md": ["Manrope"],
+                        "display": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9ff;
+            color: #0b1c30;
+            font-family: 'Manrope', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #E2E8F0;
+            border-radius: 10px;
+        }
+        .event-card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 12px 40px rgba(0,0,0,0.06);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 border-secondary-fixed/50 flex justify-between items-center px-margin-mobile h-16 bg-transparent">
+<div class="flex items-center gap-3">
+
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-secondary-fixed overflow-hidden ring-2 ring-primary/10">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZNCYK01uMpE1IPZjNGBVcwHpzSHzt9rfMk9iu7gCzNiyAob2fKBJkIDf_Echt-zBsEiw20EjARGbsve9zAAojNyB7s_DTIjDrckngGIIWCWEMZb83cGic72GU8P8V2Oc3Z_C6UbDbhfs-vPAhyjkL4v0L7eZz-aP0aj_7zg_J1LPfFP1hRjZ6V8cpvM4QSprbRpIY5CLFChh_QkUkNmJ1GClmwOtU5yZiMZjmoNnDyKBEkft3TM5SwaxFo6sGWuBylXmRxecXtpIV">
+</div>
+</div>
+</header>
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<!-- Hero & Filter Section -->
+<div class="flex justify-center mb-8">
+<div class="inline-flex p-1 bg-surface-container-low border border-outline-variant/30 rounded-xl w-full max-w-md">
+<button class="flex-1 px-6 py-2.5 rounded-lg font-label-md text-label-md transition-all bg-surface-container-lowest text-primary shadow-sm" id="main-tab-events">
+      Events
+    </button>
+<button class="flex-1 px-6 py-2.5 rounded-lg font-label-md text-label-md transition-all text-on-surface-variant hover:bg-white/50" id="main-tab-feed">
+      Feed
+    </button>
+</div>
+</div><section class="mb-10" id="events-view-header">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-6">Dive Events</h2>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<!-- Toggle Container -->
+
+<!-- Chips Filter -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+<span class="px-4 py-1.5 bg-primary text-on-primary rounded-full font-label-sm text-label-sm whitespace-nowrap cursor-pointer">Explore All</span>
+<span class="px-4 py-1.5 bg-surface-container-lowest border border-outline-variant/50 text-on-surface-variant rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-primary transition-colors cursor-pointer">Workshops</span>
+<span class="px-4 py-1.5 bg-surface-container-lowest border border-outline-variant/50 text-on-surface-variant rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-primary transition-colors cursor-pointer">Meetups</span>
+<span class="px-4 py-1.5 bg-surface-container-lowest border border-outline-variant/50 text-on-surface-variant rounded-full font-label-sm text-label-sm whitespace-nowrap hover:border-primary transition-colors cursor-pointer">Cleanup</span>
+</div>
+</div>
+</section>
+<!-- Bento Grid / Events Feed -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter" id="events-view-content">
+<!-- Featured Event (Large Card) -->
+<div class="md:col-span-8 group cursor-pointer">
+<div class="relative h-[420px] rounded-3xl overflow-hidden border border-outline-variant/20 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] bg-white transition-all duration-300 event-card-hover">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A cinematic wide-angle shot of a group of divers exploring a vibrant coral reef at night, with their powerful dive torches cutting through the deep blue crystalline water. The lighting is high-contrast with brilliant bioluminescent particles floating in the water. The overall aesthetic is professional, clean, and highlights the premium maritime atmosphere of the GoDive brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhZqVn4PT3UpHF2uhZhgyGHdkE_wq_AOFogeme-kmVGjx9b3PBeAcVYZGC6puUejg8m92k2H6UF1zkQ-EM4i6NyTe8I7i4vyU-Rj44w1iDZqHBrukG8EMSxjuhrrkcwlcnbs_ZRoQPKEckeY4lI7diWT9jqHIvf72v5xAVCDHIlbXBGN2C9TgZKO4cRVyv3Zk9u-Jn0VNgPX4Yc3QUMUHd7xFsxIHaWZ6stoxg_UnkyM789-VA6MAIXNenKNxSy8b3CvUM80YVTG0y" style="transform: scale(1) translate(0px, 0px);">
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-on-background/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 w-full">
+<div class="flex gap-2 mb-4">
+<span class="px-3 py-1 bg-primary text-on-primary rounded font-label-sm text-label-sm">FEATURED</span>
+<span class="px-3 py-1 bg-white/20 backdrop-blur-md text-white rounded font-label-sm text-label-sm">Limited Spots</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-white mb-2">Midnight Bioluminescence Expedition</h3>
+<div class="flex items-center gap-4 text-white/80 font-label-md text-label-md mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                                Oct 24, 2023
+                            </div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span>
+                                Blue Lagoon, Bali
+                            </div>
+</div>
+<button class="bg-primary hover:bg-primary-container text-white px-8 py-3 rounded-xl font-label-md text-label-md transition-all active:scale-95">Join Expedition</button>
+</div>
+</div>
+</div>
+<!-- Side Card 1 (Workshop) -->
+<div class="md:col-span-4 group cursor-pointer">
+<div class="h-full flex flex-col bg-white rounded-3xl overflow-hidden border border-outline-variant/20 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] transition-all duration-300 event-card-hover">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A high-quality, minimalist photograph of an underwater camera rig sitting on a clean white surface with subtle blue water reflections. The lighting is bright and airy, emphasizing professional dive gear with surgical precision. The style is athletic and sophisticated, consistent with a luxury maritime chronometer brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABPXP7vQ6lZ9i4OwvEI9P6fCJdvhboM-RR74ZYoqpizgxQzPQOTwzi5-EaQLeQbgLlK0U1uRJLzWwBFwjA_yppYBiXI7pG0TFXbKWCzIzdn0GJ3ATNgLCRMiFiAol3ahF0E99xJdfc2kid1gpGsPvRqDrnpaDRXVB8aTnqAoF9a6Bq5kNj0M3B-Ds5WFtvfgkRSwevfNB3ZXxx0F9IebFMtJJ1_G9sIO3Ax79yC67MiKsfHqQSiTjq6Pxpvii1Q98Elu_QYfaC-ZRB">
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<span class="text-primary font-label-sm text-label-sm mb-2">WORKSHOP</span>
+<h4 class="font-headline-md text-headline-md text-on-background mb-4">Mastering Underwater Macro Photography</h4>
+<p class="text-on-surface-variant font-body-md text-body-md mb-6 line-clamp-2">Learn from the pros on how to capture the tiniest marine life with stunning clarity.</p>
+<div class="mt-auto flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant">Nov 02 • Sydney</span>
+<button class="text-primary font-label-md text-label-md hover:underline">Interested</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Row 2 Card 1 -->
+<div class="md:col-span-4 group cursor-pointer">
+<div class="flex flex-col bg-white rounded-3xl overflow-hidden border border-outline-variant/20 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] transition-all duration-300 event-card-hover">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A group of smiling scuba divers on a boat deck during a sunny day, preparing their tanks and gear. The sunlight is high-key and bright, creating a cheerful, community-focused atmosphere. The scene is clean and modern, with nautical elements and a clear blue sky in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYq1qfdiBLXXtVJPOTjzWE1xwk7tOYVX0mpZBxUC_x8MN2CD37bDTHbpbGXNQoYE12lYiiP5B35agBb1EEI0bFe321Y6crbOBrhPwi55rz67H22dGW6WX__sHGaTWK6t3-jLU4zXDa-wnTX5fH8_isVD6dH6f6le62KIj9DozRREv0oyl4Gl-_b-i1OWHNA8FFHXU5Tu7Slj1uAaHWchNugAsgMSLzp-ew2yAbFEe8D1IIVQe9JolCrQsYbInM8RJz_4Bi0_rZ7_0I">
+</div>
+<div class="p-6">
+<span class="text-primary font-label-sm text-label-sm mb-2">MEETUP</span>
+<h4 class="font-headline-md text-headline-md text-on-background mb-4">Reef Clean-up &amp; Social Dive</h4>
+<div class="flex flex-col gap-2 mb-6">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                                09:00 AM - 02:00 PM
+                            </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="place">place</span>
+                                Sunset Beach
+                            </div>
+</div>
+<button class="w-full border border-outline-variant py-3 rounded-xl font-label-md text-label-md text-on-background hover:bg-surface-container-low transition-colors active:scale-95">Join Group</button>
+</div>
+</div>
+</div>
+<!-- Row 2 Card 2 -->
+<div class="md:col-span-4 group cursor-pointer">
+<div class="flex flex-col bg-white rounded-3xl overflow-hidden border border-outline-variant/20 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] transition-all duration-300 event-card-hover">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A vertical composition showing a single scuba diver descending into deep turquoise water, surrounded by schools of small silvery fish. The lighting is ethereal, with sunbeams piercing through the surface. The aesthetic is minimal and serene, emphasizing the vastness of the ocean in a high-contrast light mode style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCE1O0IxYY_urnbrvbF2ZfLy7ObDcNVZnzdInVuaekT_rf6yyL--iUOu_NS4gT1aIJAXGVAuQ2ouwd-1nAKQ4woQDNM7PntDtuYqrOmdTHmtgt6__EsSaBoErMm-yVzoTMtH4ZV7uL5TYbaCfFV2TZ7h37EbEfjOzjvPwb2znpyCssGBWB6_wg3yuPL--Ce4m0ATMJG3V4aO3338v9ZEu47AhrEmYXGxdea86Nt7bt8PCQy1toDREmxJBrULZUVEO7WTyRyC-mForTo">
+</div>
+<div class="p-6">
+<span class="text-primary font-label-sm text-label-sm mb-2">TRIP</span>
+<h4 class="font-headline-md text-headline-md text-on-background mb-4">Deep Sea Wreck Exploration</h4>
+<div class="flex flex-col gap-2 mb-6">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="event">event</span>
+                                Dec 12 - Dec 15
+                            </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="military_tech">military_tech</span>
+                                Advanced Certification
+                            </div>
+</div>
+<button class="w-full border border-outline-variant py-3 rounded-xl font-label-md text-label-md text-on-background hover:bg-surface-container-low transition-colors active:scale-95">View Details</button>
+</div>
+</div>
+</div>
+<!-- Row 2 Card 3 - Quick Info/Stat -->
+<div class="md:col-span-4">
+<div class="h-full bg-primary-container p-8 rounded-3xl flex flex-col justify-between border border-white/10 text-white overflow-hidden relative">
+<div class="absolute -right-10 -top-10 opacity-10">
+<span class="material-symbols-outlined text-[200px]" data-icon="explore">explore</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-2">Dive Community</h4>
+<p class="font-body-md text-body-md text-white/80">You've participated in 4 events this year. 12 upcoming events in your area.</p>
+</div>
+<div class="mt-8">
+<div class="flex -space-x-3 mb-4">
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQHSqVzgtua_8DRpFpc51fRB7MntMwcfOjBOz_Ux2LVfNe_vLQ4FtEdoJ-vcZWGK-f75AK88qWHCvgDICNn6VyH1388w91mBMUe7Hm9aD-bk9NK0sYLevxvWsbou9-WFTM6kri_j8pC5sz0tLjb973d2fnIQ7xM4N6mCo87y8mXQ1WdCwB6_XMEy23GU1K1V_D3qcrzrv2BU0ZNwikgZn3SxLAEbekF5FEF0ETrH2VzX3g8YTOpJHW53_CN0hG42tQ0_DjEUa2K1qf">
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArBIEIKa1ZiSx31ycRsvJ1dURxVIS0e-XMbkMc9NgQxLabup1Zhaaj7SmLBvuMnW44cGYy9gNLD20XWF-5LhuBRmkRtz3WPNw-rhY5eqAhImCJlPm-0B5XcSGq8uzC-uZb9ew8KGJu3HpK2eoEu9wkNLrNTRwn32onqVmm6sQx1e7NEW8PFExygSF3AAdN0on3-Y2ATh9j1fSM_nvKWiebfnn3KQmvjq_lOFwm5lCUXPeOAY0_Je4NNDlgOZs42n4zWK54_aHOO3K9">
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGYueProjkV7Bt74EpRK7At-znhGWVLSgAx7GOKU_tII3R1f5hZ7GGIWFxpsiOfM38BcLIEJTqBmK6PnQ70a18OqrjVbLsEjU5akal1wZtyYMgGjXnPJ7Yvs5f2r5Q9iOqgnIpGI2pTH46snOfB3hBXdSXIfvtWSWF3JwSAoXG6Piv9_tBSkeRhFUTHufSGbwAqtxUdLjRnZIrt9ONe-eeEKWsEZqSnsOAvZ90WOMTs9dFi00yAr6dEy2d_h9W1TA5ux9Wp5VJ1C2d">
+<div class="w-10 h-10 rounded-full border-2 border-primary-container bg-surface/20 flex items-center justify-center text-[10px] font-bold">+28</div>
+</div>
+<button class="font-label-md text-label-md flex items-center gap-2 group">
+                            Invite friends
+                            <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div><div class="space-y-gutter hidden" id="feed-view">
+<!-- Feed Post 1 -->
+<div class="bg-surface-container-lowest rounded-3xl border border-outline-variant/20 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<img alt="User" class="w-10 h-10 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQHSqVzgtua_8DRpFpc51fRB7MntMwcfOjBOz_Ux2LVfNe_vLQ4FtEdoJ-vcZWGK-f75AK88qWHCvgDICNn6VyH1388w91mBMUe7Hm9aD-bk9NK0sYLevxvWsbou9-WFTM6kri_j8pC5sz0tLjb973d2fnIQ7xM4N6mCo87y8mXQ1WdCwB6_XMEy23GU1K1V_D3qcrzrv2BU0ZNwikgZn3SxLAEbekF5FEF0ETrH2VzX3g8YTOpJHW53_CN0hG42tQ0_DjEUa2K1qf">
+<div>
+<p class="font-label-md text-on-surface">Marco Rossi</p>
+<p class="font-label-sm text-on-surface-variant/70">2 hours ago • Great Barrier Reef</p>
+</div>
+</div>
+<button class="text-on-surface-variant"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<p class="font-body-md text-on-surface-variant mb-4">Finally ticked off the night dive at the Outer Reef! The bioluminescence was absolutely mind-blowing. If you haven't done it yet, you're missing out.</p>
+<img alt="Dive Photo" class="w-full aspect-video object-cover rounded-2xl mb-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhZqVn4PT3UpHF2uhZhgyGHdkE_wq_AOFogeme-kmVGjx9b3PBeAcVYZGC6puUejg8m92k2H6UF1zkQ-EM4i6NyTe8I7i4vyU-Rj44w1iDZqHBrukG8EMSxjuhrrkcwlcnbs_ZRoQPKEckeY4lI7diWT9jqHIvf72v5xAVCDHIlbXBGN2C9TgZKO4cRVyv3Zk9u-Jn0VNgPX4Yc3QUMUHd7xFsxIHaWZ6stoxg_UnkyM789-VA6MAIXNenKNxSy8b3CvUM80YVTG0y">
+<div class="flex gap-6">
+<button class="flex items-center gap-1.5 text-primary font-label-md"><span class="material-symbols-outlined text-[20px]">favorite</span> 128</button>
+<button class="flex items-center gap-1.5 text-on-surface-variant font-label-md"><span class="material-symbols-outlined text-[20px]">chat_bubble</span> 24</button>
+<button class="flex items-center gap-1.5 text-on-surface-variant font-label-md"><span class="material-symbols-outlined text-[20px]">share</span></button>
+</div>
+</div>
+<!-- Feed Post 2 (Community Update) -->
+<div class="bg-primary/5 rounded-3xl border border-primary/10 p-6">
+<div class="flex items-start gap-4">
+<div class="p-3 bg-primary/10 rounded-2xl text-primary">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline-md text-headline-md text-primary mb-1">Community Milestone!</h4>
+<p class="font-body-md text-on-surface-variant">Our Sydney chapter just reached 1,000 active divers. Join us this Saturday at Bondi for a celebratory morning dive.</p>
+<button class="mt-4 text-primary font-label-md flex items-center gap-1">View event <span class="material-symbols-outlined text-[18px]">arrow_forward</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for adding event -->
+<button class="fixed right-6 bottom-28 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest/30 backdrop-blur-3xl border-t border-white/5 h-20 flex justify-around items-center px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-[10px] font-bold mt-1 uppercase">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl p-2 shadow-[0_0_20px_rgba(76,214,251,0.15)] active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-[10px] font-bold mt-1 uppercase">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-caps text-[10px] font-bold mt-1 uppercase">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-caps text-[10px] font-bold mt-1 uppercase">Profile</span>
+</a>
+</nav>
+<script>
+        // Tab switching logic
+        const allEventsBtn = document.getElementById('all-events-btn');
+        const myEventsBtn = document.getElementById('my-events-btn');
+
+        allEventsBtn.addEventListener('click', () => {
+            allEventsBtn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+            allEventsBtn.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+            
+            myEventsBtn.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+            myEventsBtn.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+        });
+
+        myEventsBtn.addEventListener('click', () => {
+            myEventsBtn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+            myEventsBtn.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+            
+            allEventsBtn.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+            allEventsBtn.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+        });
+
+        // Subtle parallax effect on cards
+        document.querySelectorAll('.event-card-hover').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const { left, top, width, height } = card.getBoundingClientRect();
+                const x = (e.clientX - left) / width;
+                const y = (e.clientY - top) / height;
+                
+                const img = card.querySelector('img');
+                if (img) {
+                    img.style.transform = `scale(1.08) translate(${(x - 0.5) * 10}px, ${(y - 0.5) * 10}px)`;
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                const img = card.querySelector('img');
+                if (img) {
+                    img.style.transform = `scale(1) translate(0, 0)`;
+                }
+            });
+        });
+    </script>
+<script>
+  const tabEvents = document.getElementById('main-tab-events');
+  const tabFeed = document.getElementById('main-tab-feed');
+  const eventsHeader = document.getElementById('events-view-header');
+  const eventsContent = document.getElementById('events-view-content');
+  const feedView = document.getElementById('feed-view');
+
+  tabEvents.addEventListener('click', () => {
+    // Active styles
+    tabEvents.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+    tabEvents.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+    tabFeed.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+    tabFeed.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+
+    // Visibility
+    eventsHeader.classList.remove('hidden');
+    eventsContent.classList.remove('hidden');
+    feedView.classList.add('hidden');
+  });
+
+  tabFeed.addEventListener('click', () => {
+    // Active styles
+    tabFeed.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+    tabFeed.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+    tabEvents.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+    tabEvents.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+
+    // Visibility
+    eventsHeader.classList.add('hidden');
+    eventsContent.classList.add('hidden');
+    feedView.classList.remove('hidden');
+  });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

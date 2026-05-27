@@ -1,0 +1,6 @@
+{
+  "appId": "com.godive.app",
+  "appName": "GoDive",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

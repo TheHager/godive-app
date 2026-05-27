@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>GoDive - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#006689",
+                        "primary-fixed-dim": "#78d1ff",
+                        "outline-variant": "#bdc8d0",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "surface-variant": "#d3e4fe",
+                        "tertiary-container": "#727577",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#636467",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-primary-fixed-variant": "#004c68",
+                        "surface-dim": "#cbdbf5",
+                        "on-surface": "#0b1c30",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#213145",
+                        "on-primary-container": "#fbfcff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#c3e8ff",
+                        "primary": "#006386",
+                        "primary-container": "#007da8",
+                        "on-error": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed": "#001e2c",
+                        "secondary": "#5d5e61",
+                        "on-tertiary-container": "#fbfdff",
+                        "on-tertiary-fixed": "#191c1e",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-container": "#e2e2e5",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "tertiary-fixed": "#e0e3e5",
+                        "inverse-primary": "#78d1ff",
+                        "tertiary": "#595c5e",
+                        "on-primary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "outline": "#6e7880",
+                        "on-surface-variant": "#3e484f",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#454749"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "base": "8px",
+                        "safe": "env(safe-area-inset-bottom, 24px)"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "display": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "label-md": ["Manrope"],
+                        "headline-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    },
+                    "boxShadow": {
+                        'level-1': '0px 4px 20px rgba(0,0,0,0.04)',
+                        'level-2': '0px 12px 40px rgba(0,0,0,0.08)',
+                        'glow': '0 0 20px rgba(76,214,251,0.15)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hero-overlay {
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(248,249,255,1) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pb-[100px] md:pb-0">
+<!-- TopAppBar (Web) -->
+<header class="hidden md:flex justify-between items-center w-full px-margin-desktop h-20 bg-surface/80 backdrop-blur-2xl sticky top-0 z-50 border-b border-secondary-fixed/50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary text-3xl">waves</span>
+<span class="font-display text-headline-md text-primary tracking-tighter font-extrabold">GoDive</span>
+</div>
+<nav class="flex gap-8">
+<a class="font-label-md text-label-md text-primary flex items-center gap-2 hover:text-primary-fixed-dim transition-colors" href="#"><span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>edit_note</span>Log</a>
+<a class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2 hover:text-primary-fixed-dim transition-colors" href="#"><span class="material-symbols-outlined">explore</span>Sites</a>
+<a class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2 hover:text-primary-fixed-dim transition-colors" href="#"><span class="material-symbols-outlined">scuba_diving</span>Gear</a>
+<a class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2 hover:text-primary-fixed-dim transition-colors" href="#"><span class="material-symbols-outlined">account_circle</span>Profile</a>
+</nav>
+</header>
+<!-- TopAppBar (Mobile) -->
+<header class="md:hidden flex justify-between items-center w-full px-margin-mobile h-16 bg-surface/20 backdrop-blur-2xl fixed top-0 z-50 border-b border-white/5">
+<div class="flex items-center gap-2">
+<span class="font-display text-headline-md text-primary tracking-tighter font-extrabold">GoDive</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:text-primary-container transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-sm">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBzi7ULYR3RukMICueHelm4Q6Pt-wDgMTPTQckQbgrl4gqOpjx2-kvDWixijKKQEmrGzK3k5TIVgW67cDI3AsGBE9XMiTE4D-_iJk63aXYjpsz6LW04j_BQXx77y3B5uin7zcjCDvloVEKBg7IZC-KwN9-QgShz1qVwPVoQaJaPm3tuUbpm3IKkIlJ_CR60qjSr3hES4gVJoUBPzSAx2awEIR_YAGgOuwtl3QumPyJFfIDqfa86yn4-X5AMnbQO9dFGGnreP47eitt"/>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-container-max mx-auto md:px-margin-desktop md:pt-8 pt-16">
+<!-- Hero Section -->
+<section class="relative w-full h-[450px] md:h-[500px] md:rounded-3xl overflow-hidden shadow-level-1 group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" data-alt="Cinematic, high-quality vertical shot of a scuba diver descending into crystal clear turquoise ocean water with rays of sunlight piercing through. Minimalist composition, professional underwater photography, serene and adventurous mood. Matching a clean, light minimalist aesthetic." style='background-image: url("https://lh3.googleusercontent.com/aida/ADBb0ugEZ72Tsevnq7P4F7y_C3BmML8Mw47j6BKSS1gYGfpjo4aJ_QjyqazZ8rNTR5LX3dchW6g5BJorFi6vXlOo_mXSNDHfjPS2D0Y9UjArVIa-OgstvHy7dhK6rU0TWW4DOCrdzQRGLeGAX4g3-g2E5Q96p-FlTM6CUzwe4x4WbBXU_F-gBIpZbO1dP3f0WIGkK0A95PYBevikJn4lA8KDanSlzQckXktGMWoQYJzTOiIIs49CDy1iEsUApxU");'></div>
+<div class="absolute inset-0 hero-overlay md:bg-gradient-to-t md:from-surface md:via-surface/50 md:to-transparent"></div>
+<div class="absolute bottom-0 left-0 w-full p-6 md:p-12 flex flex-col justify-end">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-2 opacity-90">Welcome back</p>
+<h1 class="font-display text-display text-on-surface mb-6 md:text-5xl">Your next adventure awaits, Marcus.</h1>
+<!-- Progression Bar inside Hero -->
+<div class="glass-panel rounded-2xl p-6 border border-white/40 shadow-level-2 max-w-md w-full backdrop-blur-xl">
+<div class="flex justify-between items-end mb-3">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Current Status</p>
+<div class="flex items-center gap-1.5 mb-0.5 text-primary"><span class="material-symbols-outlined text-sm" style='font-variation-settings: "FILL" 1;'>verified</span><p class="font-label-sm text-label-sm uppercase tracking-wider">Master Scuba Diver</p></div><p class="font-headline-md text-headline-md text-on-surface">Level 24</p>
+</div>
+<p class="font-label-md text-label-md text-primary font-medium">550 XP to Lvl 25</p>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000 ease-out w-[65%]" style="width: 65%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Content Area -->
+<div class="px-margin-mobile md:px-0 mt-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Left Column: Actions & Stats -->
+<div class="md:col-span-8 flex flex-col gap-6">
+<!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-4">
+<button class="bg-primary text-on-primary font-label-md text-label-md py-4 px-6 rounded-xl flex justify-center items-center gap-2 hover:bg-primary-container transition-colors shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                        Log New Dive
+                    </button>
+<button class="bg-surface text-on-surface font-label-md text-label-md py-4 px-6 rounded-xl border border-secondary-fixed flex justify-center items-center gap-2 hover:bg-surface-container-lowest transition-colors shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-lg">explore</span>
+                        Explore Sites
+                    </button>
+</div>
+<!-- Bento Grid Stats -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl p-6 shadow-level-1 flex flex-col justify-between aspect-square md:aspect-auto md:h-40">
+<span class="material-symbols-outlined text-outline text-2xl mb-4">history</span>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Total Dives</p>
+<p class="font-headline-lg text-headline-lg text-on-surface">214</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl p-6 shadow-level-1 flex flex-col justify-between aspect-square md:aspect-auto md:h-40">
+<span class="material-symbols-outlined text-outline text-2xl mb-4">set_meal</span>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Species Spotted</p>
+<p class="font-headline-lg text-headline-lg text-on-surface">42</p>
+</div>
+</div>
+</div>
+<!-- Latest Achievement -->
+<div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl p-4 shadow-level-1 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined">workspace_premium</span>
+</div>
+<div class="flex-grow">
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Latest Achievement</p>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Deep Diver Specialist</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div><div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl p-6 shadow-level-1 mt-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-on-surface text-lg">Weekly Challenges</h3>
+<a class="font-label-md text-primary hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-6">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">scuba_diving</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Deep Dive Master</p>
+<p class="font-label-sm text-on-surface-variant">Complete 3 dives over 30m</p>
+</div>
+</div>
+<span class="font-label-sm text-primary bg-primary/10 px-2 py-1 rounded">2d left</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<p class="font-label-sm text-on-surface-variant">Progress</p>
+<p class="font-label-sm text-primary">2/3</p>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 66.6%"></div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">eco</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Eco-Warrior</p>
+<p class="font-label-sm text-on-surface-variant">Participate in a beach clean-up</p>
+</div>
+</div>
+<span class="font-label-sm text-primary bg-primary/10 px-2 py-1 rounded">4d left</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<p class="font-label-sm text-on-surface-variant">Progress</p>
+<p class="font-label-sm text-primary">0/1</p>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 0%"></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl p-6 shadow-level-1">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline-md text-on-surface text-lg">Events You've Joined</h3>
+<a class="font-label-md text-primary hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 group cursor-pointer">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Deep Sea Clean-up</p>
+<p class="font-label-sm text-on-surface-variant">Sat, 10:00 AM • Blue Hole Park</p>
+</div>
+</div>
+<div class="flex items-center gap-4 group cursor-pointer">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Wreck Dive Workshop</p>
+<p class="font-label-sm text-on-surface-variant">Sun, 2:00 PM • Marina Training Center</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[#fffbeb] border border-amber-200 rounded-2xl p-6 shadow-level-1 flex items-start gap-4 mt-4">
+<div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-700">
+<span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>warning</span>
+</div>
+<div class="flex-grow">
+<p class="font-label-sm text-amber-800 uppercase font-bold tracking-wider">Service Alert</p>
+<p class="font-body-lg text-amber-900 font-semibold">Regulator Service Due</p>
+<p class="font-body-md text-amber-800/80">Your Atomic T3 is due for its annual service in 5 days.</p>
+</div>
+<button class="p-2 text-amber-700 hover:bg-amber-200/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">calendar_add_on</span>
+</button>
+</div>
+</div>
+<!-- Right Column: Featured -->
+<div class="md:col-span-4">
+<div class="bg-surface-container-lowest border border-secondary-fixed rounded-2xl overflow-hidden shadow-level-1 h-full flex flex-col group cursor-pointer hover:shadow-level-2 transition-shadow">
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-surface-container-lowest/80 backdrop-blur-3xl rounded-t-xl border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]"><a class="flex flex-col items-center justify-center text-primary bg-primary/10 rounded-xl p-2 shadow-glow active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">edit_note</span>
+<span class="font-label-sm text-[10px] mt-1">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-sm text-[10px] mt-1">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="font-label-sm text-[10px] mt-1">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">scuba_diving</span>
+<span class="font-label-sm text-[10px] mt-1">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-sm text-[10px] mt-1">Profile</span>
+</a></nav>
+</body></html>

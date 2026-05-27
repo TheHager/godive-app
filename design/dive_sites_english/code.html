@@ -1,0 +1,359 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f8f9ff;
+            overflow-x: hidden;
+            min-height: max(884px, 100dvh);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-pane {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 102, 137, 0.1);
+        }
+        .bioluminescent-glow {
+            box-shadow: 0 4px 20px rgba(0, 99, 134, 0.15);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .radial-void {
+            background: radial-gradient(circle at top center, #f0f4ff 0%, #f8f9ff 70%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#eaf1ff",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#e2e2e5",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-primary-fixed-variant": "#004c68",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#78d1ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "on-error": "#ffffff",
+                        "primary-container": "#007da8",
+                        "tertiary-fixed": "#e0e3e5",
+                        "error-container": "#ffdad6",
+                        "secondary": "#5d5e61",
+                        "outline-variant": "#bdc8d0",
+                        "on-tertiary-container": "#fbfdff",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#191c1e",
+                        "background": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e2c",
+                        "outline": "#6e7880",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006689",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#fbfcff",
+                        "on-surface-variant": "#3e484f",
+                        "tertiary-container": "#727577",
+                        "on-background": "#0b1c30",
+                        "inverse-primary": "#78d1ff",
+                        "primary": "#006386",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#c3e8ff",
+                        "on-secondary-container": "#636467",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "tertiary": "#595c5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "margin-desktop": "40px",
+                        "md": "16px",
+                        "margin-mobile": "20px",
+                        "unit": "4px",
+                        "3xl": "64px",
+                        "sm": "8px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Manrope"],
+                        "stat-lg": ["Manrope"],
+                        "body-base": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "display-lg": ["Manrope"],
+                        "display-xl": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "label-caps": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "stat-lg": ["36px", {"lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+                        "display-xl": ["72px", {"lineHeight": "1.0", "letterSpacing": "-0.05em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.2em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background radial-void pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 border-primary/10 flex justify-between items-center px-margin-mobile h-16 bg-transparent">
+<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary" data-icon="waves">waves</span><h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1></div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="filter_list">filter_list</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="map">map</span>
+</div>
+</header>
+<main class="pt-24 px-margin-mobile max-w-4xl mx-auto">
+<!-- Search Section -->
+<section class="mb-lg">
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant group-focus-within:text-primary transition-colors" data-icon="search">search</span>
+</div>
+<input class="w-full h-14 bg-white border border-primary/10 rounded-xl pl-12 pr-4 text-body-base text-on-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-on-surface-variant/50 shadow-sm" placeholder="Find your next descent..." type="text">
+</div>
+</section>
+<!-- Categories / Quick Filters -->
+<div class="flex overflow-x-auto gap-sm pb-lg hide-scrollbar">
+<button class="flex-none px-md py-2 bg-primary text-on-primary rounded-full font-label-caps text-label-caps bioluminescent-glow">All Sites</button>
+<button class="flex-none px-md py-2 bg-white text-on-surface-variant border border-primary/10 rounded-full font-label-caps text-label-caps hover:bg-primary/5 hover:text-primary transition-all shadow-sm">Shipwrecks</button>
+<button class="flex-none px-md py-2 bg-white text-on-surface-variant border border-primary/10 rounded-full font-label-caps text-label-caps hover:bg-primary/5 hover:text-primary transition-all shadow-sm">Coral Reefs</button>
+<button class="flex-none px-md py-2 bg-white text-on-surface-variant border border-primary/10 rounded-full font-label-caps text-label-caps hover:bg-primary/5 hover:text-primary transition-all shadow-sm">Caves</button>
+<button class="flex-none px-md py-2 bg-white text-on-surface-variant border border-primary/10 rounded-full font-label-caps text-label-caps hover:bg-primary/5 hover:text-primary transition-all shadow-sm">Deep Blue</button>
+</div>
+<!-- Featured Dive Site (Hero Style) -->
+<section class="mb-xl relative h-[320px] rounded-2xl overflow-hidden group shadow-lg">
+<img alt="A cinematic underwater shot of a diver exploring a vibrant coral wall" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU00axD_t_opxwRKwbK5av_lTnm2BRFGNXs29QrxOTkm0H4orVXYUPeJFLuK7XESh_l9ifwo9PQtjOZ9R-iOA-TUI1sXjqC-SvCglOE6RtHpxnABSL73L0L0QhMXbykFKfZeTffc70FAWQXtPeMdLwN_qYVRnG1XuETVsoPSxS_BbYobUTh0dOOuY80t4lpMelJpal8tOLAsTqggYoQSO0oMyq2giwwwlvfvrtifHdA9W5bkvAbmU8N33FvfYW8Bi2-JQgja1OGGAg">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-lg w-full">
+<div class="flex justify-between items-end">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary/20 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-widest border border-white/30">Pro Level</span>
+<div class="flex items-center gap-1 text-primary-fixed-dim">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-caps text-label-caps">4.9</span>
+</div>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-white">The Blue Hole Abyss</h2>
+<p class="text-white/80 font-body-sm text-body-sm">Red Sea, Egypt</p>
+</div>
+<button class="bg-primary text-on-primary h-12 w-12 rounded-full flex items-center justify-center bioluminescent-glow active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid of Sites -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Card 1 -->
+<div class="bg-white rounded-xl overflow-hidden group shadow-sm border border-primary/5 transition-transform duration-200 active:scale-95">
+<div class="h-40 overflow-hidden relative">
+<img alt="Ship wreck on sandy seabed" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8BXilJyQhBc8VUBoo7Rz89yVl6-v40oBZ5rDDA9U97n1qKaS1vEKumGvKh453Tey3ALoG-eGvnKgOq_Qs0v3EWXblUSr5BO4nPii4jEjduxDV7w-6Rizji_EBp5JITXXntBbPO3yxiMkTY_OPd2XeqvbvtJUEbaTQc_SpCG8Xjg3S1tU_Pt-PFk9tS2JW7g5eSdHwpFZ8EOQsOOOtxYqlu57UsRd1L0mhpLt6X_X-qjmiV1pJzgP2VeWEyLY-1fptbdA4sSbEvHQ0">
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/10">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-caps text-label-caps">4.7</span>
+</div>
+</div>
+</div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-base text-body-base font-bold text-on-surface">Zenobia Wreck</h3>
+<span class="font-label-caps text-label-caps text-secondary">Expert</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-4">Larnaca, Cyprus</p>
+<div class="flex items-center justify-between">
+<div class="flex gap-3">
+<div class="flex flex-col">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">MAX DEPTH</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">42m</span>
+</div>
+<div class="flex flex-col border-l border-primary/10 pl-3">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">VISIBILITY</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">30m+</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-xl overflow-hidden group shadow-sm border border-primary/5 transition-transform duration-200 active:scale-95">
+<div class="h-40 overflow-hidden relative">
+<img alt="Macro sea anemone and clownfish" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBejpejv9FmfOytZYcJwx2H4_4YDNlTZ6HUEcUy-QB-qckKYV7QJY3k0Evfn7IboD-q3C-ME_5OUo9aVOvf7Mu7GFfxdq57WKrYkZgC3Gh4jup2tomzE08uKS6BRa86rRtFX53LtG43pxlHjnmGNlwYGSevShSTGlTdi--WR6I_vM6Bj9cB1zroeuGOOZGdGYRdYYPZe06nLJMdHIzTrg8LD1arZHr9MhrdMXMH6jIhxx4BgIy3fAoqoniz4Urr3z00mBK5gXvkVl98">
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/10">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-caps text-label-caps">4.8</span>
+</div>
+</div>
+</div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-base text-body-base font-bold text-on-surface">Great Barrier Wall</h3>
+<span class="font-label-caps text-label-caps text-secondary">Beginner</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-4">Queensland, Australia</p>
+<div class="flex items-center justify-between">
+<div class="flex gap-3">
+<div class="flex flex-col">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">MAX DEPTH</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">18m</span>
+</div>
+<div class="flex flex-col border-l border-primary/10 pl-3">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">VISIBILITY</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">25m</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white rounded-xl overflow-hidden group shadow-sm border border-primary/5 transition-transform duration-200 active:scale-95">
+<div class="h-40 overflow-hidden relative">
+<img alt="Silfra fissure ice caves" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvvqhjua6XEpvBqIxWizdwTx6Or1P0CbRbVI3QvMVurf9fxr2Js68wThA4k5h6vdWUiBYxFL1_sj_JH5vEXfFevomONFPGIpVoCaTmmjFE92cTQzIW5K-0NC3X8m6S0prth7iwtblHFUPR4YMguniXn9Jk1u5vBVTnUfvoaihRqJH184UYMCa3LRRVyUQDxMHaEYm3I7IxcS-UmsAQZHJ7yxGOam7tdHEEZJnjs21zY3vBChXCEcCHpgipo7_XFUU-nMOvMkf1JT4h">
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/10">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-caps text-label-caps">5.0</span>
+</div>
+</div>
+</div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-base text-body-base font-bold text-on-surface">Silfra Fissure</h3>
+<span class="font-label-caps text-label-caps text-secondary">Advanced</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-4">Pingvellir, Iceland</p>
+<div class="flex items-center justify-between">
+<div class="flex gap-3">
+<div class="flex flex-col">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">MAX DEPTH</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">12m</span>
+</div>
+<div class="flex flex-col border-l border-primary/10 pl-3">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">VISIBILITY</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">100m+</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-white rounded-xl overflow-hidden group shadow-sm border border-primary/5 transition-transform duration-200 active:scale-95">
+<div class="h-40 overflow-hidden relative">
+<img alt="Hammerhead sharks in Galapagos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxVZ0WOR0dHRJfJag1d9ICLOTDlTJlUS5szwTjOo06dQppfHF2D4_eQTlN5eFtwXKB_D_kSOTQSua-G37Wt96nnecSDF7FTYcONl0R131MchQeFwntgTDbbv-jzTA8mTmDEmRGHIhCnBgtdCL3vszmiaoq8rtyCrMLXjo97qFXLguatrqZE4UW9B_C353L2BLC9q25XJXYjdxJXgBaiwNIBkoCp-uMAHrlH-BWzJE8LfdTp-ijDKzSQa4N9_RiqVk3ehIFMaJCJz0w">
+<div class="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg border border-primary/10">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[12px]" data-icon="star" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-caps text-label-caps">4.9</span>
+</div>
+</div>
+</div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-base text-body-base font-bold text-on-surface">Wolf Island</h3>
+<span class="font-label-caps text-label-caps text-secondary">Expert</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-4">Galápagos, Ecuador</p>
+<div class="flex items-center justify-between">
+<div class="flex gap-3">
+<div class="flex flex-col">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">MAX DEPTH</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">35m</span>
+</div>
+<div class="flex flex-col border-l border-primary/10 pl-3">
+<span class="font-label-caps text-[8px] text-on-surface-variant uppercase tracking-tighter">VISIBILITY</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">20m</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-white/80 backdrop-blur-3xl border-t border-primary/10 rounded-t-xl shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/5 rounded-xl p-2 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-label-caps">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-caps text-label-caps">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-caps text-label-caps">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple scroll reveal effect for header
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            const header = document.querySelector('header');
+            
+            if (currentScroll > lastScroll && currentScroll > 100) {
+                header.style.transform = 'translateY(-100%)';
+                header.style.transition = 'transform 0.3s ease';
+            } else {
+                header.style.transform = 'translateY(0)';
+            }
+            lastScroll = currentScroll;
+        });
+    </script>
+
+
+
+
+
+
+
+
+</body></html>

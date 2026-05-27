@@ -144,21 +144,21 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
   return (
     <div className="flex flex-col gap-10 p-6 w-full max-w-4xl mx-auto min-w-0 pb-32">
       <section>
-        <h2 className="mb-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-on-surface whitespace-nowrap">Friends & Rankings</h2>
-        <p className="text-lg font-medium text-on-surface-variant opacity-70">Connect with divers and see who is leading.</p>
+        <h2 className="mb-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0b2240] whitespace-nowrap">Friends & Rankings</h2>
+        <p className="text-lg font-medium text-[#475569] opacity-70">Connect with divers and see who is leading.</p>
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button 
           onClick={() => setShowSearchModal(true)}
-          className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-secondary py-4 px-6 font-black uppercase tracking-widest text-on-secondary shadow-xl transition-all hover:bg-secondary-container active:scale-95 group shadow-secondary/20 border border-white/10"
+          className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-secondary py-4 px-6 font-black uppercase tracking-widest text-on-secondary shadow-xl transition-all hover:bg-secondary-container active:scale-95 group shadow-secondary/20 border "
         >
           <Search size={20} className="transition-transform group-hover:scale-110" />
           Find Buddies
         </button>
         <button 
           onClick={() => setShowLeaderboard(true)}
-          className="flex-1 flex items-center justify-center gap-3 rounded-2xl bg-surface-container-highest py-4 px-6 font-black uppercase tracking-widest text-on-surface shadow-xl transition-all hover:bg-white/5 active:scale-95 group border border-white/10"
+          className="flex-1 flex items-center justify-center gap-3 rounded-2xl premium-glass-highest py-4 px-6 font-black uppercase tracking-widest text-[#0b2240] shadow-xl transition-all hover:premium-glass active:scale-95 group border "
         >
           <Trophy size={20} className="text-secondary transition-transform group-hover:scale-110" />
           Rankings
@@ -166,7 +166,7 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2">My Buddies ({buddies.length})</h3>
+        <h3 className="text-xs font-black uppercase tracking-widest text-[#475569] mb-2">My Buddies ({buddies.length})</h3>
         
         {isLoadingBuddies ? (
           <div className="flex h-16 w-full items-center justify-center">
@@ -177,7 +177,7 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
             {buddies.map(buddy => (
               <div 
                 key={buddy.id} 
-                className="flex flex-col items-center gap-3 p-4 bg-surface-container-high/30 border border-white/5 rounded-3xl cursor-pointer hover:bg-surface-container-high transition-colors group"
+                className="flex flex-col items-center gap-3 p-4 premium-glass border  rounded-3xl cursor-pointer hover:premium-glass transition-colors group"
                 onClick={() => setSelectedBuddyForProfile(buddy)}
               >
                 <div className="relative">
@@ -199,8 +199,8 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
                 </div>
                 <div className="text-center w-full min-w-0 flex flex-col items-center gap-1">
-                  <span className="text-xs font-black uppercase tracking-widest text-on-surface truncate w-full">{buddy.displayName}</span>
-                  <span className="text-[9px] font-bold text-on-surface-variant uppercase bg-black/20 px-2 py-0.5 rounded-full truncate w-full">
+                  <span className="text-xs font-black uppercase tracking-widest text-[#0b2240] truncate w-full">{buddy.displayName}</span>
+                  <span className="text-[9px] font-bold text-[#475569] uppercase premium-glass px-2 py-0.5 rounded-full truncate w-full">
                     {getRankInfo(calculateLevel((buddy.points || 0) + (buddy.rankingPoints || 0))).title}
                   </span>
                 </div>
@@ -208,10 +208,10 @@ export const FriendsView = ({ setView }: { setView: (v: View) => void }) => {
             ))}
           </div>
         ) : (
-          <div className="py-12 flex flex-col items-center justify-center text-center bg-surface-container-high/20 rounded-[40px] border border-white/5">
-            <Users size={48} className="text-on-surface-variant/20 mb-4" />
-            <h4 className="text-on-surface font-black italic text-xl">No Buddies Yet</h4>
-            <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-widest mt-2">Find divers and connect</p>
+          <div className="py-12 flex flex-col items-center justify-center text-center premium-glass rounded-[40px] border ">
+            <Users size={48} className="text-[#083344] mb-4" />
+            <h4 className="text-[#0b2240] font-black italic text-xl">No Buddies Yet</h4>
+            <p className="text-[#083344] text-xs font-bold uppercase tracking-widest mt-2">Find divers and connect</p>
           </div>
         )}
       </section>
@@ -254,17 +254,17 @@ const LeaderboardModal = ({ isOpen, onClose, profile }: any) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/95 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/95 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="relative w-full max-w-4xl h-full max-h-[90vh] rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full max-w-4xl h-full max-h-[90vh] rounded-[2.5rem] premium-glass-highest border  shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="absolute right-4 top-4 z-50">
-              <button onClick={onClose} className="rounded-full bg-surface-container/80 backdrop-blur-md p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10 shadow-lg">
+              <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border  shadow-lg">
                 <X size={24} />
               </button>
             </div>
@@ -288,27 +288,27 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/90 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/90 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-lg rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg rounded-[2.5rem] premium-glass-highest border  shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="p-6 border-b border-white/5 bg-surface-container-highest shrink-0">
+            <div className="p-6 border-b  premium-glass-highest shrink-0">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-2xl font-black italic tracking-tight text-on-surface">Find Buddies</h3>
-                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">Community Discovery</p>
+                  <h3 className="text-2xl font-black italic tracking-tight text-[#0b2240]">Find Buddies</h3>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#083344]">Community Discovery</p>
                 </div>
-                <button onClick={onClose} className="rounded-full bg-surface-container-high p-2 text-on-surface hover:bg-white/10 transition-colors border border-white/10">
+                <button onClick={onClose} className="rounded-full premium-glass p-2 text-[#0b2240] hover:premium-glass transition-colors border ">
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={onSearch} className="flex gap-2 rounded-2xl bg-white/5 p-2 border border-white/5 focus-within:ring-1 focus-within:ring-secondary/50">
+              <form onSubmit={onSearch} className="flex gap-2 rounded-2xl premium-glass p-2 border  focus-within:ring-1 focus-within:ring-secondary/50">
                 <div className="flex flex-1 items-center gap-3 px-3 min-w-0">
                   <Search size={18} className="text-secondary shrink-0" />
                   <input
@@ -317,7 +317,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search name, email, phone..."
-                    className="w-full bg-transparent border-none p-0 text-sm font-medium text-on-surface placeholder:text-outline/30 focus:ring-0 min-w-0 flex-1"
+                    className="premium-input w-full bg-transparent -none p-0 text-sm font-medium text-[#0b2240] placeholder:text-[#083344] -0 min-w-0 flex-1"
                   />
                 </div>
                 <button 
@@ -342,7 +342,7 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
               ) : results.length > 0 ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Possible Matches</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#083344]">Possible Matches</span>
                     <span className="text-[10px] font-black text-secondary uppercase bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">{results.length} Found</span>
                   </div>
                   {results.map((user: UserProfile, index: number) => {
@@ -353,27 +353,27 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                         key={user.id} 
-                        className="flex items-center justify-between p-3 rounded-[2rem] bg-surface-container-high/30 border border-white/5 backdrop-blur-md group hover:bg-surface-container-high hover:border-white/10 transition-all duration-300"
+                        className="flex items-center justify-between p-3 rounded-[2rem] premium-glass border   group hover:premium-glass hover: transition-all duration-300"
                       >
                         <div className="flex items-center gap-4 ml-1 min-w-0 flex-1">
                           <div className="relative shrink-0">
                             {user.photoURL ? (
                               <img 
                                 src={user.photoURL} 
-                                className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
+                                className="h-14 w-14 rounded-2xl border-2  shadow-2xl object-cover transition-transform group-hover:scale-105 duration-500" 
                                 alt={user.displayName}
                               />
                             ) : (
-                              <div className="flex h-14 w-14 rounded-2xl border-2 border-white/10 bg-surface/50 text-secondary shadow-2xl items-center justify-center transition-transform group-hover:scale-105 duration-500">
+                              <div className="flex h-14 w-14 rounded-2xl border-2  bg-surface/50 text-secondary shadow-2xl items-center justify-center transition-transform group-hover:scale-105 duration-500">
                                 <UserIcon size={28} />
                               </div>
                             )}
                             <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-secondary border-4 border-surface-container-highest shadow-xl" />
                           </div>
                           <div className="flex flex-col min-w-0 flex-1 pr-2">
-                            <span className="font-extrabold text-on-surface group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
+                            <span className="font-extrabold text-[#0b2240] group-hover:text-secondary transition-colors italic tracking-tight text-lg truncate pr-2 leading-tight">{user.displayName}</span>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[9px] text-on-surface-variant uppercase font-black tracking-[0.1em]">
+                              <span className="text-[9px] text-[#475569] uppercase font-black tracking-[0.1em]">
                                 {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
                               </span>
                             </div>
@@ -384,13 +384,13 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                           className={cn(
                             "flex items-center gap-2 rounded-full px-6 py-3 transition-all duration-300 shadow-xl font-black uppercase tracking-[0.2em] text-[9px] shrink-0 active:scale-95 border",
                             isBuddy 
-                              ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20" 
+                              ? "bg-[#0055ff]/10 text-[#0055ff] border-[#0055ff]/20 hover:bg-[#0055ff]/20" 
                               : "bg-secondary text-on-secondary border-secondary/20 hover:shadow-secondary/20"
                           )}
                         >
                           {isBuddy ? (
                             <>
-                              <UserCheck size={14} className="text-primary" />
+                              <UserCheck size={14} className="text-[#0055ff]" />
                               <span className="hidden sm:inline">Buddy</span>
                               <span className="sm:hidden">OK</span>
                             </>
@@ -407,12 +407,12 @@ const UserSearchModal = ({ isOpen, onClose, results, isSearching, onToggleBuddy,
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
-                  <div className="rounded-full bg-surface-container-high p-6 text-on-surface-variant/20 border border-white/5">
+                  <div className="rounded-full premium-glass p-6 text-[#083344] border ">
                     <Users size={48} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-on-surface">No Divers Found</h4>
-                    <p className="text-xs font-medium text-on-surface-variant mt-1 max-w-[200px] mx-auto opacity-60">Try searching for a different username, email, or phone number.</p>
+                    <h4 className="text-lg font-black text-[#0b2240]">No Divers Found</h4>
+                    <p className="text-xs font-medium text-[#475569] mt-1 max-w-[200px] mx-auto opacity-60">Try searching for a different username, email, or phone number.</p>
                   </div>
                 </div>
               )}
@@ -470,14 +470,14 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/95 backdrop-blur-md" 
+            className="absolute inset-0 bg-background/95 " 
             onClick={onClose} 
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-sm rounded-[2.5rem] bg-surface-container-highest border border-white/10 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            className="relative w-full max-w-sm rounded-[2.5rem] premium-glass-highest border  shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
           >
             <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
               <ActionMenu 
@@ -492,9 +492,9 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
               />
               <button 
                 onClick={onClose} 
-                className="p-2 rounded-full bg-surface-container hover:bg-surface border border-white/5 transition-colors"
+                className="p-2 rounded-full premium-glass hover:bg-surface border  transition-colors"
               >
-                <X size={16} className="text-on-surface" />
+                <X size={16} className="text-[#0b2240]" />
               </button>
             </div>
             <div className="p-8 text-center flex flex-col items-center bg-gradient-to-b from-secondary/10 to-transparent shrink-0">
@@ -519,24 +519,24 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   if (b && b.earned) {
                     const BIcon = b.icon;
                     return (
-                      <div className="flex items-center justify-center gap-2 mb-2 bg-white/5 pr-3 pl-1 py-1 rounded-full border border-white/10">
-                        <div className="bg-primary/20 text-primary p-1.5 rounded-full">
+                      <div className="flex items-center justify-center gap-2 mb-2 premium-glass pr-3 pl-1 py-1 rounded-full border ">
+                        <div className="bg-[#0055ff]/20 text-[#0055ff] p-1.5 rounded-full">
                           <BIcon size={14} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-primary">{b.label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#0055ff]">{b.label}</span>
                       </div>
                     );
                   }
                   return null;
               })())}
 
-              <h3 className="text-2xl font-black italic tracking-tighter text-on-surface">{user.displayName}</h3>
+              <h3 className="text-2xl font-black italic tracking-tighter text-[#0b2240]">{user.displayName}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
                   {getRankInfo(calculateLevel((user.points || 0) + (user.rankingPoints || 0))).title}
                 </span>
-                <span className="h-1 w-1 rounded-full bg-white/20" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                <span className="h-1 w-1 rounded-full premium-glass" />
+                <span className="text-[10px] font-bold text-[#083344] uppercase tracking-widest">
                   LVL {calculateLevel((user.points || 0) + (user.rankingPoints || 0))}
                 </span>
               </div>
@@ -545,40 +545,40 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
             <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
               <div className="space-y-4">
                 {user.bio && (
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 mb-4">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-outline">Bio</div>
-                    <div className="text-xs font-medium text-on-surface-variant leading-relaxed italic">"{user.bio}"</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 mb-4">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Bio</div>
+                    <div className="text-xs font-medium text-[#475569] leading-relaxed italic">"{user.bio}"</div>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2">
                   <Ship size={12} />
                   Dive Stats
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Total Dives</div>
-                     <div className="text-xl font-black text-on-surface italic">{user.divesCount || 0}</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Total Dives</div>
+                     <div className="text-xl font-black text-[#0b2240] italic">{user.divesCount || 0}</div>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1 text-center">
-                     <div className="text-[9px] font-black uppercase tracking-widest text-outline">Exp. Points</div>
+                  <div className="premium-glass rounded-2xl p-4 border  space-y-1 text-center">
+                     <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Exp. Points</div>
                      <div className="text-xl font-black text-secondary italic">{(user.points || 0) + (user.rankingPoints || 0)}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                   <Award size={12} />
                   Diving Certifications
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {(user.certificates || []).length > 0 ? (
                     (user.certificates || []).map((cert: string) => (
-                      <span key={cert} className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
+                      <span key={cert} className="rounded-xl border border-[#0055ff]/20 bg-[#0055ff]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#0055ff] shadow-sm">
                         {cert}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs italic text-on-surface-variant/50">No certifications recorded</span>
+                    <span className="text-xs italic text-[#083344]">No certifications recorded</span>
                   )}
                 </div>
 
@@ -587,7 +587,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                   if (earnedBadges.length > 0) {
                     return (
                       <>
-                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                           <Trophy size={12} />
                           Earned Badges
                         </div>
@@ -595,9 +595,9 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                           {earnedBadges.map((b: any) => {
                             const BIcon = b.icon;
                             return (
-                              <div key={b.id} className="flex items-center gap-2 bg-surface-container/50 border border-white/10 rounded-xl px-2.5 py-1.5" title={b.label}>
+                              <div key={b.id} className="flex items-center gap-2 premium-glass border  rounded-xl px-2.5 py-1.5" title={b.label}>
                                 <BIcon size={14} className="text-secondary" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{b.label}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#475569]">{b.label}</span>
                               </div>
                             );
                           })}
@@ -610,7 +610,7 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
 
                 {canViewPrivate && (
                   <>
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-on-surface-variant/40 mb-2 pt-2 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#083344] mb-2 pt-2 border-t ">
                       <Phone size={12} />
                       Contact Info
                     </div>
@@ -621,9 +621,9 @@ const UserProfileModal = ({ isOpen, onClose, user, isBuddy, onRemoveBuddy }: { i
                           <Loader2 size={24} className="animate-spin text-secondary" />
                         </div>
                       ) : privateInfo?.phoneNumber && (
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1">
-                           <div className="text-[9px] font-black uppercase tracking-widest text-outline">Phone Number</div>
-                           <div className="text-sm font-bold text-on-surface">{privateInfo.phoneNumber}</div>
+                        <div className="premium-glass rounded-2xl p-4 border  space-y-1">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-[#083344]">Phone Number</div>
+                           <div className="text-sm font-bold text-[#0b2240]">{privateInfo.phoneNumber}</div>
                         </div>
                       )}
                     </div>

@@ -8,6 +8,11 @@ if (!admin.apps.length) {
   });
 }
 
+const deadManSwitch = require('./deadManSwitch');
+exports.onActiveDiveCreated = deadManSwitch.onActiveDiveCreated;
+exports.onActiveDiveUpdated = deadManSwitch.onActiveDiveUpdated;
+exports.processDiveTimeout = deadManSwitch.processDiveTimeout;
+
 exports.getParticipantPrivateInfo = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');

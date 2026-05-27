@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -97,6 +98,7 @@ async function startServer() {
       // Initialize Gemini
       const apiKey = process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) {
+        console.error("Moderation API Error: Gemini API key is missing from environment variables.");
         return res.status(500).json({ error: "Gemini API key is missing." });
       }
 
@@ -129,6 +131,72 @@ async function startServer() {
       let errorMessage = error.message || "Failed to evaluate image";
       if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
         errorMessage = "The Gemini API key is invalid. Please go to the Settings menu (gear icon in the top right), and enter a valid key for MODERATION_GEMINI_KEY. You can get a free key from aistudio.google.com/app/apikey.";
+      }
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Vision API: Identify marine species from an uploaded image
+  app.post("/api/vision/identify-species", async (req, res) => {
+    try {
+      const { image, maxResults = 3, confidenceThreshold = 0.5 } = req.body;
+      if (!image) {
+        return res.status(400).json({ error: "Missing image data" });
+      }
+
+      const apiKey = process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error("Vision API Error: Gemini API key is missing from environment variables.");
+        return res.status(500).json({ error: "Gemini API key is missing." });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      // Strip data url prefix if present
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `You are a marine biologist AI. Analyze this underwater/marine photograph and identify any marine species visible.
+
+Rules:
+- Only identify species you can see clear visual evidence for (fin shape, body pattern, coloring, anatomy).
+- Do NOT guess or hallucinate. If unsure, return fewer results or an empty array.
+- Return at most ${maxResults} species.
+- Only include species where your confidence is above ${confidenceThreshold} (0 to 1 scale).
+- Use common English names (e.g. "Blue Tang", "Manta Ray", "Green Sea Turtle").
+
+Respond with ONLY valid JSON in this exact format, no markdown, no explanation:
+{"matches":[{"name":"Species Name","confidence":0.85}]}`
+              },
+              { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+            ]
+          }
+        ]
+      });
+
+      const rawText = response.text?.trim() || "";
+
+      // Parse the JSON response, stripping any markdown fencing
+      const jsonStr = rawText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const matches = Array.isArray(parsed.matches) ? parsed.matches : [];
+        return res.json({ matches });
+      } catch {
+        console.error("Failed to parse Gemini species response:", rawText);
+        return res.json({ matches: [] });
+      }
+    } catch (error: any) {
+      console.error("Species identification error:", error);
+      let errorMessage = error.message || "Failed to identify species";
+      if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
+        errorMessage = "The Gemini API key is invalid. Please set GEMINI_API_KEY in your environment.";
       }
       res.status(500).json({ error: errorMessage });
     }

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --surface-gradient: linear-gradient(180deg, #f8f9ff 0%, #eff4ff 100%);
+        }
+        body {
+            background: #f8f9ff;
+            background-image: var(--surface-gradient);
+            min-height: 100vh;
+            color: #0b1c30;
+        }
+        .glass-panel {
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 102, 137, 0.08);
+            border: 1px solid #e5eeff;
+        }
+        .bioluminescent-glow {
+            box-shadow: 0 0 20px rgba(0, 99, 134, 0.15);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#eaf1ff",
+                        "inverse-surface": "#213145",
+                        "secondary-container": "#e2e2e5",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-primary-fixed-variant": "#004c68",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#78d1ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "on-error": "#ffffff",
+                        "primary-container": "#007da8",
+                        "tertiary-fixed": "#e0e3e5",
+                        "error-container": "#ffdad6",
+                        "secondary": "#5d5e61",
+                        "outline-variant": "#bdc8d0",
+                        "on-tertiary-container": "#fbfdff",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#191c1e",
+                        "background": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e2c",
+                        "outline": "#6e7880",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006689",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#fbfcff",
+                        "on-surface-variant": "#3e484f",
+                        "tertiary-container": "#727577",
+                        "on-background": "#0b1c30",
+                        "inverse-primary": "#78d1ff",
+                        "primary": "#006386",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#c3e8ff",
+                        "on-secondary-container": "#636467",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "tertiary": "#595c5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "margin-desktop": "40px",
+                        "md": "16px",
+                        "margin-mobile": "20px",
+                        "unit": "4px",
+                        "3xl": "64px",
+                        "sm": "8px",
+                        "2xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Manrope"],
+                        "stat-lg": ["Manrope"],
+                        "body-base": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "display-lg": ["Manrope"],
+                        "display-xl": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "label-caps": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "stat-lg": ["36px", {"lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "letterSpacing": "0", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+                        "display-xl": ["72px", {"lineHeight": "1.0", "letterSpacing": "-0.05em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.2em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-base text-on-surface antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-margin-mobile bg-surface">
+<div class="flex items-center gap-2">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1>
+</div>
+<button class="p-2 active:scale-95 transition-transform text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile max-w-lg mx-auto">
+<!-- Profile Header -->
+<section class="flex flex-col items-center mb-8 text-center">
+<div class="relative mb-4">
+<div class="w-24 h-24 rounded-full border-2 border-primary-container p-1 bioluminescent-glow bg-white">
+<img class="w-full h-full rounded-full object-cover grayscale brightness-90 contrast-110" data-alt="A professional close-up portrait of a tech-savvy diver in a minimalist underwater setting. The lighting is deep blue and atmospheric, reflecting off a high-tech wetsuit. The image maintains a cool, abyssal aesthetic with sharp clarity and sophisticated shadows, perfectly aligned with a premium UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSiuoNR8ufVcYQsg1x20M3RBNA7aNV-Eis3bsaLBZtEq6QRHzQOuE5ZKe8CBhQT_K1ktmTBidr2IUlLCIJcpMBXxZkOuX1n6n7XXvCy-BfLqRwcL2a80Ml4KjDKibC2Xc4kZFzQc7wbrcT-dry9blX5CSJpkNt8vTW4Sv0RAceA_b6KYVoc4W7xSjDtDoJ-U8zwTc20unqAWq6tYLxIWTt-SpkBMWN7TBUAKE3Kr8cS-8eDDWsZ0jfTf51SxILU6oZjREXvy9cg2Wc"/>
+</div>
+<div class="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full border-2 border-white">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified" style='font-variation-settings: "FILL" 1;'>verified</span>
+</div>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Marcus Vane</h2>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-[0.2em]">MASTER SCUBA DIVER • PADI #49281</p>
+</section>
+<!-- Level & Progression -->
+<section class="mb-10 w-full glass-panel rounded-xl p-5">
+<div class="flex justify-between items-end mb-3">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">CURRENT RANK</span>
+<h3 class="font-headline-lg text-primary leading-none">Level 24</h3>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-bold">2,450 / 3,000 XP</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2 mb-2 overflow-hidden">
+<div class="bg-primary h-2 rounded-full transition-all duration-1000 ease-out" style="width: 82%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center">550 XP to Level 25. Next unlock: Wreck Diver Specialty.</p>
+</section>
+<!-- Technical Stats Grid -->
+<section class="grid grid-cols-2 gap-4 mb-10">
+<div class="glass-panel rounded-xl p-5 flex flex-col items-center justify-center col-span-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">TOTAL TIME UNDERWATER</span>
+<div class="flex items-baseline gap-1">
+<span class="font-stat-lg text-stat-lg text-primary tracking-tighter">148</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">HRS</span>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col items-center justify-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">TOTAL DIVES</span>
+<span class="font-stat-lg text-stat-lg text-primary">214</span>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col items-center justify-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">DEEPEST DIVE</span>
+<div class="flex items-baseline gap-1">
+<span class="font-stat-lg text-stat-lg text-primary">42.8</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">M</span>
+</div>
+</div>
+</section>
+<!-- Trophies & Badges -->
+<section class="mb-10">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant px-2 mb-4">ACHIEVEMENTS</h3>
+<!-- Trophy Room -->
+<div class="glass-panel rounded-xl p-5 mb-4">
+<div class="flex justify-between items-center mb-5">
+<h4 class="font-body-base text-body-base font-bold text-on-surface">Trophy Room</h4>
+<button class="font-body-sm text-body-sm text-primary font-bold hover:underline">View All</button>
+</div>
+<div class="flex justify-between items-start text-center">
+<div class="flex flex-col items-center gap-2">
+<div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary border-2 border-primary/20">
+<span class="material-symbols-outlined text-[32px]" data-icon="water_drop" style='font-variation-settings: "FILL" 1;'>water_drop</span>
+</div>
+<span class="font-label-caps text-label-caps uppercase text-on-surface">Deep Diver</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-secondary border-2 border-secondary/20">
+<span class="material-symbols-outlined text-[32px]" data-icon="biotech" style='font-variation-settings: "FILL" 1;'>biotech</span>
+</div>
+<span class="font-label-caps text-label-caps uppercase text-on-surface">Marine Bio</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-16 h-16 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary border-2 border-tertiary/20">
+<span class="material-symbols-outlined text-[32px]" data-icon="eco" style='font-variation-settings: "FILL" 1;'>eco</span>
+</div>
+<span class="font-label-caps text-label-caps uppercase text-on-surface">Eco-Warrior</span>
+</div>
+</div>
+</div>
+<!-- Badges -->
+<div class="glass-panel rounded-xl p-5">
+<h4 class="font-body-base text-body-base font-bold text-on-surface mb-5">Recent Badges</h4>
+<div class="grid grid-cols-4 gap-4">
+<div class="w-12 h-12 mx-auto rounded-lg bg-surface-container flex items-center justify-center text-primary shadow-sm border border-surface-container-high">
+<span class="material-symbols-outlined" data-icon="anchor" style='font-variation-settings: "FILL" 1;'>anchor</span>
+</div>
+<div class="w-12 h-12 mx-auto rounded-lg bg-surface-container flex items-center justify-center text-secondary shadow-sm border border-surface-container-high">
+<span class="material-symbols-outlined" data-icon="sailing" style='font-variation-settings: "FILL" 1;'>sailing</span>
+</div>
+<div class="w-12 h-12 mx-auto rounded-lg bg-surface-container flex items-center justify-center text-tertiary shadow-sm border border-surface-container-high">
+<span class="material-symbols-outlined" data-icon="photo_camera" style='font-variation-settings: "FILL" 1;'>photo_camera</span>
+</div>
+<div class="w-12 h-12 mx-auto rounded-lg bg-surface-container flex items-center justify-center text-primary shadow-sm border border-surface-container-high">
+<span class="material-symbols-outlined" data-icon="nights_stay" style='font-variation-settings: "FILL" 1;'>nights_stay</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Biography & Certifications -->
+<section class="mb-10 w-full glass-panel rounded-xl p-5">
+<div class="mb-6">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase italic tracking-widest">BIOGRAPHY</h3>
+</div>
+<p class="font-body-base text-body-base text-on-surface">Never tried diving. Haven't even showered in years</p>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="star">star</span>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase italic tracking-widest">CERTIFICATIONS</h3>
+</div>
+<p class="font-body-base text-body-base text-on-surface">No certifications added yet.</p>
+</div>
+</section>
+<!-- Dive Safety Information -->
+<section class="mb-10 w-full glass-panel rounded-xl p-5">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-error" data-icon="monitor_heart">monitor_heart</span>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase italic tracking-widest">DIVE SAFETY INFORMATION</h3>
+</div>
+<div class="space-y-4">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-1">YOUR PHONE NUMBER</span>
+<p class="font-body-base text-body-base font-bold text-on-surface">+4528594484</p>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-1">EMERGENCY CONTACT NAME</span>
+<p class="font-body-base text-body-base font-bold text-on-surface">Kine</p>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-1">EMERGENCY CONTACT PHONE</span>
+<p class="font-body-base text-body-base font-bold text-on-surface">+4792404674</p>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-1">MEDICAL NOTES (ALLERGIES, MEDS, ETC.)</span>
+<p class="font-body-base text-body-base italic text-on-surface">Diabetes type 1</p>
+</div>
+<div class="pt-4 border-t border-surface-container">
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-3">SECONDARY EMERGENCY CONTACT (OPTIONAL)</span>
+<div class="space-y-3">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant/80 block">NAME</span>
+<p class="font-body-base text-body-base font-bold text-on-surface">Not set</p>
+</div>
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant/80 block">PHONE</span>
+<p class="font-body-base text-body-base font-bold text-on-surface">Not set</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Account Settings List -->
+<section class="space-y-3">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant px-2 mb-4">INSTRUMENTATION &amp; PRIVACY</h3>
+<button class="w-full glass-panel rounded-xl px-4 py-4 flex items-center justify-between group active:scale-[0.98] transition-all">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface" data-icon="account_box">account_box</span>
+<span class="font-body-base text-body-base font-semibold">Personal Details</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="w-full glass-panel rounded-xl px-4 py-4 flex items-center justify-between group active:scale-[0.98] transition-all">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface" data-icon="security">security</span>
+<span class="font-body-base text-body-base font-semibold">Biometric Lock</span>
+</div>
+<div class="w-10 h-6 bg-surface-container rounded-full relative">
+<div class="absolute right-1 top-1 w-4 h-4 bg-primary rounded-full shadow-sm"></div>
+</div>
+</button>
+<button class="w-full glass-panel rounded-xl px-4 py-4 flex items-center justify-between group active:scale-[0.98] transition-all">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface" data-icon="notifications_active">notifications_active</span>
+<span class="font-body-base text-body-base font-semibold">Dive Alerts</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Admin Dashboard Button -->
+<div class="pt-2">
+<button class="w-full glass-panel border-primary/20 rounded-xl px-4 py-4 flex items-center justify-between group active:scale-[0.98] transition-all">
+<div class="flex items-center gap-4 text-primary">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-base text-body-base font-bold">Admin Dashboard</span>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="pt-2">
+<button class="w-full bg-error-container/10 border border-error/20 rounded-xl px-4 py-4 flex items-center justify-between group active:scale-[0.98] transition-all">
+<div class="flex items-center gap-4 text-error">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-base text-body-base font-bold">Terminate Session</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Technical Footer -->
+<footer class="mt-12 text-center">
+<p class="font-label-caps text-label-caps text-on-surface-variant/60">GODIVE SYSTEM V2.4.11</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant/60 mt-1">ENCRYPTED END-TO-END</p>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-white/90 backdrop-blur-3xl border-t border-surface-container-high flex justify-around items-center px-4 pb-safe h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-label-caps">Sites</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving">scuba_diving</span>
+<span class="font-label-caps text-label-caps">Gear</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary p-2 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle" style='font-variation-settings: "FILL" 1;'>account_circle</span>
+<span class="font-label-caps text-label-caps">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for technical stats
+        document.querySelectorAll('.font-stat-lg').forEach(stat => {
+            stat.addEventListener('mouseenter', () => {
+                stat.classList.add('scale-105');
+                stat.classList.add('transition-transform');
+            });
+            stat.addEventListener('mouseleave', () => {
+                stat.classList.remove('scale-105');
+            });
+        });
+    </script>
+</body></html>

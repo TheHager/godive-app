@@ -1,0 +1,401 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "inverse-on-surface": "#eaf1ff",
+                "inverse-surface": "#213145",
+                "secondary-container": "#e2e2e5",
+                "on-secondary-fixed-variant": "#454749",
+                "on-primary-fixed-variant": "#004c68",
+                "on-tertiary-fixed-variant": "#444749",
+                "primary-fixed-dim": "#78d1ff",
+                "surface-container": "#e5eeff",
+                "surface-container-low": "#eff4ff",
+                "on-error": "#ffffff",
+                "primary-container": "#007da8",
+                "tertiary-fixed": "#e0e3e5",
+                "error-container": "#ffdad6",
+                "secondary": "#5d5e61",
+                "outline-variant": "#bdc8d0",
+                "on-tertiary-container": "#fbfdff",
+                "surface-variant": "#d3e4fe",
+                "on-tertiary-fixed": "#191c1e",
+                "background": "#f8f9ff",
+                "surface-dim": "#cbdbf5",
+                "on-secondary": "#ffffff",
+                "tertiary-fixed-dim": "#c4c7c9",
+                "secondary-fixed-dim": "#c6c6c9",
+                "secondary-fixed": "#e2e2e5",
+                "on-primary": "#ffffff",
+                "on-primary-fixed": "#001e2c",
+                "outline": "#6e7880",
+                "on-secondary-fixed": "#1a1c1e",
+                "on-tertiary": "#ffffff",
+                "surface-tint": "#006689",
+                "on-surface": "#0b1c30",
+                "on-primary-container": "#fbfcff",
+                "on-surface-variant": "#3e484f",
+                "tertiary-container": "#727577",
+                "on-background": "#0b1c30",
+                "inverse-primary": "#78d1ff",
+                "primary": "#006386",
+                "surface-bright": "#f8f9ff",
+                "on-error-container": "#93000a",
+                "surface-container-highest": "#d3e4fe",
+                "primary-fixed": "#c3e8ff",
+                "on-secondary-container": "#636467",
+                "surface-container-lowest": "#ffffff",
+                "error": "#ba1a1a",
+                "surface-container-high": "#dce9ff",
+                "surface": "#f8f9ff",
+                "tertiary": "#595c5e"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "base": "8px",
+                "container-max": "1280px",
+                "margin-desktop": "48px",
+                "margin-mobile": "16px",
+                "gutter": "24px"
+        },
+        "fontFamily": {
+                "body-lg": ["Manrope"],
+                "body-md": ["Manrope"],
+                "label-sm": ["Manrope"],
+                "headline-lg-mobile": ["Manrope"],
+                "headline-lg": ["Manrope"],
+                "display": ["Manrope"],
+                "headline-md": ["Manrope"],
+                "label-md": ["Manrope"],
+                "label-caps": ["Manrope"],
+                "stat-lg": ["Manrope"]
+        },
+        "fontSize": {
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.2em", "fontWeight": "800"}],
+                "stat-lg": ["36px", {"lineHeight": "1.0", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+        }
+    },
+    },
+  }
+</script>
+<style>
+      body {
+        background-color: #f8f9ff;
+        background-image: radial-gradient(circle at 50% 0%, rgba(0, 99, 134, 0.05) 0%, transparent 70%);
+        min-height: 100vh;
+        color: #0b1c30;
+      }
+      .glass-pane {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(0, 99, 134, 0.1);
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+      }
+      .bioluminescent-glow {
+        box-shadow: 0 0 15px rgba(0, 99, 134, 0.2);
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #f1f5f9; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 h-16 flex justify-between items-center px-margin-mobile md:px-margin-desktop bg-transparent">
+<div class="flex items-center gap-3">
+
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tighter">GoDive</h1>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">LOG</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">SITES</a>
+<a class="font-label-caps text-label-caps text-primary transition-colors" href="#">GEAR</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">PROFILE</a>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant active:scale-95 transition-transform" data-icon="notifications">notifications</button>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Hero Summary Section -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<p class="font-label-caps text-label-caps text-primary mb-2">EQUIPMENT STATUS</p>
+<h2 class="font-display text-display text-on-surface mb-2">Gear Locker</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
+                        Monitor the technical integrity of your life-support systems. Scheduled maintenance ensures deep-sea reliability.
+                    </p>
+</div>
+<div class="flex gap-4">
+<div class="glass-pane rounded-xl p-4 flex flex-col items-center justify-center min-w-[100px]">
+<span class="font-stat-lg text-stat-lg text-primary">08</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">TOTAL ITEMS</span>
+</div>
+<div class="glass-pane rounded-xl p-4 flex flex-col items-center justify-center min-w-[100px] border-error/10">
+<span class="font-stat-lg text-stat-lg text-error">01</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">DUE SOON</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid for Gear -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Main Featured Item: Regulator (High Priority) -->
+<div class="md:col-span-8 glass-pane rounded-2xl p-6 relative overflow-hidden group" style="background: rgba(255, 255, 255, 0.7);">
+<div class="absolute top-0 right-0 p-6">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-caps text-[10px] tracking-widest border border-primary/20">OPTIMAL</span>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-center h-full">
+<div class="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden bg-surface-container relative">
+<img alt="Regulator" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A professional high-end scuba diving regulator set featuring a chrome-finished first stage and a sleek black second stage with neon blue accents. The equipment is photographed in a minimalist studio setting with moody, dark abyssal lighting and soft cyan rim highlights. The aesthetic is technical and premium, emphasizing precision engineering and submarine performance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNGubsT99lSwsFeGRjbmG0rebvduinZcNb9AocywC7OOruIXh166G--dhcC6MQRZmZOc0hBeev44YRk85c09kpW4n-4f3GkkApE_Gz2Dgas1_9-DORSxL8TapR_H2ZPf3MK5N5vfyeuknq6QvX83n1Jm2vejt4qQPq7jwlZInRSVoEywynUS2ut6-8b9qBb1kwi0yYBhIlldC5-a2yLZh10Bhv-iZSCPJKFXhDg9_D8cNUb-VrAhAJlzBYWvN08Viu566BqBn8IszB">
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-1">Apeks MTX-RC</h3>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-6">REGULATOR SYSTEM • SN: AX-99281</p>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="space-y-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant block">LAST SERVICE</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">OCT 14, 2023</span>
+</div>
+<div class="space-y-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant block">NEXT SERVICE</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">OCT 2024</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container w-3/4 rounded-full bioluminescent-glow"></div>
+</div>
+<div class="mt-3 flex justify-between items-center">
+<span class="font-label-caps text-[10px] text-on-surface-variant">RELIABILITY INDEX</span>
+<span class="font-label-caps text-[10px] text-primary font-bold">75%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Maintenance Alert Card -->
+<div class="md:col-span-4 glass-pane rounded-2xl p-6 border-error/20 flex flex-col justify-between bg-error-container/5" style="background: rgba(255, 255, 255, 0.7);">
+<div>
+<div class="w-12 h-12 rounded-xl bg-error/10 flex items-center justify-center mb-6 border border-error/10">
+<span class="material-symbols-outlined text-error text-2xl" data-icon="build">build</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Service Due</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                        Suunto D5 Dive Computer requires a battery diagnostic and O-ring replacement within the next 12 days.
+                    </p>
+</div>
+<button class="w-full py-3 rounded-xl bg-error text-white font-label-caps text-label-caps hover:brightness-110 shadow-lg shadow-error/20 transition-all active:scale-95">
+                    SCHEDULE SERVICE
+                </button>
+</div>
+<!-- Gear List Items -->
+<div class="md:col-span-4 glass-pane rounded-2xl p-6 group hover:border-primary/30 transition-colors">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="scuba_diving">scuba_diving</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Scubapro Hydros Pro</h4>
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-6 uppercase tracking-wider">BCD • BACK INFLATION</p>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary bioluminescent-glow"></div>
+<span class="font-label-caps text-[10px] text-primary">READY FOR DIVE</span>
+</div>
+</div>
+<div class="md:col-span-4 glass-pane rounded-2xl p-6 group hover:border-primary/30 transition-colors">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="visibility">visibility</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Hollis M1 Mask</h4>
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-6 uppercase tracking-wider">MASK • CRYSTAL CLEAR</p>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary bioluminescent-glow"></div>
+<span class="font-label-caps text-[10px] text-primary">INSPECTED</span>
+</div>
+</div>
+<div class="md:col-span-4 glass-pane rounded-2xl p-6 group hover:border-primary/30 transition-colors">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="thermostat">thermostat</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Bare Revel 5mm</h4>
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-6 uppercase tracking-wider">WETSUIT • THERMAL</p>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary bioluminescent-glow"></div>
+<span class="font-label-caps text-[10px] text-primary">DRY STORAGE</span>
+</div>
+</div>
+<!-- Detailed Stats Table (Fluid Layout) -->
+<div class="md:col-span-12 glass-pane rounded-2xl mt-4 overflow-hidden">
+<div class="px-6 py-4 border-b border-primary/5 flex justify-between items-center bg-primary/5">
+<h3 class="font-label-caps text-label-caps text-on-surface font-bold">TECHNICAL INVENTORY</h3>
+<div class="flex gap-2">
+<button class="p-2 rounded-lg hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="filter_list">filter_list</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="search">search</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="border-b border-primary/5">
+<th class="px-6 py-4 font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase">COMPONENT</th>
+<th class="px-6 py-4 font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase">STATUS</th>
+<th class="px-6 py-4 font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase">DIVE COUNT</th>
+<th class="px-6 py-4 font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase">HEALTH</th>
+<th class="px-6 py-4 font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase text-right">ACTION</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="watch">watch</span>
+</div>
+<div>
+<span class="font-body-md text-body-md text-on-surface block font-semibold">Suunto D5 Black</span>
+<span class="font-label-caps text-[9px] text-on-surface-variant">SERIAL: 219001-B</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-error bg-error/10 px-2 py-1 rounded text-[10px] font-bold">WARNING</span>
+</td>
+<td class="px-6 py-5 font-body-md text-on-surface">42 DIVES</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="flex-1 w-20 h-1 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-error w-1/4"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">25%</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-primary hover:underline font-label-caps text-[10px] font-bold">REPLACE BATTERY</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="lightbulb">lightbulb</span>
+</div>
+<div>
+<span class="font-body-md text-body-md text-on-surface block font-semibold">BigBlue AL1200</span>
+<span class="font-label-caps text-[9px] text-on-surface-variant">SERIAL: BB-7721</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-primary bg-primary/10 px-2 py-1 rounded text-[10px] font-bold">READY</span>
+</td>
+<td class="px-6 py-5 font-body-md text-on-surface">18 DIVES</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="flex-1 w-20 h-1 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-full"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">100%</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for adding gear -->
+<button class="fixed bottom-24 right-6 md:right-12 w-14 h-14 bg-primary text-white rounded-2xl shadow-xl shadow-primary/30 flex items-center justify-center active:scale-90 transition-all hover:scale-110 z-50">
+<span class="material-symbols-outlined text-3xl font-bold" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-white/90 backdrop-blur-3xl border-t border-primary/10 flex justify-around items-center px-4 pb-safe h-20">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps mt-1">LOG</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-label-caps text-label-caps mt-1">SITES</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary/5 rounded-xl p-2" href="#">
+<span class="material-symbols-outlined" data-icon="scuba_diving" style="font-variation-settings: &quot;FILL&quot; 1;">scuba_diving</span>
+<span class="font-label-caps text-label-caps mt-1">GEAR</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-caps text-label-caps mt-1">PROFILE</span>
+</a>
+</nav>
+<script>
+        // Clean micro-interaction for a light theme
+        document.querySelectorAll('.glass-pane').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Subtle highlight effect on hover for high-tech feel
+                card.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 70%)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'rgba(255, 255, 255, 0.7)';
+            });
+        });
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

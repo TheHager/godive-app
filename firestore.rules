@@ -200,6 +200,16 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (isOwner(existing().userId) || isModerator());
     }
 
+    match /activeDives/{diveId} {
+      allow get: if isSignedIn() && (resource == null || isOwner(resource.data.userId) || isAdmin());
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && isOwner(incoming().userId);
+      allow update: if isSignedIn() && isOwner(existing().userId) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'endedAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
     match /sightings/{sightingId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || true);
