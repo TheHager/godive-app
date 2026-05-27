@@ -144,25 +144,33 @@ async function startServer() {
         return res.status(400).json({ error: "Missing image data" });
       }
 
-      const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.MODERATION_GEMINI_KEY || process.env.GEMINI_API_KEY;
-      if (!apiKey) {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.MODERATION_GEMINI_KEY;
+      if (!apiKey || apiKey.trim() === '') {
         console.error("Vision API Error: Gemini API key is missing from environment variables.");
-        return res.status(500).json({ error: "Gemini API key is missing." });
+        return res.status(500).json({ error: "Gemini API key is not configured on the server." });
       }
 
-      const ai = new GoogleGenAI({ apiKey });
+      let ai;
+      try {
+        ai = new GoogleGenAI({ apiKey });
+      } catch (initErr: any) {
+        console.error("GoogleGenAI initialization error:", initErr);
+        return res.status(500).json({ error: "Failed to initialize AI client: " + initErr.message });
+      }
 
       // Strip data url prefix if present
       const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `You are a marine biologist AI. Analyze this underwater/marine photograph and identify any marine species visible.
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `You are a marine biologist AI. Analyze this underwater/marine photograph and identify any marine species visible.
 
 Rules:
 - Only identify species you can see clear visual evidence for (fin shape, body pattern, coloring, anatomy).
@@ -173,32 +181,45 @@ Rules:
 
 Respond with ONLY valid JSON in this exact format, no markdown, no explanation:
 {"matches":[{"name":"Species Name","confidence":0.85}]}`
-              },
-              { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
-            ]
-          }
-        ]
-      });
+                },
+                { inlineData: { data: base64Data, mimeType: "image/jpeg" } }
+              ]
+            }
+          ]
+        });
+      } catch (genErr: any) {
+        console.error("Gemini generation error:", genErr);
+        let errorMsg = genErr.message || "Failed to identify species";
+        if (errorMsg.includes("API_KEY_INVALID") || errorMsg.includes("API key not valid")) {
+           errorMsg = "The Gemini API key is invalid. Please check your environment variables.";
+        }
+        return res.status(500).json({ error: "Gemini API call failed: " + errorMsg });
+      }
 
-      const rawText = response.text?.trim() || "";
+      if (!response || typeof response.text !== 'string') {
+        console.error("Gemini returned an invalid or empty response object.");
+        return res.status(500).json({ error: "Gemini API returned an empty response." });
+      }
+
+      const rawText = response.text.trim();
+      if (!rawText) {
+        console.error("Gemini returned empty text content.");
+        return res.status(500).json({ error: "Gemini API returned empty text." });
+      }
 
       // Parse the JSON response, stripping any markdown fencing
       const jsonStr = rawText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
       try {
         const parsed = JSON.parse(jsonStr);
         const matches = Array.isArray(parsed.matches) ? parsed.matches : [];
-        return res.json({ matches });
-      } catch {
-        console.error("Failed to parse Gemini species response:", rawText);
-        return res.json({ matches: [] });
+        return res.status(200).json({ matches });
+      } catch (parseErr: any) {
+        console.error("Failed to parse Gemini species response:", rawText, parseErr);
+        return res.status(500).json({ error: "Failed to parse AI response into JSON", details: rawText });
       }
     } catch (error: any) {
-      console.error("Species identification error:", error);
-      let errorMessage = error.message || "Failed to identify species";
-      if (errorMessage.includes("API_KEY_INVALID") || errorMessage.includes("API key not valid")) {
-        errorMessage = "The Gemini API key is invalid. Please set GEMINI_API_KEY in your environment.";
-      }
-      res.status(500).json({ error: errorMessage });
+      console.error("Unhandled error in /api/vision/identify-species:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 
