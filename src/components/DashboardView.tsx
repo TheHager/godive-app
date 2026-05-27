@@ -1475,7 +1475,7 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
 
     try {
       // Ensure we hit the absolute URL in production so we don't fall back to an empty static file
-      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://us-central1-project-7c683cb5-9592-4a84-97d.cloudfunctions.net';
       const response = await fetch(`${baseUrl}/identifySpecies`, {
         method: 'POST',
         headers: {

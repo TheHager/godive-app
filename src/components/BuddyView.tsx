@@ -1040,7 +1040,7 @@ const CreateEventModal = ({ isOpen, onClose, profile, eventToEdit }: any) => {
       
       setIsModerating(true);
       try {
-        const baseUrl = import.meta.env.VITE_API_URL || '';
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://us-central1-project-7c683cb5-9592-4a84-97d.cloudfunctions.net';
         const response = await fetch(`${baseUrl}/moderateImage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
