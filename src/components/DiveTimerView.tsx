@@ -161,9 +161,9 @@ export function DiveTimerView() {
                 onClick={() => setPlannedMinutes(Math.max(1, plannedMinutes - 5))}
                 className="w-14 h-14 rounded-full premium-glass active:premium-glass flex items-center justify-center text-[#0b2240] border  transition-transform active:scale-95 shadow-sm text-2xl"
               >-</button>
-              <input className="premium-input premium-input" type="number" value={plannedMinutes} onChange={(e) => setPlannedMinutes(parseInt(e.target.value) || 0)}
+              <input type="number" value={plannedMinutes} onChange={(e) => setPlannedMinutes(parseInt(e.target.value) || 0)}
                 onBlur={(e) => setPlannedMinutes(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-32 text-center bg-transparent -b-2 -[#0055ff] focus: focus:-secondary font-mono font-bold text-6xl p-2 text-[#0b2240]"
+                className="premium-input w-32 text-center bg-transparent border-b-2 border-[#0055ff] focus:outline-none focus:border-secondary font-mono font-bold text-6xl p-2 text-[#0b2240]"
               />
               <button 
                 onClick={() => setPlannedMinutes(plannedMinutes + 5)}
