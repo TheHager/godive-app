@@ -176,6 +176,15 @@ service cloud.firestore {
         && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000));
     }
 
+    function isValidMarineSpecies(data) {
+      return data.keys().hasAll(['id', 'commonName', 'scientificName', 'category'])
+        && data.id is number
+        && data.commonName is string
+        && data.scientificName is string
+        && data.category is string
+        && (!('imageUrl' in data) || data.imageUrl == null || data.imageUrl is string);
+    }
+
     // --- Collection Matchers ---
 
     match /users/{userId} {
@@ -308,6 +317,14 @@ service cloud.firestore {
         isAdmin()
       );
       allow delete: if isSignedIn() && (isOwner(existing().hostId) || isAdmin());
+    }
+
+    match /marine_species/{speciesId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidMarineSpecies(incoming());
+      allow update: if false; // Restricted as per user comments
+      allow delete: if isAdmin();
     }
   }
 }

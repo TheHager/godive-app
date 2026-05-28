@@ -161,3 +161,25 @@ export interface ActiveDive {
     push: boolean;
   };
 }
+
+export interface DiveSpot {
+  id: string;
+  type: string;
+  name: string;
+  lat: number;
+  lng: number;
+  maxDepth?: number;
+  difficulty?: "Beginner" | "Intermediate" | "Advanced";
+  visibility?: string;
+  current?: string;
+  corals?: string[];
+  marineLife?: string[];
+  description?: string;
+  photo?: string;
+  status?: string;
+  upvotes?: number;
+  downvotes?: number;
+  userId?: string;
+  userDisplayName?: string;
+  timestamp?: any;
+}

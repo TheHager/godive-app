@@ -18,11 +18,7 @@ if (!API_KEY && process.env.NODE_ENV === 'production') {
 }
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
 
-const INITIAL_DIVE_SITES = [
-  { id: 'site_1', type: "site", name: "Great Blue Hole", lat: 17.3160, lng: -87.5351 },
-  { id: 'site_2', type: "site", name: "Half Moon Caye Wall", lat: 17.2052, lng: -87.5342 },
-];
-
+import { INITIAL_DIVE_SITES } from "../constants/diveSites";
 const INITIAL_REVIEWS = {
   'site_1': [
     { id: 1, user: "Alice Walker", rating: 5, text: "Amazing visibility, saw a few reef sharks! The stalactites are mind-blowing at depth." },
@@ -45,6 +41,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   const [sites, setSites] = useState<any[]>(INITIAL_DIVE_SITES);
   const [sightings, setSightings] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const currentUserRole = 'admin'; // For testing RBAC
 
   useEffect(() => {
     // Current time minus 24 hours
@@ -135,7 +132,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   const [isAddingSighting, setIsAddingSighting] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState({ lat: 17.3160, lng: -87.5351 });
+  const [mapCenter, setMapCenter] = useState({ lat: 10.0956, lng: 99.8404 });
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   const formatTimeAgo = (timestamp: number) => {
@@ -559,7 +556,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
           }
         }}
         defaultZoom={12}
-        mapId="DEMO_MAP_ID"
+        mapId="dde41c6be1763de35bd42ff0"
         internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
         style={{ width: '100%', height: '100%', cursor: selectionMode !== 'none' ? 'crosshair' : undefined }}
         disableDefaultUI={true}
@@ -642,6 +639,7 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
             site={selectedSite}
             onClose={() => setSelectedSite(null)}
             onAddReview={handleAddReview}
+            onUpdate={(data: any) => handleUpdateSite(selectedSite.id, data)}
           />
         )}
         {selectedSite && selectedSite.type === 'unverified' && (
@@ -824,46 +822,16 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
         <div className="pointer-events-auto flex w-full items-end justify-between gap-2 sm:gap-4 pb-4">
           <div className="flex-1" />
 
-          <div className="relative shrink-0">
-            <AnimatePresence>
-              {showAddMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute bottom-16 right-0 mb-2 flex flex-col gap-2 min-w-[200px]"
-                >
-                  <button
-                    onClick={() => { setSelectionMode('site'); setShowAddMenu(false); }}
-                    className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
-                  >
-                    <div className="rounded-full bg-[#0055ff]/20 p-2 text-[#0055ff]">
-                      <MapPin size={18} />
-                    </div>
-                    Suggest Dive Site
-                  </button>
-                  <button
-                    onClick={() => { setSelectionMode('sighting'); setShowAddMenu(false); }}
-                    className="flex w-full items-center gap-3 rounded-2xl premium-glass p-4 text-sm font-bold text-[#0b2240] shadow-xl hover:premium-glass-highest transition-colors border "
-                  >
-                    <div className="rounded-full bg-secondary/20 p-2 text-secondary">
-                      <Fish size={18} />
-                    </div>
-                    Log Marine Life
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <button
-              onClick={() => setShowAddMenu(!showAddMenu)}
-              className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-[1.25rem] transition-all active:scale-95 border  hover:scale-110",
-                showAddMenu ? "premium-glass-highest text-[#0b2240]" : "bg-secondary text-on-secondary hover:bg-secondary-container hover:-rotate-12 shadow-[0_0_40px_rgba(76,214,251,0.3)]"
-              )}
-            >
-              <Plus size={28} className={cn("transition-transform", showAddMenu && "rotate-45")} />
-            </button>
-          </div>
+          {currentUserRole === 'admin' || currentUserRole === 'moderator' ? (
+            <div className="pointer-events-auto relative shrink-0">
+              <button
+                onClick={() => { setIsAddingSite(true); }}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0055ff] text-white shadow-[0_0_20px_rgba(0,85,255,0.4)] transition-all hover:scale-105 active:scale-95 hover:shadow-[0_0_25px_rgba(0,85,255,0.6)]"
+              >
+                <Plus size={24} strokeWidth={2.5} />
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -889,8 +857,56 @@ export const ExplorerView = ({ onNavigateToEvent }: ExplorerViewProps = {}) => {
   );
 };
 
-const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
+const SiteReviewModal = ({ site, onClose, onAddReview, onUpdate }: any) => {
   const { profile } = useAuth();
+  const currentUserRole = 'admin'; // For testing RBAC
+  const [isEditingSite, setIsEditingSite] = useState(false);
+  const [editSiteName, setEditSiteName] = useState(site.name || "");
+  const [editSiteLat, setEditSiteLat] = useState(site.lat?.toString() || "");
+  const [editSiteLng, setEditSiteLng] = useState(site.lng?.toString() || "");
+  const [editSiteMaxDepth, setEditSiteMaxDepth] = useState(site.maxDepth?.toString() || "");
+  const [editSiteDifficulty, setEditSiteDifficulty] = useState(site.difficulty || "");
+  const [editSiteVisibility, setEditSiteVisibility] = useState(site.visibility || "");
+  const [editSiteCurrent, setEditSiteCurrent] = useState(site.current || "");
+  const [editSiteCorals, setEditSiteCorals] = useState(site.corals?.join(", ") || "");
+  const [editSiteMarineLife, setEditSiteMarineLife] = useState(site.marineLife?.join(", ") || "");
+  const [editSiteDescription, setEditSiteDescription] = useState(site.description || "");
+  const [editSitePhoto, setEditSitePhoto] = useState<string | null>(site.photo || null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_DIM = 800;
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        setEditSitePhoto(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
   const [newReviewText, setNewReviewText] = useState("");
   const [newRating, setNewRating] = useState(0);
   const [siteReviews, setSiteReviews] = useState<any[]>([]);
@@ -958,13 +974,23 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
         exit={{ y: 20, opacity: 0 }}
         className="relative flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-[2rem] premium-glass-highest/60  shadow-2xl border "
       >
-        {site.photo && (
-          <div className="w-full h-48 relative shrink-0">
-            <img src={site.photo} className="w-full h-full object-cover" alt={site.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/60 to-transparent" />
+        {site.photo && !isEditingSite && (
+          <div className="h-48 shrink-0 relative overflow-hidden bg-gradient-to-br from-[#006386] to-[#0b1c30]">
+            <img
+              src={site.photo}
+              className="w-full h-full object-cover relative z-10 transition-opacity"
+              alt={site.name}
+              onError={(e) => {
+                e.currentTarget.style.opacity = '0';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+              <MapPin size={48} className="text-white/20" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/60 to-transparent z-20 pointer-events-none" />
           </div>
         )}
-        <div className="flex items-center justify-between border-b  p-6 relative">
+        <div className="flex items-center justify-between border-b p-6 relative">
           <div className="relative z-10">
             <h2 className="text-lg font-black uppercase text-[#0b2240]">{site.name}</h2>
             <div className="flex items-center gap-2 mt-1">
@@ -972,73 +998,308 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
               <span className="text-xs font-bold text-[#475569]">{avgRating} • {totalReviews} reviews</span>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors relative z-10">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-1 relative z-10">
+            {(currentUserRole === 'admin' || currentUserRole === 'moderator') && !isEditingSite && (
+              <ActionMenu
+                items={[
+                  { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditingSite(true) }
+                ]}
+              />
+            )}
+            <button onClick={() => { onClose(); setIsEditingSite(false); }} className="rounded-full p-2 text-[#475569] hover:premium-glass transition-colors">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="h-8 w-8 border-4 border-secondary/20 border-t-secondary rounded-full animate-spin" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Fetching Reviews...</span>
-            </div>
-          ) : siteReviews.length === 0 ? (
-            <div className="text-center text-[#475569] text-sm py-8">
-              No reviews yet. Be the first to review!
-            </div>
-          ) : (
-            siteReviews.map((r: any) => (
-              <div key={r.id} className="rounded-2xl border  premium-glass p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-[#0b2240]">{r.userDisplayName}</span>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} size={12} className={star <= r.rating ? "text-secondary fill-secondary" : "text-[#083344]"} />
-                    ))}
+        {isEditingSite ? (
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+            <form className="mt-4" onSubmit={(e) => {
+              e.preventDefault();
+              if (onUpdate) {
+                onUpdate({
+                  name: editSiteName,
+                  lat: parseFloat(editSiteLat),
+                  lng: parseFloat(editSiteLng),
+                  maxDepth: editSiteMaxDepth ? parseInt(editSiteMaxDepth, 10) : null,
+                  difficulty: editSiteDifficulty,
+                  visibility: editSiteVisibility,
+                  current: editSiteCurrent,
+                  corals: editSiteCorals ? editSiteCorals.split(',').map(s => s.trim()).filter(Boolean) : [],
+                  marineLife: editSiteMarineLife ? editSiteMarineLife.split(',').map(s => s.trim()).filter(Boolean) : [],
+                  description: editSiteDescription,
+                  photo: editSitePhoto
+                });
+                setIsEditingSite(false);
+              }
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Photo</label>
+                  <div className="flex gap-4 items-center">
+                    {editSitePhoto && (
+                      <img src={editSitePhoto} alt="Site" className="h-16 w-16 object-cover rounded-xl" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[#0055ff]/30 text-[#0055ff] hover:bg-[#0055ff]/5"
+                    >
+                      <Camera size={16} />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">{editSitePhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                    />
                   </div>
                 </div>
-                <p className="text-sm text-[#475569] leading-relaxed">{r.text}</p>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Site Name</label>
+                  <input
+                    type="text"
+                    value={editSiteName}
+                    onChange={(e) => setEditSiteName(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Description</label>
+                  <textarea
+                    value={editSiteDescription}
+                    onChange={(e) => setEditSiteDescription(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50 min-h-[80px]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lat</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editSiteLat}
+                      onChange={(e) => setEditSiteLat(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Lng</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editSiteLng}
+                      onChange={(e) => setEditSiteLng(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Max Depth (m)</label>
+                    <input
+                      type="number"
+                      value={editSiteMaxDepth}
+                      onChange={(e) => setEditSiteMaxDepth(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Difficulty</label>
+                    <select
+                      value={editSiteDifficulty}
+                      onChange={(e) => setEditSiteDifficulty(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    >
+                      <option value="">Select...</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                      <option value="Expert">Expert</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Visibility</label>
+                    <input
+                      type="text"
+                      value={editSiteVisibility}
+                      onChange={(e) => setEditSiteVisibility(e.target.value)}
+                      placeholder="e.g. 10-20m"
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Current</label>
+                    <input
+                      type="text"
+                      value={editSiteCurrent}
+                      onChange={(e) => setEditSiteCurrent(e.target.value)}
+                      placeholder="e.g. Mild"
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Corals (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editSiteCorals}
+                    onChange={(e) => setEditSiteCorals(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Marine Life (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editSiteMarineLife}
+                    onChange={(e) => setEditSiteMarineLife(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                  />
+                </div>
               </div>
-            ))
-          )}
-        </div>
-
-        <div className="border-t  premium-glass p-6">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#475569] mb-3">
-            {isUpdating ? "Update Your Review" : "Add Your Review"}
-          </h3>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
+              <div className="flex gap-3 mt-6">
                 <button
                   type="button"
-                  key={star}
-                  onClick={() => setNewRating(star)}
-                  className="rounded-full p-1"
+                  onClick={() => setIsEditingSite(false)}
+                  className="flex-1 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[#083344] hover:premium-glass"
                 >
-                  <Star size={24} className={star <= newRating ? "text-secondary fill-secondary" : "text-[#083344] transition-colors hover:text-secondary"} />
+                  Cancel
                 </button>
-              ))}
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-2xl bg-[#0055ff] text-[11px] font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(76,145,251,0.3)]"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+            {site.description && (
+              <p className="text-sm text-[#475569] leading-relaxed mb-6 italic">
+                "{site.description}"
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {site.maxDepth && (
+                <div className="rounded-2xl border premium-glass p-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Max Depth</span>
+                  <span className="text-sm font-bold text-[#0b2240]">{site.maxDepth}m</span>
+                </div>
+              )}
+              {site.difficulty && (
+                <div className="rounded-2xl border premium-glass p-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Difficulty</span>
+                  <span className="text-sm font-bold text-[#0b2240]">{site.difficulty}</span>
+                </div>
+              )}
+              {site.visibility && (
+                <div className="rounded-2xl border premium-glass p-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Visibility</span>
+                  <span className="text-sm font-bold text-[#0b2240]">{site.visibility}</span>
+                </div>
+              )}
+              {site.current && (
+                <div className="rounded-2xl border premium-glass p-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Current</span>
+                  <span className="text-sm font-bold text-[#0b2240]">{site.current}</span>
+                </div>
+              )}
             </div>
-            <div className="relative">
-              <textarea
-                value={newReviewText}
-                onChange={(e) => setNewReviewText(e.target.value)}
-                placeholder="What did you see? How was the visibility?"
-                className="premium-input w-full resize-none rounded-xl  -white/10 -highest p-3 pr-12 text-sm text-[#0b2240] placeholder:text-[#083344] focus:-secondary focus: -1 -secondary min-h-[80px]"
-              />
-              <button
-                type="submit"
-                disabled={!newRating || !newReviewText.trim()}
-                className="absolute bottom-3 right-3 rounded-full bg-secondary p-2 text-on-secondary shadow-lg disabled:opacity-50 transition-colors"
-                title="Post Review"
-              >
-                <Send size={16} />
-              </button>
-            </div>
-          </form>
-        </div>
+            {site.corals && site.corals.length > 0 && (
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-2">Corals</span>
+                <div className="flex flex-wrap gap-2">
+                  {site.corals.map((coral: string, i: number) => (
+                    <span key={i} className="px-3 py-1 rounded-full bg-[#0055ff]/10 text-[#0055ff] text-xs font-bold">{coral}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {site.marineLife && site.marineLife.length > 0 && (
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-2">Marine Life</span>
+                <div className="flex flex-wrap gap-2">
+                  {site.marineLife.map((life: string, i: number) => (
+                    <span key={i} className="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold">{life}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <h3 className="text-xs font-bold uppercase tracking-widest text-[#475569] mb-4">Reviews</h3>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div className="h-8 w-8 border-4 border-secondary/20 border-t-secondary rounded-full animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#083344]">Fetching Reviews...</span>
+              </div>
+            ) : siteReviews.length === 0 ? (
+              <div className="text-center text-[#475569] text-sm py-8">
+                No reviews yet. Be the first to review!
+              </div>
+            ) : (
+              siteReviews.map((r: any) => (
+                <div key={r.id} className="rounded-2xl border  premium-glass p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-[#0b2240]">{r.userDisplayName}</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={12} className={star <= r.rating ? "text-secondary fill-secondary" : "text-[#083344]"} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-[#475569] leading-relaxed">{r.text}</p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {!isEditingSite && (
+          <div className="border-t  premium-glass p-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-[#475569] mb-3">
+              {isUpdating ? "Update Your Review" : "Add Your Review"}
+            </h3>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setNewRating(star)}
+                    className="rounded-full p-1"
+                  >
+                    <Star size={24} className={star <= newRating ? "text-secondary fill-secondary" : "text-[#083344] transition-colors hover:text-secondary"} />
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <textarea
+                  value={newReviewText}
+                  onChange={(e) => setNewReviewText(e.target.value)}
+                  placeholder="What did you see? How was the visibility?"
+                  className="premium-input w-full resize-none rounded-xl  -white/10 -highest p-3 pr-12 text-sm text-[#0b2240] placeholder:text-[#083344] focus:-secondary focus: -1 -secondary min-h-[80px]"
+                />
+                <button
+                  type="submit"
+                  disabled={!newRating || !newReviewText.trim()}
+                  className="absolute bottom-3 right-3 rounded-full bg-secondary p-2 text-on-secondary shadow-lg disabled:opacity-50 transition-colors"
+                  title="Post Review"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </motion.div>
     </div>
   );
@@ -1046,8 +1307,8 @@ const SiteReviewModal = ({ site, onClose, onAddReview }: any) => {
 
 const AddSiteModal = ({ onClose, onAdd, location }: any) => {
   const [name, setName] = useState("");
-  const initialLat = location && typeof location.lat === 'number' && !isNaN(location.lat) ? location.lat.toFixed(4) : "17.3160";
-  const initialLng = location && typeof location.lng === 'number' && !isNaN(location.lng) ? location.lng.toFixed(4) : "-87.5351";
+  const initialLat = location && typeof location.lat === 'number' && !isNaN(location.lat) ? location.lat.toFixed(4) : "10.0956";
+  const initialLng = location && typeof location.lng === 'number' && !isNaN(location.lng) ? location.lng.toFixed(4) : "99.8404";
   const [lat, setLat] = useState(initialLat);
   const [lng, setLng] = useState(initialLng);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -1207,8 +1468,8 @@ const AddSiteModal = ({ onClose, onAdd, location }: any) => {
 const AddSightingModal = ({ onClose, onAdd, location }: any) => {
   const [fishSearch, setFishSearch] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const initialLat = location && typeof location.lat === 'number' && !isNaN(location.lat) ? location.lat.toFixed(4) : "17.3160";
-  const initialLng = location && typeof location.lng === 'number' && !isNaN(location.lng) ? location.lng.toFixed(4) : "-87.5351";
+  const initialLat = location && typeof location.lat === 'number' && !isNaN(location.lat) ? location.lat.toFixed(4) : "10.0956";
+  const initialLng = location && typeof location.lng === 'number' && !isNaN(location.lng) ? location.lng.toFixed(4) : "99.8404";
   const [lat, setLat] = useState(initialLat);
   const [lng, setLng] = useState(initialLng);
 
@@ -1350,6 +1611,8 @@ const AddSightingModal = ({ onClose, onAdd, location }: any) => {
 
 export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpdate, onDelete }: any) => {
   const { profile } = useAuth();
+  const [isVoting, setIsVoting] = useState(false);
+  const currentUserRole = 'admin'; // For testing RBAC
   const isCreator = profile?.id === site.userId;
   const [hasVoted, setHasVoted] = useState(false);
   const [checkingVote, setCheckingVote] = useState(true);
@@ -1358,6 +1621,49 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
   const [editName, setEditName] = useState(site.name || "");
   const [editLat, setEditLat] = useState(site.lat?.toString() || "");
   const [editLng, setEditLng] = useState(site.lng?.toString() || "");
+  const [editMaxDepth, setEditMaxDepth] = useState(site.maxDepth?.toString() || "");
+  const [editDifficulty, setEditDifficulty] = useState(site.difficulty || "");
+  const [editVisibility, setEditVisibility] = useState(site.visibility || "");
+  const [editCurrent, setEditCurrent] = useState(site.current || "");
+  const [editCorals, setEditCorals] = useState(site.corals?.join(", ") || "");
+  const [editMarineLife, setEditMarineLife] = useState(site.marineLife?.join(", ") || "");
+  const [editDescription, setEditDescription] = useState(site.description || "");
+  const [editPhoto, setEditPhoto] = useState<string | null>(site.photo || null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_DIM = 800;
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        setEditPhoto(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     const checkVote = async () => {
@@ -1390,9 +1696,19 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
         className="relative w-full max-w-sm rounded-[2rem] premium-glass-highest/60  shadow-2xl border  overflow-hidden"
       >
         {site.photo && !isEditing && (
-          <div className="w-full h-40 relative">
-            <img src={site.photo} className="w-full h-full object-cover" alt={site.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/80 to-transparent" />
+          <div className="h-48 shrink-0 relative overflow-hidden bg-gradient-to-br from-[#006386] to-[#0b1c30]">
+            <img
+              src={site.photo}
+              className="w-full h-full object-cover relative z-10 transition-opacity"
+              alt={site.name}
+              onError={(e) => {
+                e.currentTarget.style.opacity = '0';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center z-0">
+              <MapPin size={48} className="text-white/20" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/60 to-transparent z-20 pointer-events-none" />
           </div>
         )}
         <div className="p-6">
@@ -1406,7 +1722,7 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
               <h2 className="text-xl font-black text-[#0b2240]">{site.name}</h2>
             </div>
             <div className="flex items-center gap-1">
-              {profile?.id === site.userId && !isEditing && (
+              {(profile?.id === site.userId || currentUserRole === 'admin' || currentUserRole === 'moderator') && !isEditing && (
                 <ActionMenu
                   items={[
                     { label: "Edit Site", icon: <Edit2 size={16} />, onClick: () => setIsEditing(true) }
@@ -1423,11 +1739,46 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
             <form className="mt-4" onSubmit={(e) => {
               e.preventDefault();
               if (onUpdate) {
-                onUpdate({ name: editName, lat: editLat, lng: editLng });
+                onUpdate({
+                  name: editName,
+                  lat: parseFloat(editLat),
+                  lng: parseFloat(editLng),
+                  maxDepth: editMaxDepth ? parseInt(editMaxDepth, 10) : null,
+                  difficulty: editDifficulty,
+                  visibility: editVisibility,
+                  current: editCurrent,
+                  corals: editCorals ? editCorals.split(',').map(s => s.trim()).filter(Boolean) : [],
+                  marineLife: editMarineLife ? editMarineLife.split(',').map(s => s.trim()).filter(Boolean) : [],
+                  description: editDescription,
+                  photo: editPhoto
+                });
                 setIsEditing(false);
               }
             }}>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Photo</label>
+                  <div className="flex gap-4 items-center">
+                    {editPhoto && (
+                      <img src={editPhoto} alt="Site" className="h-16 w-16 object-cover rounded-xl" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[#0055ff]/30 text-[#0055ff] hover:bg-[#0055ff]/5"
+                    >
+                      <Camera size={16} />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">{editPhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Site Name</label>
                   <input
@@ -1436,6 +1787,14 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                     onChange={(e) => setEditName(e.target.value)}
                     className="premium-input w-full rounded-2xl  p-3 text-sm font-bold text-[#083344]  -white/5 -2  focus:"
                     required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Description</label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50 min-h-[80px]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1461,6 +1820,71 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
                       required
                     />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Max Depth (m)</label>
+                    <input
+                      type="number"
+                      value={editMaxDepth}
+                      onChange={(e) => setEditMaxDepth(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Difficulty</label>
+                    <select
+                      value={editDifficulty}
+                      onChange={(e) => setEditDifficulty(e.target.value)}
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    >
+                      <option value="">Select...</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                      <option value="Expert">Expert</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Visibility</label>
+                    <input
+                      type="text"
+                      value={editVisibility}
+                      onChange={(e) => setEditVisibility(e.target.value)}
+                      placeholder="e.g. 10-20m"
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Current</label>
+                    <input
+                      type="text"
+                      value={editCurrent}
+                      onChange={(e) => setEditCurrent(e.target.value)}
+                      placeholder="e.g. Mild"
+                      className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Corals (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editCorals}
+                    onChange={(e) => setEditCorals(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-[#083344] mb-2 ml-1">Marine Life (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editMarineLife}
+                    onChange={(e) => setEditMarineLife(e.target.value)}
+                    className="premium-input w-full rounded-2xl p-3 text-sm font-bold text-[#083344] bg-white/50"
+                  />
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
@@ -1513,6 +1937,57 @@ export const UnverifiedSiteModal = ({ site, onClose, onUpvote, onDownvote, onUpd
             </form>
           ) : (
             <>
+              {site.description && (
+                <p className="text-sm text-[#475569] leading-relaxed mb-6 italic">
+                  "{site.description}"
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {site.maxDepth && (
+                  <div className="rounded-2xl border premium-glass p-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Max Depth</span>
+                    <span className="text-sm font-bold text-[#0b2240]">{site.maxDepth}m</span>
+                  </div>
+                )}
+                {site.difficulty && (
+                  <div className="rounded-2xl border premium-glass p-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Difficulty</span>
+                    <span className="text-sm font-bold text-[#0b2240]">{site.difficulty}</span>
+                  </div>
+                )}
+                {site.visibility && (
+                  <div className="rounded-2xl border premium-glass p-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Visibility</span>
+                    <span className="text-sm font-bold text-[#0b2240]">{site.visibility}</span>
+                  </div>
+                )}
+                {site.current && (
+                  <div className="rounded-2xl border premium-glass p-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-1">Current</span>
+                    <span className="text-sm font-bold text-[#0b2240]">{site.current}</span>
+                  </div>
+                )}
+              </div>
+              {site.corals && site.corals.length > 0 && (
+                <div className="mb-6">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-2">Corals</span>
+                  <div className="flex flex-wrap gap-2">
+                    {site.corals.map((coral: string, i: number) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-[#0055ff]/10 text-[#0055ff] text-xs font-bold">{coral}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {site.marineLife && site.marineLife.length > 0 && (
+                <div className="mb-6">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#475569] block mb-2">Marine Life</span>
+                  <div className="flex flex-wrap gap-2">
+                    {site.marineLife.map((life: string, i: number) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-bold">{life}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className="text-sm text-[#475569] leading-relaxed mb-6">
                 {hasVoted
                   ? "You have already submitted your verification for this dive site. Thank you for contributing to the community!"

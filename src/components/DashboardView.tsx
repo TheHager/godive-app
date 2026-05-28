@@ -15,7 +15,7 @@ import {
   ArrowDown,
   ArrowLeft,
   Compass, Map as LucideMap, Trophy, HeartPulse, Zap, 
-  Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Lock, ArrowUpRight, MessageSquare,
+  Image as ImageIcon, Video, Star, Award, Globe, History, Box, Eye, CheckCircle2, Check, Lock, ArrowUpRight, MessageSquare,
   Share2, Upload, Crosshair, HelpCircle, Pin, Trash2, User as UserIcon, AlertTriangle, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,6 +49,334 @@ interface SpeciesAppearance {
   timestamp?: any;
   [key: string]: any;
 }
+
+// Media Identification Modal
+const MediaIdentificationModal = ({ onClose, onConfirm }: { onClose: () => void, onConfirm: (speciesName: string | null, photoDataUrl: string, askCommunity?: boolean, caption?: string) => void }) => {
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [aiEnabled, setAiEnabled] = useState(false);
+    const [aiDetectionStatus, setAiDetectionStatus] = useState<'idle' | 'detecting' | 'done'>('idle');
+    const [aiDetectionError, setAiDetectionError] = useState<string | null>(null);
+    const [detectedSpecies, setDetectedSpecies] = useState<{name: string | null, confidence: number, photo: string, accepted?: boolean, shouldScan: boolean, isChallenging?: boolean, pendingCommunityId?: boolean, caption?: string, manualQuery?: string}[]>([]);
+
+    React.useEffect(() => {
+        // Only clear the status if we toggle off while detecting
+        if (!aiEnabled && aiDetectionStatus === 'detecting') {
+            setAiDetectionStatus('idle');
+            setAiDetectionError(null);
+        }
+    }, [aiEnabled, aiDetectionStatus]);
+
+    const identifySpecies = async (imageBase64: string, photoDataUrl: string) => {
+        setAiDetectionStatus('detecting');
+        setAiDetectionError(null);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 18000); // 18-second timeout
+
+        try {
+            const baseUrl = import.meta.env.VITE_API_URL || 'https://us-central1-project-7c683cb5-9592-4a84-97d.cloudfunctions.net';
+            const response = await fetch(`${baseUrl}/identifySpecies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: imageBase64,
+                    maxResults: 3,
+                    confidenceThreshold: 0.5,
+                }),
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                console.error(`Vision API error: ${response.status}`);
+                setAiDetectionError(`Server returned ${response.status}. Please try again or enter manually.`);
+                return;
+            }
+
+            const data = await response.json();
+            
+            if (data.matches && data.matches.length > 0) {
+                setDetectedSpecies(prev => [
+                    ...prev,
+                    ...data.matches.map((r: any) => ({
+                        name: r.name,
+                        confidence: r.confidence,
+                        photo: photoDataUrl,
+                        shouldScan: true
+                    }))
+                ]);
+            }
+        } catch (err: any) {
+            console.error("Error connecting to Vision API", err);
+            if (err.name === 'AbortError') {
+                setAiDetectionError("Identification timed out. Please try again or enter manually.");
+            } else {
+                setAiDetectionError("Identification failed. Please try again or enter manually.");
+            }
+        } finally {
+            clearTimeout(timeoutId);
+            setAiDetectionStatus('done');
+        }
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+                reader.onload = (e) => resolve(e.target?.result as string);
+            });
+            reader.readAsDataURL(file);
+            const dataUrl = await base64Promise;
+            
+            if (aiEnabled) {
+                identifySpecies(dataUrl.split(',')[1], dataUrl);
+            } else {
+                setDetectedSpecies(prev => [
+                    ...prev,
+                    { name: null, confidence: 0, photo: dataUrl, shouldScan: false }
+                ]);
+            }
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+        >
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[2.5rem] bg-white p-6 sm:p-8 shadow-2xl no-scrollbar flex flex-col"
+            >
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight italic">Upload Media</h2>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#0089b7]">AI Species Identifier</p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="mb-6 bg-slate-50 p-4 rounded-2xl flex items-center justify-between border border-slate-100">
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800">AI Species Identification</h3>
+                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">Auto-scan media for marine life</p>
+                    </div>
+                    <button 
+                        onClick={() => setAiEnabled(!aiEnabled)}
+                        className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${aiEnabled ? 'bg-[#0089b7]' : 'bg-slate-300'}`}
+                    >
+                        <motion.div 
+                            className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                            animate={{ x: aiEnabled ? 24 : 0 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-6 space-y-6">
+                    <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" multiple accept="image/*,video/*" />
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full aspect-video rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-3 group/upload hover:border-[#0089b7]/30 transition-all shadow-sm"
+                    >
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover/upload:bg-[#0089b7]/10 group-hover/upload:text-[#0089b7] transition-all shadow-sm">
+                            <Camera size={28} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Tap to upload photos/video</span>
+                    </button>
+
+                    {aiDetectionStatus === 'detecting' && (
+                        <div className="p-5 rounded-2xl bg-[#0089b7]/5 border border-[#0089b7]/10 flex flex-col items-center gap-4 text-center">
+                            <div className="w-12 h-12 rounded-full bg-[#0089b7]/10 flex items-center justify-center animate-pulse">
+                                <Search size={24} className="text-[#0089b7]" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-[#0089b7] uppercase tracking-widest">Scanning...</h3>
+                                <p className="text-[10px] font-bold text-slate-500 mt-1">Our AI is analyzing your media</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {aiDetectionError && (
+                        <div className="p-5 rounded-2xl bg-red-50 border border-red-100 flex flex-col items-center gap-3 text-center">
+                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                                <AlertTriangle size={20} />
+                            </div>
+                            <p className="text-xs font-bold text-red-600">{aiDetectionError}</p>
+                        </div>
+                    )}
+
+                    {detectedSpecies.length > 0 && (
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                Uploaded Media Queue
+                            </h3>
+                            {detectedSpecies.map((sp, idx) => (
+                                <div key={idx} className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm flex flex-col gap-3 relative">
+                                    {sp.accepted && (
+                                        <button
+                                            onClick={() => setDetectedSpecies(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-3 right-3 p-1.5 rounded-full text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors z-10"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    <div className={`flex items-center gap-3 ${sp.accepted ? 'pr-8' : ''}`}>
+                                        <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                                            <img src={sp.photo} className="w-full h-full object-cover" alt="Identified" />
+                                        </div>
+                                        <div className="flex-1">
+                                            {sp.shouldScan && sp.name ? (
+                                                <h4 className="text-sm font-black text-slate-800 leading-tight">
+                                                    {sp.name}
+                                                </h4>
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add a caption... (optional)"
+                                                    value={sp.caption || ''}
+                                                    onChange={(e) => setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, caption: e.target.value } : s))}
+                                                    disabled={sp.accepted}
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-black text-slate-800 focus:outline-none focus:border-[#0089b7]/50 focus:ring-2 focus:ring-[#0089b7]/20 transition-all placeholder:font-medium placeholder:text-slate-400 disabled:opacity-50"
+                                                />
+                                            )}
+                                            {sp.shouldScan && sp.name && (
+                                                <p className="text-[10px] font-bold text-slate-400">AI Match: {Math.round(sp.confidence * 100)}%</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {!sp.accepted && !sp.isChallenging && (
+                                        <div className="pt-2 border-t border-slate-50 flex gap-2">
+                                            {sp.shouldScan && sp.name ? (
+                                                <>
+                                                    <button 
+                                                        onClick={() => setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, accepted: true } : s))}
+                                                        className="flex-1 py-2 rounded-xl bg-[#0089b7] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#007095] shadow-md transition-all"
+                                                    >
+                                                        APPROVED
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, isChallenging: true } : s))}
+                                                        className="flex-1 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors shadow-md"
+                                                    >
+                                                        CHALLENGE
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button 
+                                                        onClick={() => setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, accepted: true } : s))}
+                                                        className="flex-1 py-2 rounded-xl bg-[#0089b7] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#007095] shadow-md transition-all"
+                                                    >
+                                                        Keep
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setDetectedSpecies(prev => prev.filter((_, i) => i !== idx))}
+                                                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                                                    >
+                                                        Discard
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {sp.isChallenging && (
+                                        <div className="pt-2 border-t border-slate-50 space-y-3">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search species manually..."
+                                                    value={sp.manualQuery || ''}
+                                                    onChange={(e) => setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, manualQuery: e.target.value } : s))}
+                                                    className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0089b7] transition-colors"
+                                                />
+                                                {sp.manualQuery && sp.manualQuery.length > 1 && !sp.accepted && (
+                                                    <div className="absolute top-full mt-1 left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 max-h-32 overflow-y-auto no-scrollbar">
+                                                        {Object.keys(MARINE_LIFE_DATABASE)
+                                                            .filter(f => f.toLowerCase().includes(sp.manualQuery!.toLowerCase()))
+                                                            .slice(0, 5)
+                                                            .map(match => (
+                                                                <button
+                                                                    key={match}
+                                                                    onClick={() => {
+                                                                        setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, name: match, accepted: true, isChallenging: false, manualQuery: undefined } : s))
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                                                                >
+                                                                    {match}
+                                                                </button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-px bg-slate-100" />
+                                                <span className="text-[10px] font-bold text-slate-300 uppercase">OR</span>
+                                                <div className="flex-1 h-px bg-slate-100" />
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setDetectedSpecies(prev => prev.map((s, i) => i === idx ? { ...s, accepted: true, pendingCommunityId: true, isChallenging: false, manualQuery: undefined, name: null } : s))
+                                                }}
+                                                className="w-full py-2 rounded-xl border border-dashed border-[#0089b7]/30 bg-[#0089b7]/5 text-[#0089b7] text-[10px] font-black uppercase tracking-widest hover:bg-[#0089b7]/10 transition-colors"
+                                            >
+                                                Ask Community on Feed
+                                            </button>
+                                            <button 
+                                                onClick={() => setDetectedSpecies(prev => prev.filter((_, i) => i !== idx))}
+                                                className="w-full py-1.5 text-center text-[10px] font-bold text-red-400 hover:text-red-500 uppercase tracking-widest"
+                                            >
+                                                Discard Photo Entirely
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {sp.accepted && !sp.isChallenging && (
+                                        <div className="pt-2 border-t border-slate-50 relative">
+                                            <p className="text-[10px] font-bold text-[#0089b7] flex items-center gap-1 justify-center py-1">
+                                                <CheckCircle2 size={12} /> {sp.pendingCommunityId ? 'Flagged for community ID' : (sp.shouldScan && sp.name ? 'Approved for observation list' : 'Kept in media queue')}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                    <button
+                        onClick={() => {
+                            detectedSpecies.forEach(sp => {
+                                const finalSpeciesName = (sp.shouldScan ? (sp.accepted && sp.name ? sp.name : null) : (sp.name?.trim() ? sp.name.trim() : null));
+                                onConfirm(finalSpeciesName, sp.photo, sp.pendingCommunityId, sp.caption);
+                            });
+                            onClose();
+                        }}
+                        className="w-full py-4 rounded-xl bg-[#0089b7] text-white font-black uppercase tracking-widest text-xs hover:bg-[#007095] transition-colors shadow-md"
+                    >
+                        Confirm & Close
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
 
 export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNavigateToDiveTimer }: { onNavigateToEvent?: (id: string) => void, onNavigateToProfile?: () => void, onNavigateToDiveTimer?: () => void }) => {
   const { profile } = useAuth();
@@ -130,6 +458,31 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
     return speciesSet;
   }, [allSightings, allDives]);
 
+  const verifiedSpeciesSet = useMemo(() => {
+    const verifiedSet = new Set<string>();
+    
+    // Sightings from explorer are considered verified implicitly
+    allSightings.forEach(item => {
+      if (item.species) verifiedSet.add(item.species);
+      if (item.label) verifiedSet.add(item.label);
+    });
+
+    allDives.forEach(dive => {
+      if (dive.verifiedSpecies !== undefined) {
+        if (Array.isArray(dive.verifiedSpecies)) {
+          dive.verifiedSpecies.forEach((s: string) => verifiedSet.add(s));
+        }
+      } else {
+        // Grandfathering: assume all previously logged species in fishSpotted are verified
+        if (dive.fishSpotted && Array.isArray(dive.fishSpotted)) {
+          dive.fishSpotted.forEach((s: string) => verifiedSet.add(s));
+        }
+      }
+    });
+
+    return verifiedSet;
+  }, [allSightings, allDives]);
+
   const [dynamicStats, setDynamicStats] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -170,7 +523,7 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
       ...dynamicStats
     };
 
-    const speciesWithPhoto = new Set<string>();
+    const speciesSageSet = new Set<string>();
 
     allDives.forEach(dive => {
       const type = (dive.diveType || 'Recreational').toLowerCase();
@@ -179,12 +532,18 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
 
       if (dive.depth > 30) stats.deep++;
 
-      if (dive.photos && dive.photos.length > 0 && dive.fishSpotted) {
-        dive.fishSpotted.forEach((species: string) => speciesWithPhoto.add(species));
+      if (dive.verifiedSpecies !== undefined) {
+        if (Array.isArray(dive.verifiedSpecies)) {
+          dive.verifiedSpecies.forEach((s: string) => speciesSageSet.add(s));
+        }
+      } else {
+        if (dive.fishSpotted) {
+          dive.fishSpotted.forEach((species: string) => speciesSageSet.add(species));
+        }
       }
     });
 
-    stats['Species Sage'] = speciesWithPhoto.size;
+    stats['Species Sage'] = speciesSageSet.size;
 
     const now = Date.now();
     myEvents?.forEach((e) => {
@@ -209,7 +568,16 @@ export const DashboardView = ({ onNavigateToEvent, onNavigateToProfile, onNaviga
   const dives = allDives.length;
   const fish = discoveredSpecies.size;
   
-  const [totalXp, setTotalXp] = useState<number>((profile?.points ?? 0) > 0 ? profile!.points! : (dives * 250 + fish * 15));
+  const verifiedSpeciesXP = useMemo(() => {
+    let xp = 0;
+    verifiedSpeciesSet.forEach(s => {
+      xp += getSpeciesXP(s);
+    });
+    return xp;
+  }, [verifiedSpeciesSet]);
+
+  // Use dynamic calculation fallback combining basic dives with the robust getSpeciesXP for verified species
+  const [totalXp, setTotalXp] = useState<number>((profile?.points ?? 0) > 0 ? profile!.points! : (dives * 250 + verifiedSpeciesXP));
 
   const { pinnedBadgeId } = useUser();
 
@@ -748,22 +1116,22 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div 
         initial={{ y: 50, scale: 0.95, opacity: 0 }}
         animate={{ y: 0, scale: 1, opacity: 1 }}
         exit={{ y: 30, scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] rounded-[2.5rem] bg-surface-container-high border border-white/10 shadow-2xl"
+        className="relative w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] rounded-[2.5rem] bg-slate-50/10 border-l border-slate-200/20 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-white/5 bg-surface-container-high/50 backdrop-blur-md md:p-8">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xl shadow-sm flex items-center justify-between p-6 md:p-8 shrink-0">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter text-white uppercase italic md:text-3xl">
+            <h3 className="text-2xl font-black tracking-tighter text-[#0b2240] uppercase italic md:text-3xl">
               Explorer Rankings
             </h3>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40 mt-1 md:text-xs">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#475569] mt-1 md:text-xs">
               Ascend through the echelons of the deep
             </p>
           </div>
@@ -771,7 +1139,7 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="p-2 rounded-full bg-white/5 text-on-surface-variant hover:text-white transition-colors border border-white/5 md:p-3"
+            className="p-2 rounded-full bg-slate-100/80 hover:bg-slate-200 transition-colors text-[#475569] md:p-3 flex items-center justify-center"
           >
             <X size={20} className="md:size-6" />
           </motion.button>
@@ -787,49 +1155,49 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
                 <div 
                   key={rank.title}
                   className={cn(
-                    "relative overflow-hidden p-6 rounded-3xl border transition-all duration-500",
+                    "relative overflow-hidden p-6 rounded-2xl transition-all duration-500",
                     isCurrent 
-                      ? "bg-secondary/10 border-secondary/30 ring-1 ring-secondary/20 shadow-[0_0_40px_-12px_rgba(76,214,251,0.2)]" 
+                      ? "bg-white border-2 border-[#0055ff] shadow-[0_8px_30px_rgba(0,85,255,0.25)] scale-[1.02] z-10" 
                       : isUnlocked 
-                        ? "bg-white/5 border-white/10 opacity-70" 
-                        : "bg-black/20 border-white/5 opacity-40 grayscale"
+                        ? "bg-white border border-slate-200 shadow-sm hover:shadow-md" 
+                        : "bg-white border border-slate-200 grayscale shadow-sm text-opacity-50"
                   )}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 transform transition-transform group-hover:scale-110",
-                        isUnlocked ? "border-secondary/50 bg-secondary/5 text-secondary shadow-lg shadow-secondary/10" : "border-white/5 bg-white/5 text-on-surface-variant/20"
+                        isUnlocked ? "border-[#0055ff]/30 bg-[#0055ff]/10 text-[#0055ff] shadow-md shadow-[#0055ff]/10" : "border-slate-200 bg-slate-50 text-slate-300"
                       )}>
                         <Trophy size={28} className={!isUnlocked ? "opacity-20" : ""} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className={cn("text-xl font-black italic tracking-tight", isUnlocked ? "text-white" : "text-white/40")}>
+                          <h4 className={cn("text-xl font-black italic tracking-tight", isUnlocked ? "text-[#0b2240]" : "text-[#0b2240]/40")}>
                             {rank.title}
                           </h4>
                           {isCurrent && (
-                            <span className="text-[8px] font-black uppercase tracking-widest bg-secondary text-on-secondary px-2 py-0.5 rounded-full">
+                            <span className="text-[8px] font-black uppercase tracking-widest bg-[#0055ff] text-white px-2 py-0.5 rounded-full">
                               Current
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary/60">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#475569]">
                           {rank.status} • LVL {rank.min}+
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex flex-col sm:items-end">
-                      <span className={cn("text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border", isUnlocked ? "bg-white/5 border-white/10 text-on-surface-variant" : "bg-black/20 border-white/5 text-on-surface-variant/20")}>
+                      <span className={cn("text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border", isUnlocked ? "bg-slate-50 border-slate-200 text-[#475569]" : "bg-slate-50 border-slate-200 text-[#475569]/50")}>
                         {rank.cert}
                       </span>
                     </div>
                   </div>
                   
                   {isUnlocked && (
-                    <div className="mt-4 pt-4 border-t border-white/5">
-                      <p className="text-xs text-on-surface-variant/60 leading-relaxed font-medium italic">
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                      <p className="text-xs text-[#475569] leading-relaxed font-medium italic">
                         "{rank.desc}"
                       </p>
                     </div>
@@ -837,7 +1205,7 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
                   
                   {!isUnlocked && (
                     <div className="absolute top-4 right-4 group-hover:scale-110 transition-transform">
-                      <Lock size={16} className="text-on-surface-variant/20" />
+                      <Lock size={16} className="text-[#475569]/20" />
                     </div>
                   )}
                 </div>
@@ -850,6 +1218,7 @@ const RanksModal = ({ ranks, activeLevel, onClose }: { ranks: Rank[], activeLeve
   );
 };
 
+import { MarineLifeService, MarineSpecies, MarineSpeciesDetails } from "../lib/MarineLifeService";
 import { MARINE_SPECIES_DATA } from "../constants/marineLifeData";
 
 const HistoryModal = ({ 
@@ -870,15 +1239,17 @@ const HistoryModal = ({
   const { profile } = useAuth();
   const isDives = type === 'dives';
   const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState<'all' | 'spotted' | 'not-seen' | 'rare'>('all');
-  const [selectedSpecies, setSelectedSpecies] = useState<any>(null);
+  const [filter, setFilter] = useState<'nearby' | 'spotted'>('nearby');
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
+  const [selectedSpecies, setSelectedSpecies] = useState<any>(null);
   const speciesLogMap = React.useMemo(() => {
     const map = new window.Map<string, { count: number, lastSeen?: any }>();
     
-    const record = (species: string, timestamp: any) => {
-      if (!species) return;
-      const key = species.trim();
+    const record = (speciesOrId: string | number, timestamp: any) => {
+      if (!speciesOrId) return;
+      const key = speciesOrId.toString().trim();
       const existing = map.get(key);
       if (!existing) {
         map.set(key, { count: 1, lastSeen: timestamp });
@@ -890,17 +1261,63 @@ const HistoryModal = ({
       }
     };
 
-    allSightings.forEach(s => record(s.species || s.label, s.timestamp));
+    allSightings.forEach(s => {
+      if (s.speciesId) record(s.speciesId, s.timestamp);
+      else record(s.species || s.label, s.timestamp);
+    });
     allDives.forEach(d => {
+      if (d.fishSpottedIds) d.fishSpottedIds.forEach((id: string|number) => record(id, d.timestamp));
       if (d.fishSpotted) d.fishSpotted.forEach((s: string) => record(s, d.timestamp));
     });
 
     return map;
   }, [allSightings, allDives]);
 
+  const [dynamicSpecies, setDynamicSpecies] = useState<MarineSpecies[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const requestLocation = () => {
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => setGeoError(err.message)
+    );
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSpecies = async () => {
+      setIsSearching(true);
+      try {
+        let results: MarineSpecies[] = [];
+        if (searchQuery.trim()) {
+          results = await MarineLifeService.searchSpecies(searchQuery);
+        } else if (filter === 'nearby' && userLocation) {
+          results = await MarineLifeService.getNearbyTreasures(userLocation.lat, userLocation.lng, 50);
+        } else if (filter === 'spotted') {
+          const ids = Array.from(speciesLogMap.keys()).filter(k => !isNaN(Number(k)));
+          const promises = ids.map(id => MarineLifeService.getCachedSpecies(Number(id)));
+          const resolved = await Promise.all(promises);
+          results = resolved.filter(Boolean) as MarineSpecies[];
+        }
+        if (isMounted) setDynamicSpecies(results);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setIsSearching(false);
+      }
+    };
+
+    const delay = setTimeout(fetchSpecies, 300);
+    return () => {
+      isMounted = false;
+      clearTimeout(delay);
+    };
+  }, [searchQuery, filter, userLocation, speciesLogMap]);
+
   const filteredSpecies = React.useMemo(() => {
-    let list = MARINE_SPECIES_DATA.map(s => {
-      const stats = speciesLogMap.get(s.name);
+    let list = dynamicSpecies.map(s => {
+      const stats = speciesLogMap.get(s.id.toString()) || speciesLogMap.get(s.commonName);
       return {
         ...s,
         spottedCount: stats?.count || 0,
@@ -908,81 +1325,90 @@ const HistoryModal = ({
       };
     });
 
-    if (searchQuery) {
-      list = list.filter(s =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.scientificName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
     if (filter === 'spotted') list = list.filter(s => s.spottedCount > 0);
-    if (filter === 'not-seen') list = list.filter(s => s.spottedCount === 0);
-    if (filter === 'rare') list = list.filter(s => s.rarity === 'rare');
 
     return list;
-  }, [speciesLogMap, searchQuery, filter]);
+  }, [dynamicSpecies, speciesLogMap, filter]);
+
 
   if (isDives) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ y: 50, scale: 0.95, opacity: 0 }}
-          animate={{ y: 0, scale: 1, opacity: 1 }}
-          exit={{ y: 30, scale: 0.95, opacity: 0 }}
-          className="relative w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] rounded-[3rem] bg-surface-container-high border border-white/10 shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6 border-b border-white/5 bg-surface-container-high/50 backdrop-blur-md md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-black tracking-tighter text-white uppercase italic">Dive Journal</h3>
-              <button onClick={onClose} className="p-2 rounded-full bg-white/5 text-on-surface-variant hover:text-white transition-colors">
-                <X size={20} />
-              </button>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ y: 50, scale: 0.95, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 30, scale: 0.95, opacity: 0 }}
+            className="relative w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] rounded-[3rem] bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 bg-white/80 backdrop-blur-md md:p-8 shrink-0 z-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-black tracking-tighter text-[#0b2240] uppercase italic">Dive Journal</h3>
+                <button onClick={onClose} className="p-2 rounded-full bg-slate-100/80 hover:bg-slate-200 text-[#475569] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-full py-3 pl-11 pr-4 text-xs font-bold text-[#0b2240] w-full focus:outline-none focus:ring-2 focus:ring-[#0055ff]/20 focus:border-[#0055ff] shadow-sm transition-all"
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40" size={16} />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-black/40 border border-white/5 rounded-full py-3 pl-11 pr-4 text-xs font-bold text-white w-full"
-              />
-            </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
-            <div className="flex flex-col gap-4">
-              {allDives.filter(i => (i.location || "").toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
-                <div key={item.id} className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined">history</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <h4 className="text-lg font-black text-primary truncate leading-none mb-1">
-                        {item.location}
-                      </h4>
-                      <span className="text-[10px] font-black uppercase text-on-surface-variant/40 shrink-0 ml-2">
-                        {formatDate(item.date)}
-                      </span>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+              <div className="flex flex-col gap-4">
+                {allDives.filter(i => (i.location || "").toLowerCase().includes(searchQuery.toLowerCase())).map((item) => {
+                  const mediaArray = item.media || (item.photos ? item.photos : []);
+                  let displayImage = null;
+                  if (mediaArray.length > 0) {
+                    const imgIndex = item.id ? item.id.charCodeAt(item.id.length - 1) % mediaArray.length : 0;
+                    const selected = mediaArray[imgIndex];
+                    displayImage = typeof selected === 'string' ? selected : selected.url;
+                  }
+
+                  return (
+                    <div key={item.id} className="p-6 rounded-[2rem] bg-white shadow-sm hover:shadow-md transition-all flex items-center gap-4 border border-slate-100">
+                      {displayImage ? (
+                        <div className="h-12 w-12 rounded-full overflow-hidden border border-slate-100 shadow-sm shrink-0">
+                          <img src={displayImage} alt={item.location} className="h-full w-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-[#F8FAFC] flex items-center justify-center text-slate-400 shrink-0 border border-slate-100 shadow-sm">
+                          <span className="material-symbols-outlined text-[20px]">history</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h4 className="text-lg font-black text-[#0b2240] truncate leading-none mb-1">
+                            {item.location}
+                          </h4>
+                          <span className="text-[10px] font-black uppercase text-[#475569] shrink-0 ml-2">
+                            {formatDate(item.date)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#475569] font-bold truncate italic">
+                          {item.diveType || 'Diving'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-on-surface-variant/60 font-bold truncate italic">
-                      {item.diveType || 'Diving'}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </motion.div>
+          </motion.div>
+        </div>
     );
   }
 
@@ -999,21 +1425,6 @@ const HistoryModal = ({
           <span className="font-sans text-3xl text-primary tracking-tighter font-extrabold">GoDive</span>
         </div>
         <div className="flex items-center gap-4">
-          <div
-            onClick={() => {
-              onClose();
-              onNavigateToProfile?.();
-            }}
-            className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20 shadow-md cursor-pointer transition-transform active:scale-95"
-          >
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full bg-surface-container flex items-center justify-center">
-                <span className="material-symbols-outlined text-[32px] text-on-surface-variant">account_circle</span>
-              </div>
-            )}
-          </div>
           <button onClick={onClose} className="p-2 rounded-full bg-surface-container/50 text-on-surface-variant hover:text-primary transition-colors">
             <X size={24} />
           </button>
@@ -1035,12 +1446,10 @@ const HistoryModal = ({
       </div>
 
       {/* Filters */}
-      <div className="px-6 mb-8 flex gap-3 overflow-x-auto no-scrollbar">
+      <div className="px-6 mb-8 flex justify-center gap-3">
         {[
-          { id: 'all', label: 'All' },
-          { id: 'spotted', label: 'Spotted' },
-          { id: 'not-seen', label: 'Not Seen' },
-          { id: 'rare', label: 'Rare' }
+          { id: 'nearby', label: 'Nearby Treasures' },
+          { id: 'spotted', label: 'My Spotted Species' }
         ].map(f => (
           <button
             key={f.id}
@@ -1057,77 +1466,189 @@ const HistoryModal = ({
 
       {/* Grid */}
       <div className="flex-1 overflow-y-auto px-6 pb-10 no-scrollbar">
-        <div className="grid grid-cols-2 gap-4">
-          {filteredSpecies.map((species, idx) => {
-            const isFeatured = idx === 0 && filter === 'all' && !searchQuery;
-            return (
-              <motion.div
-                key={species.id}
-                onClick={() => setSelectedSpecies(species)}
-                className={cn(
-                  "relative rounded-[2.5rem] bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all",
-                  isFeatured && "col-span-2 aspect-[16/9]"
-                )}
-              >
-                <div className={cn("relative w-full overflow-hidden", isFeatured ? "flex-1" : "aspect-square")}>
-                  <img src={species.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={species.name} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  {isFeatured && (
-                    <div className="absolute bottom-6 left-8 right-6 flex items-end justify-between">
-                      <div>
-                        <h2 className="text-3xl font-black text-white italic tracking-tighter leading-none mb-1">{species.name}</h2>
-                        <p className="text-sm font-bold text-white/70 italic">{species.scientificName}</p>
-                      </div>
-                      <div className="bg-[#005f82] px-4 py-2 rounded-full shadow-lg border border-white/10">
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                          {species.spottedCount > 0 ? "SPOTTED" : "NOT SEEN"}
-                        </span>
-                      </div>
-                    </div>
+        {filter === 'nearby' && !searchQuery && !userLocation ? (
+          <div className="py-20 text-center flex flex-col items-center">
+             <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-6 text-slate-400 border border-slate-200">
+               <span className="material-symbols-outlined text-[32px]">location_on</span>
+             </div>
+             <h3 className="text-xl font-black text-[#0b2240] mb-2">Discover Local Marine Life</h3>
+             <p className="text-sm font-bold text-slate-500 mb-8 max-w-xs">Allow location access to find rare and common species near your current coordinates.</p>
+             <button onClick={requestLocation} className="px-8 py-4 bg-[#0089b7] text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-[#007095] shadow-lg transition-colors">
+               Find Nearby Treasures
+             </button>
+             {geoError && <p className="text-xs text-red-500 mt-4 font-bold max-w-xs">{geoError} - Please enable location or search manually.</p>}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {filteredSpecies.map((species, idx) => {
+              const isFeatured = idx === 0 && filter === 'nearby' && !searchQuery;
+              return (
+                <motion.div
+                  key={species.id}
+                  onClick={() => setSelectedSpecies(species)}
+                  className={cn(
+                    "relative rounded-[2.5rem] bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all",
+                    isFeatured && "col-span-2 aspect-[16/9]"
                   )}
+                >
+                  <div className={cn("relative w-full overflow-hidden bg-gradient-to-br from-[#0089b7]/10 to-[#0b2240]/10", isFeatured ? "flex-1" : "aspect-square")}>
+                    {species.imageUrl && (
+                      <img 
+                        src={species.imageUrl} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        alt={species.commonName} 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {isFeatured && (
+                      <div className="absolute bottom-6 left-8 right-6 flex items-end justify-between">
+                        <div>
+                          <h2 className="text-3xl font-black text-white italic tracking-tighter leading-none mb-1">{species.commonName}</h2>
+                          <p className="text-sm font-bold text-white/70 italic">{species.scientificName}</p>
+                        </div>
+                        {species.spottedCount > 0 && (
+                          <div className="px-4 py-2 rounded-full bg-surface-container-low/50 backdrop-blur-md border border-white/20">
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                              SPOTTED {species.spottedCount}X
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {!isFeatured && (
-                    <div className="absolute top-4 right-4">
-                      <button className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                        <HeartPulse size={20} className={species.spottedCount > 0 ? "fill-white" : ""} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {!isFeatured && (
-                  <div className="p-5 flex flex-col items-center text-center">
-                    <h3 className="text-base font-black text-[#1e293b] leading-tight mb-0.5">{species.name}</h3>
+                    <div className="p-5 flex flex-col items-center text-center">
+                    <h3 className="text-base font-black text-[#1e293b] leading-tight mb-0.5">{species.commonName}</h3>
                     <p className="text-[11px] font-bold text-slate-400 italic mb-4">{species.scientificName}</p>
 
-                    <div className="w-full pt-4 border-t border-slate-50">
-                      {species.rarity === 'rare' ? (
-                        <div className="flex items-center justify-center gap-1.5 text-error">
-                          <AlertTriangle size={14} className="fill-error/10" />
-                          <span className="text-[9px] font-black uppercase tracking-widest">Rare Species</span>
-                        </div>
-                      ) : (
+                    {species.spottedCount > 0 && (
+                      <div className="w-full pt-4 border-t border-slate-50">
                         <div className="flex items-center justify-center">
-                           <span className={cn(
-                             "text-[9px] font-black uppercase tracking-widest",
-                             species.spottedCount > 0 ? "text-[#0089b7]" : "text-slate-300"
-                           )}>
-                             {species.spottedCount > 0 ? `Spotted ${species.spottedCount}x` : "Not Seen"}
-                           </span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-[#0089b7]">
+                            Spotted {species.spottedCount}x
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
+                      </div>
+                    )}
+                  </div>)}
+                </motion.div>
+              );
+            })}
+            {filteredSpecies.length === 0 && !isSearching && (
+              <div className="col-span-2 py-10 text-center flex flex-col items-center opacity-50">
+                 <Fish size={48} className="mb-4" />
+                 <p className="text-sm font-bold uppercase tracking-widest">No Species Found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Bottom Padding for Navbar */}
       <div className="h-24 shrink-0" />
+
+      {selectedSpecies && (
+        <SpeciesDetailModal 
+          species={selectedSpecies} 
+          userMedia={filter === 'spotted' ? allDives.filter(d => 
+             d.fishSpottedIds?.includes(selectedSpecies.id?.toString()) || 
+             d.fishSpottedIds?.includes(selectedSpecies.id) ||
+             d.fishSpotted?.includes(selectedSpecies.commonName) ||
+             d.fishSpotted?.includes(selectedSpecies.id)
+          ).flatMap(d => d.media || d.photos || []) : undefined}
+          onClose={() => setSelectedSpecies(null)} 
+        />
+      )}
+    </motion.div>
+  );
+};
+
+const SpeciesDetailModal = ({ species, userMedia, onClose }: { species: any, userMedia?: string[], onClose: () => void }) => {
+  const [details, setDetails] = useState<MarineSpeciesDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    MarineLifeService.getSpeciesDetails(species.id).then(res => {
+      setDetails(res);
+      setLoading(false);
+    });
+  }, [species.id]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 50, scale: 0.95, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={{ y: 30, scale: 0.95, opacity: 0 }}
+        className="relative w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] rounded-[3rem] bg-white shadow-2xl border border-slate-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {loading ? (
+           <div className="p-20 flex items-center justify-center">
+             <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-[#0b2240] animate-spin"></div>
+           </div>
+        ) : details ? (
+          <>
+            <div className="relative w-full h-64 shrink-0 bg-slate-100">
+              {details.highResImageUrl ? (
+                <img src={details.highResImageUrl} className="w-full h-full object-cover" alt={details.commonName} />
+              ) : details.imageUrl ? (
+                <img src={details.imageUrl} className="w-full h-full object-cover" alt={details.commonName} />
+              ) : null}
+              <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-black/20 text-white backdrop-blur-md hover:bg-black/40 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+              <h2 className="text-3xl font-black text-[#0b2240] tracking-tight mb-1">{details.commonName}</h2>
+              <p className="text-sm font-bold text-slate-500 italic mb-6">{details.scientificName}</p>
+              
+              {details.description ? (
+                <div 
+                  className="prose prose-sm max-w-none text-slate-700 leading-relaxed font-medium"
+                  dangerouslySetInnerHTML={{ __html: details.description }}
+                />
+              ) : (
+                <p className="text-slate-500 italic">No additional details available.</p>
+              )}
+
+              {details.wikipediaUrl && (
+                <a href={details.wikipediaUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#0055ff] hover:text-[#0044cc] transition-colors">
+                  Read more on Wikipedia <ArrowUpRight size={16} />
+                </a>
+              )}
+
+              {userMedia && userMedia.length > 0 && (
+                <div className="mt-10 border-t border-slate-100 pt-8">
+                  <h3 className="text-xl font-black text-[#0b2240] mb-4">My Gallery</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {userMedia.map((url, i) => (
+                      <div key={i} className="aspect-square rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+                        <img src={typeof url === 'string' ? url : (url as any).url} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Dive media" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+           <div className="p-20 text-center text-slate-500 font-bold flex flex-col items-center">
+             <Fish size={48} className="mb-4 opacity-50" />
+             <p>Failed to load species details.</p>
+             <button onClick={onClose} className="mt-6 px-6 py-2 bg-slate-100 rounded-full font-bold text-slate-600">Close</button>
+           </div>
+        )}
+      </motion.div>
     </motion.div>
   );
 };
@@ -1446,8 +1967,10 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
     diveType: "Drift Dive",
     depth: "",
     duration: "",
-    fishSpotted: [] as string[],
+    fishSpotted: [] as any[],
+    verifiedSpecies: [] as any[],
     photos: [] as string[],
+    communityIdentificationRequests: [] as string[],
     notes: "",
     shareToFeed: true,
     feedDescription: "",
@@ -1456,139 +1979,10 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
   });
 
   // --- Ecosystem Observation State ---
-  const [aiDetectionStatus, setAiDetectionStatus] = useState<'idle' | 'detecting' | 'done'>('idle');
-  const [detectedSpecies, setDetectedSpecies] = useState<{name: string, confidence: number, accepted?: boolean, isManualEntry?: boolean}[]>([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
   const [speciesToView, setSpeciesToView] = useState<any>(null);
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const speciesSearchRef = React.useRef<HTMLInputElement>(null);
-
-  // Production-ready vision API pipeline
-  const identifySpecies = async (imageBase64: string) => {
-    setAiDetectionStatus('detecting');
-
-    try {
-      // Ensure we hit the absolute URL in production so we don't fall back to an empty static file
-      const baseUrl = import.meta.env.VITE_API_URL || 'https://us-central1-project-7c683cb5-9592-4a84-97d.cloudfunctions.net';
-      const response = await fetch(`${baseUrl}/identifySpecies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: imageBase64,
-          maxResults: 3,
-          confidenceThreshold: 0.5,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error(`Vision API error: ${response.status}`, errorData || 'Unknown error');
-        setAiDetectionStatus('done');
-        return;
-      }
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseErr) {
-        console.error("Invalid JSON response from vision API. Is the backend server running?", parseErr);
-        setAiDetectionStatus('done');
-        return;
-      }
-
-      // Expected response shape:
-      // { matches: [{ name: string, confidence: number }] }
-      if (data?.matches && Array.isArray(data.matches) && data.matches.length > 0) {
-        // De-duplicate within the new batch and cap at 3 results
-        const seen = new Set<string>();
-        const newResults = data.matches
-          .filter((m: { name: string }) => {
-            if (seen.has(m.name)) return false;
-            seen.add(m.name);
-            return true;
-          })
-          .slice(0, 3)
-          .map((m: { name: string; confidence: number }) => ({
-            name: m.name,
-            confidence: Math.round(m.confidence * 100),
-            accepted: false,
-            isManualEntry: false,
-          }));
-
-        // Merge with existing state: keep old entries intact, only append new unique ones
-        setDetectedSpecies(prev => {
-          const merged = [...prev];
-          newResults.forEach((r: any) => {
-            if (!merged.find(p => p.name === r.name)) {
-              merged.push(r);
-            }
-          });
-          return merged;
-        });
-      }
-      // If no matches returned, detectedSpecies stays empty — no quiz, no guessing
-    } catch (err) {
-      console.error('Species identification failed:', err);
-      // Silent failure: suggestion area stays empty, manual input is the fallback
-    } finally {
-      setAiDetectionStatus('done');
-    }
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    setAiDetectionStatus('idle');
-
-    let maxPhotos = 3;
-    if (profile?.subscriptionTier === 'premium') maxPhotos = 10;
-    if (profile?.subscriptionTier === 'vip') maxPhotos = 30;
-
-    const remainingSlots = maxPhotos - diveData.photos.length;
-    if (remainingSlots <= 0) {
-      alert(`Maximum ${maxPhotos} photos per dive log on your current plan.`);
-      return;
-    }
-
-    Array.from(files).slice(0, remainingSlots).forEach((file: File) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX_DIM = 800;
-          if (width > height) {
-            if (width > MAX_DIM) {
-              height *= MAX_DIM / width;
-              width = MAX_DIM;
-            }
-          } else {
-            if (height > MAX_DIM) {
-              width *= MAX_DIM / height;
-              height = MAX_DIM;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          setDiveData(prev => ({
-            ...prev,
-            photos: [...prev.photos, compressedDataUrl]
-          }));
-          identifySpecies(compressedDataUrl);
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
   const [fishSearch, setFishSearch] = useState("");
   const [showFishDropdown, setShowFishDropdown] = useState(false);
@@ -1611,34 +2005,89 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
 
   const filteredFish = MARINE_LIFE_DATABASE.filter(f =>
     f.toLowerCase().includes(fishSearch.toLowerCase()) &&
-    !diveData.fishSpotted.includes(f)
+    !diveData.fishSpotted.some(spotted => (typeof spotted === 'string' ? spotted : spotted.commonName) === f)
   );
 
   const handleAddFish = (fish: string, isManual = false) => {
-    if (diveData.fishSpotted.includes(fish)) return; // prevent duplicate log entries
+    const getFishName = (f: any) => typeof f === 'string' ? f : f.commonName;
+    if (diveData.fishSpotted.some(f => getFishName(f) === fish)) return; // prevent duplicate log entries
     setDiveData(prev => ({ ...prev, fishSpotted: [...prev.fishSpotted, fish] }));
     setFishSearch("");
     setShowFishDropdown(false);
-    
-    // If accepting an existing AI suggestion, mark it accepted
-    // If manual entry, add a standalone entry — never pollute AI cards with manual flags
-    setDetectedSpecies(prev => {
-        const existingIdx = prev.findIndex(sp => sp.name === fish);
-        if (existingIdx !== -1) {
-            const updated = [...prev];
-            updated[existingIdx] = { ...updated[existingIdx], accepted: true };
-            return updated;
-        }
-        // Only append a manual entry card if this is a manual selection
-        if (isManual) {
-            return [...prev, { name: fish, confidence: -1, accepted: true, isManualEntry: true }];
-        }
-        return prev;
-    });
   };
 
-  const handleRemoveFish = (fish: string) => {
-    setDiveData(prev => ({ ...prev, fishSpotted: prev.fishSpotted.filter(f => f !== fish) }));
+  const handleRemoveFish = (fish: any) => {
+    const getFishName = (f: any) => typeof f === 'string' ? f : f.commonName;
+    const targetName = getFishName(fish);
+    setDiveData(prev => ({ 
+      ...prev, 
+      fishSpotted: prev.fishSpotted.filter(f => getFishName(f) !== targetName),
+      verifiedSpecies: prev.verifiedSpecies.filter(f => getFishName(f) !== targetName)
+    }));
+  };
+
+  const handleMediaDetectedSpecies = async (speciesName: string | null, photoDataUrl: string, askCommunity?: boolean, caption?: string) => {
+    try {
+      const updateNotes = (prev: any) => caption ? (prev.notes ? `${prev.notes}\nPhoto Caption: ${caption}` : `Photo Caption: ${caption}`) : prev.notes;
+
+      if (askCommunity) {
+        setDiveData(prev => ({
+          ...prev,
+          photos: prev.photos.includes(photoDataUrl) ? prev.photos : [...prev.photos, photoDataUrl],
+          communityIdentificationRequests: prev.communityIdentificationRequests ? [...prev.communityIdentificationRequests, photoDataUrl] : [photoDataUrl],
+          notes: updateNotes(prev)
+        }));
+        return;
+      }
+
+      if (!speciesName) {
+        setDiveData(prev => ({
+          ...prev,
+          photos: prev.photos.includes(photoDataUrl) ? prev.photos : [...prev.photos, photoDataUrl],
+          notes: updateNotes(prev)
+        }));
+        return;
+      }
+
+      // 1. Search iNaturalist for the exact mapped species object
+      const speciesList = await MarineLifeService.searchSpecies(speciesName);
+      let newObj: any = speciesName;
+      if (speciesList && speciesList.length > 0) {
+        newObj = speciesList[0];
+        // Cache it in Firebase asynchronously
+        MarineLifeService.cacheSpecies(newObj).catch(console.error);
+      } else {
+        // Fallback to minimal mapped object if iNaturalist fails
+        newObj = { id: Date.now(), commonName: speciesName, scientificName: speciesName, imageUrl: null };
+      }
+
+      if (caption) {
+        newObj.caption = caption;
+      }
+
+      setDiveData(prev => {
+        const getFishName = (f: any) => typeof f === 'string' ? f : f.commonName;
+        const exists = prev.fishSpotted.some(f => getFishName(f) === speciesName);
+        
+        if (exists) {
+           return { 
+             ...prev, 
+             photos: prev.photos.includes(photoDataUrl) ? prev.photos : [...prev.photos, photoDataUrl],
+             notes: updateNotes(prev) 
+           };
+        }
+        
+        return {
+          ...prev,
+          fishSpotted: [...prev.fishSpotted, newObj],
+          verifiedSpecies: [...prev.verifiedSpecies, newObj],
+          photos: prev.photos.includes(photoDataUrl) ? prev.photos : [...prev.photos, photoDataUrl],
+          notes: updateNotes(prev)
+        };
+      });
+    } catch (err) {
+      console.error("Error saving verified species mapping:", err);
+    }
   };
 
   React.useEffect(() => {
@@ -1709,14 +2158,26 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
           {/* Date */}
           <div className="group">
             <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Date</label>
-            <div className="relative">
+            <div 
+              className="relative cursor-pointer"
+              onClick={(e) => {
+                const input = e.currentTarget.querySelector('input');
+                if (input && 'showPicker' in HTMLInputElement.prototype) {
+                  try { input.showPicker(); } catch (err) {}
+                }
+              }}
+            >
+              <div className="w-full rounded-xl bg-white py-4 px-4 text-sm font-bold text-slate-700 border border-slate-200 group-hover:border-[#0089b7]/30 transition-all shadow-sm flex items-center justify-between">
+                <span>{diveData.date ? diveData.date.split('-').reverse().join('-') : 'DD-MM-YYYY'}</span>
+                <Calendar size={18} className="text-[#0089b7]" />
+              </div>
               <input
                 type="date"
                 name="date"
                 value={diveData.date}
                 onChange={handleChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer pointer-events-none"
                 style={{ WebkitAppearance: 'none' }}
-                className="w-full rounded-xl bg-white py-4 px-4 text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0089b7]/20 focus:border-[#0089b7] transition-all shadow-sm pr-4 [&::-webkit-calendar-picker-indicator]:hidden"
               />
             </div>
           </div>
@@ -1767,6 +2228,28 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
             </div>
           </div>
 
+          {/* Photos & AI Detection Button */}
+          <div className="group">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Visual Evidence</label>
+            
+            {diveData.photos.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2">
+                    {diveData.photos.map((photo, idx) => (
+                        <div key={idx} className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                            <img src={photo} className="w-full h-full object-cover" alt="Upload" />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <button
+              onClick={() => setShowMediaModal(true)}
+              className="w-full py-4 rounded-xl bg-[#0089b7] text-white font-black uppercase tracking-widest text-xs hover:bg-[#007095] shadow-md transition-colors flex items-center justify-center gap-2"
+            >
+              <Camera size={16} /> Upload Media & Identify Species
+            </button>
+          </div>
+
           {/* Observations — Manual Search + Logged Species Chips */}
           <div className="group">
             <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 ml-1">Ecosystem Observations</label>
@@ -1810,155 +2293,31 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
             {/* Logged Species Chips — always visible regardless of photo attachment */}
             {diveData.fishSpotted.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
-                {diveData.fishSpotted.map((fish) => (
-                  <div key={fish} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0089b7]/10 border border-[#0089b7]/20 text-[#0089b7] text-xs font-bold shadow-sm">
+                {diveData.fishSpotted.map((fish, idx) => {
+                  const fishName = typeof fish === 'string' ? fish : fish.commonName;
+                  return (
+                  <div key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0089b7]/10 border border-[#0089b7]/20 text-[#0089b7] text-xs font-bold shadow-sm">
                     <Fish size={12} />
-                    {fish}
+                    {fishName}
                     <button onClick={() => handleRemoveFish(fish)} className="ml-0.5 text-[#0089b7]/50 hover:text-red-500 transition-colors">
                       <X size={12} />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
-            )}
-          </div>
-
-          {/* Photos & AI Detection */}
-          <div className="group">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-1">Visual Evidence</label>
-            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" multiple accept="image/*" />
-            
-            {diveData.photos.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2">
-                    {diveData.photos.map((photo, idx) => (
-                        <div key={idx} className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                            <img src={photo} className="w-full h-full object-cover" alt="Upload" />
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full aspect-[21/9] rounded-[1.5rem] border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center gap-3 group/upload hover:border-[#0089b7]/30 hover:bg-slate-50 transition-all shadow-sm"
-            >
-              <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover/upload:bg-[#0089b7]/10 group-hover/upload:text-[#0089b7] transition-all">
-                <Camera size={24} />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Capture your discoveries</span>
-            </button>
-
-            {/* AI Detection UI */}
-            {aiDetectionStatus === 'detecting' && (
-               <div className="mt-4 p-4 rounded-2xl bg-primary/10 border border-primary/20 flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
-                       <Search size={16} className="text-primary" />
-                   </div>
-                   <div>
-                       <p className="text-xs font-bold text-primary">Identifying Species...</p>
-                       <p className="text-[10px] text-primary/70">Analyzing image via computer vision</p>
-                   </div>
-                   <div className="ml-auto flex gap-1">
-                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:0ms]"></span>
-                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:150ms]"></span>
-                       <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]"></span>
-                   </div>
-               </div>
-            )}
-
-            {/* AI Suggestion Cards — only rendered when API returns matches */}
-            {aiDetectionStatus === 'done' && detectedSpecies.filter(sp => !sp.isManualEntry).length > 0 && (
-                <div className="mt-4 space-y-3">
-                    {detectedSpecies.filter(sp => !sp.isManualEntry).map((sp, idx) => (
-                        <div 
-                            key={`ai-${sp.name}-${idx}`}
-                            onClick={(e) => {
-                                const target = e.target as HTMLElement;
-                                if (!target.closest('button')) {
-                                    const fullSpecies = MARINE_SPECIES_DATA.find(s => s.name === sp.name);
-                                    if (fullSpecies) setSpeciesToView(fullSpecies);
-                                }
-                            }}
-                            className={cn("p-4 rounded-2xl border transition-all cursor-pointer hover:border-primary", sp.accepted ? "bg-green-50 border-green-200" : "bg-white border-slate-200 shadow-sm")}
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary text-[20px]">set_meal</span>
-                                    <span className="text-sm font-black text-slate-800">{sp.name}</span>
-                                </div>
-                                <span className={cn("text-[10px] font-bold px-2 py-1 rounded-full", sp.confidence > 85 ? "bg-green-100 text-green-700" : sp.confidence > 65 ? "bg-yellow-100 text-yellow-700" : "bg-orange-100 text-orange-700")}>
-                                    {sp.confidence}% Match
-                                </span>
-                            </div>
-                            {!sp.accepted ? (
-                                <div className="flex gap-2 mt-3">
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleAddFish(sp.name, false);
-                                        }}
-                                        className="flex-1 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-colors"
-                                    >
-                                        Accept
-                                    </button>
-                                    <button 
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            if (!profile) return;
-                                            try {
-                                                await addDoc(collection(db, "posts"), {
-                                                    userId: profile.id,
-                                                    userDisplayName: profile.displayName || "Explorer",
-                                                    userPhotoURL: profile.photoURL,
-                                                    content: `I spotted something on my dive but the AI wasn't sure. It guessed ${sp.name} (${sp.confidence}%). What do you think this is?`,
-                                                    image: diveData.photos[0] || "",
-                                                    timestamp: serverTimestamp(),
-                                                    likesCount: 0,
-                                                    commentsCount: 0,
-                                                    type: 'identification_request',
-                                                    status: 'unresolved'
-                                                });
-                                                alert("Posted to community feed for identification!");
-                                                setDetectedSpecies(prev => prev.filter((_, i) => i !== idx));
-                                            } catch (err) {
-                                                console.error(err);
-                                            }
-                                        }}
-                                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
-                                    >
-                                        Ask Community
-                                    </button>
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDetectedSpecies(prev => prev.filter((_, i) => i !== idx));
-                                            speciesSearchRef.current?.focus();
-                                        }}
-                                        className="flex-1 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors"
-                                    >
-                                        ENTER MANUALLY
-                                    </button>
-                                </div>
-                            ) : (
-                                <p className="text-[10px] font-bold text-green-600 mt-2 flex items-center gap-1">
-                                    <CheckCircle2 size={12} /> Added to your log
-                                </p>
-                            )}
-                        </div>
-                    ))}
-                </div>
             )}
           </div>
 
           {/* Standard Setup Card */}
           <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
             <label className="flex items-start gap-4 cursor-pointer">
-              <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 mt-0.5", diveData.useStandardSetup ? "bg-[#0089b7] border-[#0089b7]" : "border-slate-300")}>
-                {diveData.useStandardSetup && <CheckCircle2 size={16} className="text-white" />}
+              <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 mt-1", diveData.useStandardSetup ? "bg-[#0089b7] border-[#0089b7]" : "border-slate-300")}>
+                {diveData.useStandardSetup && <Check size={14} strokeWidth={4} className="text-white mt-[1px]" />}
               </div>
               <input type="checkbox" checked={diveData.useStandardSetup} onChange={e => setDiveData(prev => ({ ...prev, useStandardSetup: e.target.checked }))} className="hidden" />
               <div>
-                <span className="block text-sm font-black text-slate-800 uppercase tracking-tight">Use Standard Setup</span>
+                <span className="block text-sm font-black text-slate-800 uppercase tracking-tight">Use Standard Equipment Setup</span>
                 <span className="block text-[10px] text-slate-500 font-medium leading-relaxed mt-1">Automatically select equipment marked as "Standard Setup" in your gear log.</span>
               </div>
             </label>
@@ -2022,6 +2381,12 @@ const StartDiveModal = ({ onClose }: { onClose: () => void }) => {
       </motion.div>
 
       <AnimatePresence>
+        {showMediaModal && (
+          <MediaIdentificationModal 
+            onClose={() => setShowMediaModal(false)}
+            onConfirm={handleMediaDetectedSpecies}
+          />
+        )}
         {speciesToView && (
             <SpeciesInfoModal species={speciesToView} onClose={() => setSpeciesToView(null)} currentUserId={profile?.id} />
         )}

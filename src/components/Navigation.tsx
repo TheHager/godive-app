@@ -53,7 +53,7 @@ export const BottomNav = ({ currentView, setView }: { currentView: View; setView
   const { user } = useAuth();
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-1 overflow-x-auto no-scrollbar border-t  premium-glass px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))]  md:hidden w-full max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] flex items-center gap-1 overflow-x-auto no-scrollbar border-t border-[rgba(0,99,134,0.1)] bg-white/80 backdrop-blur-xl shadow-[0_-8px_24px_-4px_rgba(0,0,0,0.1)] px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] md:hidden w-full max-w-full">
       <NavItem view="friends" currentView={currentView} label="Friends" icon={Users} onClick={setView} />
       <NavItem view="buddy" currentView={currentView} label="Events" icon={Calendar} onClick={setView} />
       <NavItem view="dashboard" currentView={currentView} label="Start" icon={BarChart3} onClick={setView} />

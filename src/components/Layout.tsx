@@ -26,7 +26,7 @@ export const Layout = ({ children, currentView, setView }: LayoutProps) => {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className={cn(
                 "flex-1 w-full flex flex-col min-w-0",
-                currentView === 'explorer' ? 'pb-0' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6'
+                currentView === 'explorer' ? 'pb-0' : 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6'
               )}
             >
               {children}
